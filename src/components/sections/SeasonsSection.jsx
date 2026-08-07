@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Waves } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
+import RevealLines from "../RevealLines.jsx";
 import {
   getSeasonalGalleryFocus,
   getSeasonalGalleryMediaIds,
@@ -25,6 +26,7 @@ function SeasonalGalleryPhotos({ photos, preview = false }) {
       className={`season-gallery-photo season-gallery-photo-${photo.id}`}
       key={photo.id}
       aria-hidden={preview || undefined}
+      data-preview-target={`seasons-${photo.id}`}
     >
       <figcaption><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{photo.label}</RevealLine></figcaption>
       <div className="season-gallery-photo-frame">
@@ -160,7 +162,7 @@ export default memo(function SeasonsSection({ reducedMotion }) {
             </p>
 
             <div className="season-gallery-quote">
-              <p><RevealLine direction="right">{seasonalGallery.quote}</RevealLine></p>
+              <p><RevealLines direction="right">{seasonalGallery.quote}</RevealLines></p>
               <span><RevealLine direction="left">{seasonalGallery.signature}</RevealLine></span>
             </div>
 
@@ -169,7 +171,7 @@ export default memo(function SeasonsSection({ reducedMotion }) {
             </div>
           </div>
 
-          <p className="season-gallery-next"><RevealLine direction="left">BƯỚC CHẬM QUA BỐN MÙA, GIỮ LẠI NHỮNG KHOẢNH KHẮC THUỘC VỀ LÀNG.</RevealLine></p>
+          <p className="season-gallery-next"><RevealLines direction="left">BƯỚC CHẬM QUA BỐN MÙA, GIỮ LẠI NHỮNG KHOẢNH KHẮC THUỘC VỀ LÀNG.</RevealLines></p>
           <div className="season-gallery-progress" aria-hidden="true"><span ref={progressLineRef} /></div>
         </div>
       </div>

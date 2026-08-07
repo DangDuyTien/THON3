@@ -12,7 +12,9 @@ export default function SiteFooter() {
           <Settings aria-hidden="true" />
           <span>Quản trị</span>
         </a>
-        <a href="#home" aria-label="Lên đầu trang"><ArrowUp aria-hidden="true" /></a>
+        <a className="footer-back-to-top" href="#home" aria-label="Lên đầu trang">
+          <ArrowUp aria-hidden="true" />
+        </a>
       </div>
     </footer>
   );

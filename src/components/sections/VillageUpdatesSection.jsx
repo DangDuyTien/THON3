@@ -102,6 +102,7 @@ export default memo(function VillageUpdatesSection({ reducedMotion }) {
               <article
                 className={`village-update-card village-update-card-${card.tone}`}
                 key={card.id}
+                data-preview-target={`updates-${card.id}`}
                 ref={(node) => { cardRefs.current[index] = node; }}
                 style={{ zIndex: Math.round(20 - Math.abs(offset) * 2) }}
               >

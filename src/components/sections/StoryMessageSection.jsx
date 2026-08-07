@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
+import RevealLines from "../RevealLines.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useSectionProgress } from "../../hooks/useMotion.js";
 import { smoothStep } from "../../utils/math.js";
@@ -91,7 +92,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
           </RevealLine>
         </h2>
 
-        <figure className="story-message-photo">
+        <figure className="story-message-photo" data-preview-target="story-main">
           <AdaptiveImage
             src={villageMessage.imageSrc}
             alt={villageMessage.imageAlt}
@@ -101,7 +102,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
           />
         </figure>
 
-        <div className="story-message-signature" aria-label={villageMessage.signatureAlt}>
+        <div className="story-message-signature" aria-label={villageMessage.signatureAlt} data-preview-target="story-signature">
           {villageMessage.signatureImage ? (
             <img src={villageMessage.signatureImage} alt={villageMessage.signatureAlt} />
           ) : (
@@ -112,7 +113,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
           )}
         </div>
 
-        <p className="story-message-summary"><RevealLine direction="left">{villageMessage.summary}</RevealLine></p>
+        <p className="story-message-summary"><RevealLines direction="left">{villageMessage.summary}</RevealLines></p>
       </div>
     </section>
   );

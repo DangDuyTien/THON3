@@ -4,7 +4,9 @@ export function getPendingSubmissions() {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(PENDING_YOUTH_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => item && typeof item === "object" && !Array.isArray(item));
   } catch {
     return [];
   }

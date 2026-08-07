@@ -2,6 +2,25 @@ import { MapPin, Menu, X } from "lucide-react";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import CurtainMenu from "./CurtainMenu.jsx";
 
+function KineticRollText({ children }) {
+  const text = String(children);
+  return (
+    <span className="closing-kinetic-roll">
+      <span className="closing-kinetic-white">{text}</span>
+      <span className="closing-kinetic-green" aria-hidden="true">{text}</span>
+    </span>
+  );
+}
+
+function IconRoll({ isOpen }) {
+  return (
+    <span className="header-icon-roll">
+      <span className="header-icon-primary">{isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</span>
+      <span className="header-icon-hover" aria-hidden="true">{isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</span>
+    </span>
+  );
+}
+
 export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
   const { content } = useSiteContent();
   const { siteName, tagline } = content.settings;
@@ -9,7 +28,7 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
 
   return (
     <>
-      <header className="site-header" data-header>
+      <header className={`site-header${menuOpen ? " is-menu-open" : ""}`} data-header>
         <a className="wordmark" href="#home" aria-label={`${siteName} - về trang đầu`}>
           <span className="wordmark-name">{nameLines[0]}<br />{nameLines.slice(1).join(" ")}</span>
           <span className="wordmark-tagline">{tagline}</span>
@@ -24,7 +43,7 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
         <div className="header-actions">
           <a className="visit-link" href="#lien-he">
             <MapPin aria-hidden="true" />
-            <span>Ghé thăm</span>
+            <KineticRollText>Ghé thăm</KineticRollText>
           </a>
           <button
             className="menu-button"
@@ -34,7 +53,7 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
             aria-controls="mobile-menu"
             title={menuOpen ? "Đóng menu" : "Mở menu"}
           >
-            {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+            <IconRoll isOpen={menuOpen} />
             <span className="sr-only">{menuOpen ? "Đóng menu" : "Mở menu"}</span>
           </button>
         </div>

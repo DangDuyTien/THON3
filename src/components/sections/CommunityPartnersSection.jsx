@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import RevealLine from "../RevealLine.jsx";
+import RevealLines from "../RevealLines.jsx";
 
 const CommunityReveal = RevealLine;
 
@@ -97,6 +98,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
         className={`community-partner community-partner-${organization.type ?? "wordmark"}`}
         key={`${organization.id}-${ariaHidden ? "clone" : "orig"}-${index}`}
         role="listitem"
+        data-preview-target={`community-${organization.id}`}
         aria-hidden={ariaHidden}
       >
         {organization.logo ? (
@@ -131,7 +133,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
         </div>
 
         <p className="community-partners-intro">
-          <CommunityReveal direction="left">{communityPartners.copy}</CommunityReveal>
+          <RevealLines direction="left">{communityPartners.copy}</RevealLines>
         </p>
       </div>
 

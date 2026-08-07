@@ -10,6 +10,7 @@ import {
   Eye,
   FileJson,
   ImagePlus,
+  LogOut,
   PencilLine,
   RotateCcw,
   Save,
@@ -21,6 +22,8 @@ import {
   X,
 } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
+import AdminLivePreview from "./admin/AdminLivePreview.jsx";
+import AdminImageEditor from "./admin/AdminImageEditor.jsx";
 import {
   clearSiteContentDraft,
   cloneDefaultSiteContent,
@@ -55,6 +58,7 @@ const ADMIN_NAV_ITEMS = [
 ];
 
 const AdminCardCommandContext = createContext(null);
+const AdminImageTargetContext = createContext(null);
 const AdminPreviewEditContext = createContext(null);
 const AdminPreviewAppearanceContext = createContext(null);
 
@@ -162,82 +166,23 @@ function AdminColorField({ label, value, onChange, hint, fallback = "#15271f" })
   );
 }
 
-function AdminImageField({ label, value, onChange, hint }) {
-  const inputRef = useRef(null);
-  const [error, setError] = useState("");
-  const isUploadedFile = typeof value === "string" && value.startsWith("data:image/");
-
-  const handleFile = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("Chỉ nhận tệp hình ảnh.");
-      return;
-    }
-
-    if (file.size > 4 * 1024 * 1024) {
-      setError("Ảnh cần nhỏ hơn 4 MB để lưu được trên trình duyệt.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setError("");
-      onChange(reader.result);
-    };
-    reader.onerror = () => setError("Không thể đọc tệp ảnh này.");
-    reader.readAsDataURL(file);
-  };
-
+function AdminImageField({ label, value, onChange, hint, alt, onAltChange, position, onPositionChange, fallbackSrc, fit, target }) {
+  const onTarget = useContext(AdminImageTargetContext);
   return (
-    <div className="admin-image-field">
-      <div className="admin-image-preview">
-        {value ? (
-          <AdaptiveImage src={value} alt="" imageVariant="small" loading="lazy" />
-        ) : (
-          <ImagePlus aria-hidden="true" />
-        )}
-      </div>
-      <div className="admin-image-controls">
-        <span className="admin-field-label">{label}</span>
-        <div className="admin-image-row">
-          <input
-            className="admin-image-url"
-            type="url"
-            value={isUploadedFile ? "" : value ?? ""}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder={isUploadedFile ? "Ảnh đã tải lên từ tệp" : "Dán URL ảnh hoặc đường dẫn /assets/..."}
-            aria-label={`${label} - URL ảnh`}
-          />
-          <button
-            className="admin-secondary-button admin-icon-text-button"
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            title="Tải ảnh từ máy tính"
-          >
-            <Upload aria-hidden="true" />
-            <span>Tải ảnh</span>
-          </button>
-          {value && (
-            <button
-              className="admin-quiet-button"
-              type="button"
-              onClick={() => onChange("")}
-              title="Xóa ảnh"
-              aria-label={`Xóa ${label.toLowerCase()}`}
-            >
-              <Trash2 aria-hidden="true" />
-            </button>
-          )}
-        </div>
-        <input ref={inputRef} className="sr-only" type="file" accept="image/*" onChange={handleFile} />
-        {hint && <span className="admin-field-hint">{hint}</span>}
-        {isUploadedFile && <span className="admin-image-status">Ảnh đang được lưu kèm nội dung trên trình duyệt này.</span>}
-        {error && <span className="admin-field-error">{error}</span>}
-      </div>
-    </div>
+    <AdminImageEditor
+      label={label}
+      value={value}
+      onChange={onChange}
+      hint={hint}
+      alt={alt}
+      onAltChange={onAltChange}
+      position={position}
+      onPositionChange={onPositionChange}
+      fallbackSrc={fallbackSrc}
+      fit={fit}
+      target={target}
+      onTarget={onTarget}
+    />
   );
 }
 
@@ -277,6 +222,11 @@ function AdminPanel({ eyebrow, title, description, cardCount = 0, children }) {
       <div className="admin-panel-body">{children}</div>
     </section>
   );
+}
+
+function getAppearanceChoiceLabel(group, value) {
+  const option = SITE_APPEARANCE_OPTIONS[group]?.find((item) => item.value === value);
+  return option?.label?.replace(/\s*\(.*/, "") || value;
 }
 
 function AdminCard({ title, index, children, openByDefault = index === 0 }) {
@@ -408,8 +358,17 @@ function HeroEditor({ draft, update }) {
               <AdminField label="Dòng nhấn" value={frame.accent} onChange={(value) => update(`storyFrames[${index}].accent`, value)} />
               <AdminField label="Ghi chú bên phải" value={frame.note} onChange={(value) => update(`storyFrames[${index}].note`, value)} />
               <AdminField label="Mô tả" multiline value={frame.description} onChange={(value) => update(`storyFrames[${index}].description`, value)} />
-              <AdminImageField label="Ảnh khung cảnh" value={frame.imageSrc} onChange={(value) => update(`storyFrames[${index}].imageSrc`, value)} hint="Có thể dùng URL ảnh hoặc tải tệp từ máy tính." />
-              <AdminField label="Vị trí ảnh" value={frame.position} onChange={(value) => update(`storyFrames[${index}].position`, value)} hint="Ví dụ: center 58%" />
+              <AdminImageField
+                label="Ảnh khung cảnh"
+                value={frame.imageSrc}
+                onChange={(value) => update(`storyFrames[${index}].imageSrc`, value)}
+                alt={frame.description}
+                onAltChange={(value) => update(`storyFrames[${index}].description`, value)}
+                position={frame.position}
+                onPositionChange={(value) => update(`storyFrames[${index}].position`, value)}
+                target={`hero-${index}`}
+                hint={index === 0 ? "Khung 01 là ảnh đang hiển thị trên trang chủ." : "Khung này đang được lưu trong nội dung nhưng chưa xuất hiện ở Hero hiện tại."}
+              />
             </div>
           </AdminCard>
         ))}
@@ -427,10 +386,27 @@ function StoryEditor({ draft, update }) {
         <AdminField label="Dòng tiêu đề phía trên" value={message.headlineTop} onChange={(value) => update("villageMessage.headlineTop", value)} />
         <AdminField label="Dòng tiêu đề phía dưới" value={message.headlineBottom} onChange={(value) => update("villageMessage.headlineBottom", value)} />
         <AdminField label="Chữ ký" value={message.signatureText} onChange={(value) => update("villageMessage.signatureText", value)} />
-        <AdminField label="Mô tả ảnh" multiline value={message.imageAlt} onChange={(value) => update("villageMessage.imageAlt", value)} />
         <AdminField label="Tóm tắt" multiline value={message.summary} onChange={(value) => update("villageMessage.summary", value)} />
-        <AdminImageField label="Ảnh câu chuyện" value={message.imageSrc} onChange={(value) => update("villageMessage.imageSrc", value)} />
-        <AdminField label="Vị trí ảnh" value={message.imagePosition} onChange={(value) => update("villageMessage.imagePosition", value)} />
+        <AdminImageField
+          label="Ảnh câu chuyện"
+          value={message.imageSrc}
+          onChange={(value) => update("villageMessage.imageSrc", value)}
+          alt={message.imageAlt}
+          onAltChange={(value) => update("villageMessage.imageAlt", value)}
+          position={message.imagePosition}
+          onPositionChange={(value) => update("villageMessage.imagePosition", value)}
+          target="story-main"
+        />
+        <AdminImageField
+          label="Ảnh chữ ký (không bắt buộc)"
+          value={message.signatureImage || ""}
+          onChange={(value) => update("villageMessage.signatureImage", value || null)}
+          alt={message.signatureAlt}
+          onAltChange={(value) => update("villageMessage.signatureAlt", value)}
+          fit="contain"
+          target="story-signature"
+          hint="Để trống để dùng chữ ký vẽ từ trường Chữ ký."
+        />
       </div>
     </AdminPanel>
   );
@@ -500,24 +476,77 @@ function AdminOverviewPreview({ draft, dirty }) {
 function AdminSettingsPreview({ draft, dirty }) {
   const { settings } = draft;
   const { appearance } = settings;
+  const frame = draft.storyFrames[0];
+  const palette = [
+    { key: "background", label: "Nền ngoài" },
+    { key: "paper", label: "Nền sáng" },
+    { key: "paperDeep", label: "Nền đậm" },
+    { key: "ink", label: "Chữ" },
+    { key: "lime", label: "Nhấn" },
+    { key: "lake", label: "Nước" },
+  ];
   return (
     <AdminPreviewFrame activeSection="settings" dirty={dirty} className="admin-live-preview-settings">
-      <div className="admin-preview-settings-top">
-        <strong>{settings.siteName}</strong>
-        <span>{settings.tagline}</span>
-        <div><small>{settings.coordinates[0]}</small><small>{settings.coordinates[1]}</small></div>
-      </div>
-      <div className="admin-preview-settings-center">
-        <p>NHẬN DIỆN TRANG CHỦ</p>
-        <h3>{settings.siteName}</h3>
-        <em>{settings.tagline}</em>
-      </div>
-      <div className="admin-preview-settings-footer">
-        <span>{settings.footerText}</span>
-        <div className="admin-preview-settings-swatches" aria-label="Bảng màu đang chọn">
-          {[appearance.colors.background, appearance.colors.paper, appearance.colors.ink, appearance.colors.lime, appearance.colors.lake].map((color) => <i key={color} style={{ backgroundColor: color }} />)}
+      <div className="admin-preview-settings-board">
+        <div className="admin-preview-settings-top">
+          <div>
+            <p>XEM TRƯỚC TRỰC TIẾP / BẢN NHÁP</p>
+            <strong>{settings.siteName}</strong>
+          </div>
+          <span>{settings.tagline}</span>
+          <div><small>{settings.coordinates[0]}</small><small>{settings.coordinates[1]}</small></div>
         </div>
-        <span>{settings.siteName}</span>
+
+        <div className="admin-preview-settings-grid">
+          <article className="admin-preview-settings-card admin-preview-settings-typography">
+            <div className="admin-preview-settings-card-label"><span>01</span><strong>PHÔNG CHỮ</strong></div>
+            <h3 className="admin-preview-settings-display-sample">Ở lại <em>Mê Linh</em></h3>
+            <p className="admin-preview-settings-sans-sample">Mỗi dòng chữ vẫn giữ rõ dấu tiếng Việt ở mọi kích thước.</p>
+            <code className="admin-preview-settings-mono-sample">{getAppearanceChoiceLabel("display", appearance.fonts.display)} · {getAppearanceChoiceLabel("sans", appearance.fonts.sans)}</code>
+          </article>
+
+          <article className="admin-preview-settings-card admin-preview-settings-colors">
+            <div className="admin-preview-settings-card-label"><span>02</span><strong>MÀU SẮC & NỀN</strong></div>
+            <div className="admin-preview-settings-palette" aria-label="Bảng màu bản nháp">
+              {palette.map(({ key, label }) => (
+                <div key={key}>
+                  <i style={{ backgroundColor: appearance.colors[key] }} />
+                  <span>{label}</span>
+                  <code>{appearance.colors[key]}</code>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="admin-preview-settings-card admin-preview-settings-layout">
+            <div className="admin-preview-settings-card-label"><span>03</span><strong>BỐ CỤC</strong></div>
+            <div className="admin-preview-settings-layout-demo" aria-hidden="true">
+              <div><span>01</span><span>02</span><span>03</span></div>
+              <div><span>VĂN BẢN</span><span>ẢNH</span></div>
+            </div>
+            <p>{getAppearanceChoiceLabel("density", appearance.layout.density)} · {getAppearanceChoiceLabel("frame", appearance.layout.frame)} · {getAppearanceChoiceLabel("radius", appearance.layout.radius)}</p>
+          </article>
+
+          <article className="admin-preview-settings-card admin-preview-settings-effects">
+            <div className="admin-preview-settings-card-label"><span>04</span><strong>HIỆU ỨNG</strong></div>
+            <div className="admin-preview-settings-effect-demo">
+              <div className="admin-preview-settings-effect-image">
+                <AdaptiveImage src={frame.imageSrc} alt="" imagePosition={frame.position} imageVariant="small" sizes="120px" />
+              </div>
+              <div className="admin-preview-settings-effect-signal" aria-hidden="true"><i /><i /><i /></div>
+              <span className="admin-preview-settings-hover-label">RÊ CHUỘT</span>
+            </div>
+            <p>{getAppearanceChoiceLabel("motion", appearance.effects.motion)} · {getAppearanceChoiceLabel("imageTreatment", appearance.effects.imageTreatment)} · {getAppearanceChoiceLabel("hover", appearance.effects.hover)}</p>
+          </article>
+        </div>
+
+        <div className="admin-preview-settings-footer">
+          <span>{settings.footerText}</span>
+          <div className="admin-preview-settings-swatches" aria-label="Bảng màu đang chọn">
+            {palette.map(({ key }) => <i key={key} style={{ backgroundColor: appearance.colors[key] }} />)}
+          </div>
+          <span>{getAppearanceChoiceLabel("mono", appearance.fonts.mono)}</span>
+        </div>
       </div>
     </AdminPreviewFrame>
   );
@@ -720,9 +749,16 @@ function SeasonsEditor({ draft, update }) {
           <AdminCard key={photo.id} index={index} title={photo.label || `Ảnh ${index + 1}`}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên ảnh" value={photo.label} onChange={(value) => update(`seasonalGallery.photos[${index}].label`, value)} />
-              <AdminField label="Mô tả ảnh" multiline value={photo.imageAlt} onChange={(value) => update(`seasonalGallery.photos[${index}].imageAlt`, value)} />
-              <AdminImageField label="Ảnh" value={photo.imageSrc} onChange={(value) => update(`seasonalGallery.photos[${index}].imageSrc`, value)} />
-              <AdminField label="Vị trí ảnh" value={photo.imagePosition} onChange={(value) => update(`seasonalGallery.photos[${index}].imagePosition`, value)} />
+              <AdminImageField
+                label="Ảnh"
+                value={photo.imageSrc}
+                onChange={(value) => update(`seasonalGallery.photos[${index}].imageSrc`, value)}
+                alt={photo.imageAlt}
+                onAltChange={(value) => update(`seasonalGallery.photos[${index}].imageAlt`, value)}
+                position={photo.imagePosition}
+                onPositionChange={(value) => update(`seasonalGallery.photos[${index}].imagePosition`, value)}
+                target={`seasons-${photo.id}`}
+              />
             </div>
           </AdminCard>
         ))}
@@ -741,9 +777,16 @@ function ChoiceEditor({ choice, path, update, index }) {
         <AdminField label="Nút dẫn tới" value={choice.actionLabel} onChange={(value) => update(`${path}.actionLabel`, value)} />
         <AdminField label="Liên kết" value={choice.href} onChange={(value) => update(`${path}.href`, value)} hint="Ví dụ: #cau-chuyen" />
         <AdminField label="Mô tả" multiline value={choice.copy} onChange={(value) => update(`${path}.copy`, value)} />
-        <AdminField label="Mô tả ảnh" multiline value={choice.imageAlt} onChange={(value) => update(`${path}.imageAlt`, value)} />
-        <AdminImageField label="Ảnh lựa chọn" value={choice.imageSrc} onChange={(value) => update(`${path}.imageSrc`, value)} />
-        <AdminField label="Vị trí ảnh" value={choice.imagePosition} onChange={(value) => update(`${path}.imagePosition`, value)} />
+        <AdminImageField
+          label="Ảnh lựa chọn"
+          value={choice.imageSrc}
+          onChange={(value) => update(`${path}.imageSrc`, value)}
+          alt={choice.imageAlt}
+          onAltChange={(value) => update(`${path}.imageAlt`, value)}
+          position={choice.imagePosition}
+          onPositionChange={(value) => update(`${path}.imagePosition`, value)}
+          target={`visit-${index}`}
+        />
       </div>
     </AdminCard>
   );
@@ -752,15 +795,25 @@ function ChoiceEditor({ choice, path, update, index }) {
 function VisitEditor({ draft, update }) {
   return (
     <AdminPanel eyebrow="06 / GHÉ THĂM" title="Hai lối trở về" description="Hai lựa chọn nội dung cùng hình ảnh toàn màn hình ở cuối phần này." cardCount={2}>
+      <div className="admin-form-grid">
+        <AdminField label="Chú thích chung" value={draft.visitChoices.caption} onChange={(value) => update("visitChoices.caption", value)} />
+      </div>
       <div className="admin-card-stack">
         <ChoiceEditor choice={draft.visitChoices.left} path="visitChoices.left" update={update} index={0} />
         <ChoiceEditor choice={draft.visitChoices.right} path="visitChoices.right" update={update} index={1} />
       </div>
       <div className="admin-divider" />
       <div className="admin-form-grid">
-        <AdminImageField label="Ảnh toàn cảnh" value={draft.fullBleedArrival.imageSrc} onChange={(value) => update("fullBleedArrival.imageSrc", value)} />
-        <AdminField label="Mô tả ảnh toàn cảnh" multiline value={draft.fullBleedArrival.imageAlt} onChange={(value) => update("fullBleedArrival.imageAlt", value)} />
-        <AdminField label="Vị trí ảnh toàn cảnh" value={draft.fullBleedArrival.imagePosition} onChange={(value) => update("fullBleedArrival.imagePosition", value)} />
+        <AdminImageField
+          label="Ảnh toàn cảnh"
+          value={draft.fullBleedArrival.imageSrc}
+          onChange={(value) => update("fullBleedArrival.imageSrc", value)}
+          alt={draft.fullBleedArrival.imageAlt}
+          onAltChange={(value) => update("fullBleedArrival.imageAlt", value)}
+          position={draft.fullBleedArrival.imagePosition}
+          onPositionChange={(value) => update("fullBleedArrival.imagePosition", value)}
+          target="visit-arrival"
+        />
       </div>
     </AdminPanel>
   );
@@ -868,7 +921,14 @@ function ArchiveEditor({ draft, update }) {
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={archive.eyebrow} onChange={(value) => update("villageArchive.eyebrow", value)} />
         <AdminField label="Tiêu đề" multiline value={archive.title} onChange={(value) => update("villageArchive.title", value)} hint="Dùng xuống dòng để tách hai dòng lớn." />
-        <AdminImageField label="Ảnh mặc định" value={archive.imageSrc} onChange={(value) => update("villageArchive.imageSrc", value)} hint="Dùng làm ảnh dự phòng nếu một thẻ chưa có ảnh riêng." />
+        <AdminImageField
+          label="Ảnh mặc định"
+          value={archive.imageSrc}
+          onChange={(value) => update("villageArchive.imageSrc", value)}
+          fallbackSrc="/assets/village-hero.jpg"
+          target="archive-default"
+          hint="Dùng làm ảnh dự phòng nếu một thẻ chưa có ảnh riêng."
+        />
       </div>
       <div className="admin-card-stack">
         {archive.cards.map((card, index) => (
@@ -876,9 +936,25 @@ function ArchiveEditor({ draft, update }) {
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên tư liệu" value={card.label} onChange={(value) => update(`villageArchive.cards[${index}].label`, value)} />
               <AdminField label="Năm" value={card.year} onChange={(value) => update(`villageArchive.cards[${index}].year`, value)} />
-              <AdminField label="Mô tả ảnh" multiline value={card.imageAlt} onChange={(value) => update(`villageArchive.cards[${index}].imageAlt`, value)} />
-              <AdminImageField label="Ảnh tư liệu" value={card.imageSrc || archive.imageSrc} onChange={(value) => update(`villageArchive.cards[${index}].imageSrc`, value)} />
-              <AdminField label="Vị trí ảnh" value={card.imagePosition} onChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)} />
+              <AdminImageField
+                label="Ảnh tư liệu"
+                value={card.imageSrc || ""}
+                fallbackSrc={archive.imageSrc}
+                onChange={(value) => update(`villageArchive.cards[${index}].imageSrc`, value)}
+                alt={card.imageAlt}
+                onAltChange={(value) => update(`villageArchive.cards[${index}].imageAlt`, value)}
+                position={card.imagePosition}
+                onPositionChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)}
+                target={`archive-${card.id}`}
+              />
+              <AdminImageField
+                label="Ảnh khi rê chuột (không bắt buộc)"
+                value={card.altImageSrc || ""}
+                onChange={(value) => update(`villageArchive.cards[${index}].altImageSrc`, value)}
+                position={card.imagePosition}
+                onPositionChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)}
+                target={`archive-${card.id}`}
+              />
             </div>
           </AdminCard>
         ))}
@@ -903,8 +979,15 @@ function CommunityEditor({ draft, update }) {
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên đơn vị" value={organization.label} onChange={(value) => update(`communityPartners.organizations[${index}].label`, value)} />
               <AdminField label="Ký hiệu chữ" value={organization.mark} onChange={(value) => update(`communityPartners.organizations[${index}].mark`, value)} hint="Hiển thị khi không có logo." />
-              <AdminImageField label="Logo" value={organization.logo} onChange={(value) => update(`communityPartners.organizations[${index}].logo`, value)} />
-              <AdminField label="Mô tả logo" value={organization.logoAlt} onChange={(value) => update(`communityPartners.organizations[${index}].logoAlt`, value)} />
+              <AdminImageField
+                label="Logo"
+                value={organization.logo}
+                onChange={(value) => update(`communityPartners.organizations[${index}].logo`, value)}
+                alt={organization.logoAlt}
+                onAltChange={(value) => update(`communityPartners.organizations[${index}].logoAlt`, value)}
+                fit="contain"
+                target={`community-${organization.id}`}
+              />
             </div>
           </AdminCard>
         ))}
@@ -921,7 +1004,14 @@ function UpdatesEditor({ draft, update }) {
         <AdminField label="Nhãn nhỏ" value={updates.eyebrow} onChange={(value) => update("villageUpdates.eyebrow", value)} />
         <AdminField label="Dòng tiêu đề 1" value={updates.headline[0]} onChange={(value) => update("villageUpdates.headline[0]", value)} />
         <AdminField label="Dòng tiêu đề 2" value={updates.headline[1]} onChange={(value) => update("villageUpdates.headline[1]", value)} />
-        <AdminImageField label="Ảnh mặc định" value={updates.imageSrc} onChange={(value) => update("villageUpdates.imageSrc", value)} hint="Dùng cho thẻ chưa có ảnh riêng." />
+        <AdminImageField
+          label="Ảnh mặc định"
+          value={updates.imageSrc}
+          onChange={(value) => update("villageUpdates.imageSrc", value)}
+          fallbackSrc="/assets/village-hero.jpg"
+          target="updates-default"
+          hint="Dùng cho thẻ chưa có ảnh riêng."
+        />
       </div>
       <div className="admin-card-stack">
         {updates.cards.map((card, index) => (
@@ -929,9 +1019,17 @@ function UpdatesEditor({ draft, update }) {
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên hoạt động" value={card.label} onChange={(value) => update(`villageUpdates.cards[${index}].label`, value)} />
               <AdminField label="Thời gian" value={card.meta} onChange={(value) => update(`villageUpdates.cards[${index}].meta`, value)} />
-              <AdminField label="Mô tả ảnh" multiline value={card.imageAlt} onChange={(value) => update(`villageUpdates.cards[${index}].imageAlt`, value)} />
-              <AdminImageField label="Ảnh hoạt động" value={card.imageSrc || updates.imageSrc} onChange={(value) => update(`villageUpdates.cards[${index}].imageSrc`, value)} />
-              <AdminField label="Vị trí ảnh" value={card.imagePosition} onChange={(value) => update(`villageUpdates.cards[${index}].imagePosition`, value)} />
+              <AdminImageField
+                label="Ảnh hoạt động"
+                value={card.imageSrc || ""}
+                fallbackSrc={updates.imageSrc}
+                onChange={(value) => update(`villageUpdates.cards[${index}].imageSrc`, value)}
+                alt={card.imageAlt}
+                onAltChange={(value) => update(`villageUpdates.cards[${index}].imageAlt`, value)}
+                position={card.imagePosition}
+                onPositionChange={(value) => update(`villageUpdates.cards[${index}].imagePosition`, value)}
+                target={`updates-${card.id}`}
+              />
             </div>
           </AdminCard>
         ))}
@@ -975,7 +1073,7 @@ function getInitialSection() {
   return ADMIN_SECTIONS.some((section) => section.id === hash) ? hash : "overview";
 }
 
-export default function AdminPage() {
+export default function AdminPage({ onLogout }) {
   const { content, saveContent } = useSiteContent();
   const restoredDraftRef = useRef();
   if (restoredDraftRef.current === undefined) restoredDraftRef.current = loadSiteContentDraft();
@@ -985,6 +1083,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState("");
   const [saveError, setSaveError] = useState("");
   const [cardCommandState, setCardCommandState] = useState({ action: "", version: 0 });
+  const [previewFocusTarget, setPreviewFocusTarget] = useState("");
   const editorRef = useRef(null);
   const contentSnapshot = useMemo(() => JSON.stringify(content), [content]);
   const draftSnapshot = useMemo(() => JSON.stringify(draft), [draft]);
@@ -1013,16 +1112,20 @@ export default function AdminPage() {
     if (!dirty) {
       clearSiteContentDraft();
       lastDraftSnapshotRef.current = draftSnapshot;
-      return;
+      return undefined;
     }
-    if (lastDraftSnapshotRef.current === draftSnapshot) return;
+    if (lastDraftSnapshotRef.current === draftSnapshot) return undefined;
 
-    try {
-      persistSiteContentDraft(draft);
-      lastDraftSnapshotRef.current = draftSnapshot;
-    } catch (error) {
-      setSaveError(error?.name === "QuotaExceededError" ? "Bộ nhớ tạm đã đầy. Hãy dùng ảnh nhỏ hơn hoặc xóa ảnh cũ." : "Không thể lưu bản nháp trên trình duyệt này.");
-    }
+    const persistTimer = window.setTimeout(() => {
+      try {
+        persistSiteContentDraft(draft);
+        lastDraftSnapshotRef.current = draftSnapshot;
+      } catch (error) {
+        setSaveError(error?.name === "QuotaExceededError" ? "Bộ nhớ tạm đã đầy. Hãy dùng ảnh nhỏ hơn hoặc xóa ảnh cũ." : "Không thể lưu bản nháp trên trình duyệt này.");
+      }
+    }, 450);
+
+    return () => window.clearTimeout(persistTimer);
   }, [dirty, draft, draftSnapshot]);
 
   useEffect(() => {
@@ -1039,12 +1142,13 @@ export default function AdminPage() {
 
   const selectSection = (section) => {
     setActiveSection(section);
+    setPreviewFocusTarget("");
     setSectionQuery("");
     window.history.replaceState(null, "", `#admin-${section}`);
   };
 
   const jumpToEditor = () => {
-    editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    editorRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   };
 
   const handleSave = () => {
@@ -1129,10 +1233,10 @@ export default function AdminPage() {
           <ArrowLeft aria-hidden="true" />
           <span>{content.settings.siteName}</span>
         </a>
-          <div className="admin-topbar-title">
-            <Settings aria-hidden="true" />
-            <strong>Quản trị nội dung</strong>
-            <span className={`admin-save-state${dirty ? " is-dirty" : ""}`}>{dirty ? "Bản nháp tạm" : "Đã đồng bộ"}</span>
+        <div className="admin-topbar-title">
+          <Settings aria-hidden="true" />
+          <strong>Quản trị nội dung</strong>
+          <span className={`admin-save-state${dirty ? " is-dirty" : ""}`}>{dirty ? "Bản nháp tạm" : "Đã đồng bộ"}</span>
         </div>
         <div className="admin-topbar-actions">
           <a className="admin-secondary-button admin-icon-text-button" href="/#home" target="_blank" rel="noreferrer" aria-label="Xem trang chủ">
@@ -1143,6 +1247,12 @@ export default function AdminPage() {
             <Save aria-hidden="true" />
             <span>Lưu thay đổi</span>
           </button>
+          {onLogout && (
+            <button className="admin-secondary-button admin-icon-text-button admin-logout-btn" type="button" onClick={onLogout} title="Đăng xuất khỏi trang quản trị">
+              <LogOut aria-hidden="true" />
+              <span>Đăng xuất</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -1170,7 +1280,7 @@ export default function AdminPage() {
           </div>
           <nav className="admin-section-nav" id="admin-section-navigation">
             {visibleNavItems.map((section) => (
-              <button className={activeSection === section.id ? "is-active" : ""} type="button" key={section.id} onClick={() => selectSection(section.id)}>
+              <button className={activeSection === section.id ? "is-active" : ""} type="button" key={section.id} onClick={() => selectSection(section.id)} aria-current={activeSection === section.id ? "page" : undefined}>
                 <span className="admin-nav-label"><span className="admin-nav-index">{section.index}</span>{section.label}</span>
                 <small>{section.description}</small>
               </button>
@@ -1187,6 +1297,7 @@ export default function AdminPage() {
         </aside>
 
         <AdminCardCommandContext.Provider value={adminCardCommand}>
+          <AdminImageTargetContext.Provider value={setPreviewFocusTarget}>
           <main className="admin-main">
           <div className="admin-main-heading">
             <div>
@@ -1206,13 +1317,13 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {notice && <p className="admin-notice"><Check aria-hidden="true" /> {notice}</p>}
+          {notice && <p className="admin-notice" role="status" aria-live="polite"><Check aria-hidden="true" /> {notice}</p>}
           {saveError && <p className="admin-error" role="alert">{saveError}</p>}
           <div className="admin-content-stage" key={activeSection}>
-            <AdminVisualPreview draft={draft} activeSection={activeSection} dirty={dirty} onEdit={jumpToEditor} />
             <div className="admin-editor-stage" ref={editorRef}>
               {renderEditor()}
             </div>
+            <AdminLivePreview draft={draft} activeSection={activeSection} dirty={dirty} focusTarget={previewFocusTarget} />
           </div>
           {dirty && (
             <div className="admin-save-dock" role="status">
@@ -1228,6 +1339,7 @@ export default function AdminPage() {
             </div>
           )}
           </main>
+          </AdminImageTargetContext.Provider>
         </AdminCardCommandContext.Provider>
       </div>
     </div>

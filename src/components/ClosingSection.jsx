@@ -1,7 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
-import RevealLine from "./RevealLine.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
 const NAV_ITEMS = [
@@ -40,6 +39,12 @@ export default function ClosingSection() {
   const { settings, fullBleedArrival, communityPartners } = content;
   const nameLines = settings.siteName.split(" ");
   const organizations = communityPartners.organizations;
+  const closingHeadline = Array.isArray(fullBleedArrival.headline) && fullBleedArrival.headline.length >= 2
+    ? fullBleedArrival.headline
+    : ["LUÔN CÓ", "MỘT LỐI VỀ."];
+  const closingImageSrc = fullBleedArrival.portraitSrc || fullBleedArrival.imageSrc;
+  const closingImageAlt = fullBleedArrival.portraitAlt || fullBleedArrival.imageAlt;
+  const closingImagePosition = fullBleedArrival.imagePosition || "center 58%";
   const marqueeRef = useRef(null);
 
   // Smooth continuous infinite marquee sliding for the bottom logo strip
@@ -58,11 +63,11 @@ export default function ClosingSection() {
           const groupWidth = firstGroup.scrollWidth || firstGroup.getBoundingClientRect().width;
 
           if (groupWidth > 0) {
-            position += 1.4 * (delta / 16.66);
-            if (position >= groupWidth) {
-              position -= groupWidth;
+            position -= delta * 0.045; // Smooth 45px/sec drift speed
+            if (position <= -groupWidth) {
+              position += groupWidth;
             }
-            marqueeRef.current.style.transform = `translate3d(-${position.toFixed(2)}px, 0, 0)`;
+            marqueeRef.current.style.transform = `translate3d(${position}px, 0, 0)`;
           }
         }
       }
@@ -90,31 +95,27 @@ export default function ClosingSection() {
 
   return (
     <section className="closing-section" id="ket-lai" aria-labelledby="closing-title">
-      {/* 1. Full-bleed transition area (No green side bars) */}
+      {/* Top Section Transition Kicker */}
       <div className="closing-transition">
-        <p className="closing-transition-kicker">
-          <RevealLine>CỘNG ĐỒNG / MÊ LINH</RevealLine>
-        </p>
-        <h2>
-          <RevealLine>Theo dõi Mê Linh</RevealLine>
-        </h2>
+        <p className="closing-transition-kicker">CỘNG ĐỒNG / MÊ LINH</p>
+        <h2>Theo dõi Mê Linh</h2>
         <nav className="closing-social-links" aria-label="Mạng xã hội của Mê Linh">
           {SOCIAL_ITEMS.map(([label, href]) => (
-            <a href={href} key={label}>
+            <a href={href} key={label} target="_blank" rel="noopener noreferrer">
               <KineticRollText>{label}</KineticRollText>
             </a>
           ))}
         </nav>
       </div>
 
-      {/* 2. Lime Green Framed Shell Area */}
+      {/* Main Closing Editorial Card */}
       <div className="closing-shell-container">
         <div className="closing-shell">
           <span className="closing-shell-cap" aria-hidden="true" />
           <div className="closing-topbar">
             <a className="closing-wordmark" href="#home" aria-label={`${settings.siteName} - về trang đầu`}>
-              <span>{nameLines[0]}<br />{nameLines.slice(1).join(" ")}</span>
-              <small>{settings.tagline}</small>
+              <span>{nameLines[0]}</span>
+              <span>{nameLines.slice(1).join(" ")}</span>
             </a>
             <a className="closing-visit-link" href="#lien-he">
               <MapPin aria-hidden="true" />
@@ -123,25 +124,26 @@ export default function ClosingSection() {
           </div>
 
           <div className="closing-stage">
-            <p className="closing-kicker">
-              <RevealLine>{`MỘT NƠI ĐỂ TRỞ VỀ / ${settings.tagline}`}</RevealLine>
-            </p>
+            <p className="closing-kicker">{fullBleedArrival.eyebrow || `MỘT NƠI ĐỂ TRỞ VỀ / ${settings.tagline}`}</p>
             <h2 id="closing-title">
-              <RevealLine><span>LUÔN CÓ</span></RevealLine>
-              <RevealLine direction="left"><em>MỘT LỐI VỀ.</em></RevealLine>
+              <span>{closingHeadline[0]}</span>
+              <em>{closingHeadline[1]}</em>
             </h2>
 
             <figure className="closing-portrait">
               <AdaptiveImage
-                src={fullBleedArrival.imageSrc}
-                alt={fullBleedArrival.imageAlt}
-                imagePosition={fullBleedArrival.imagePosition}
-                imageVariant="medium"
+                src={closingImageSrc}
+                alt={closingImageAlt}
+                colorVariant="closing-portrait"
+                imagePosition={closingImagePosition}
+                imageVariant="large"
+                loading="lazy"
                 sizes="(max-width: 680px) 72vw, 34vw"
               />
               <figcaption>{settings.siteName} <span>•</span> {settings.tagline}</figcaption>
             </figure>
 
+            {/* Left Nav Column (TRANG) */}
             <nav className="closing-nav" aria-label="Điều hướng chân trang">
               <span className="closing-nav-label">TRANG</span>
               {NAV_ITEMS.map(([label, href]) => (
@@ -151,6 +153,7 @@ export default function ClosingSection() {
               ))}
             </nav>
 
+            {/* Right Nav Column (THEO DÕI) */}
             <nav className="closing-network" aria-label="Kết nối Mê Linh">
               <span className="closing-nav-label">THEO DÕI</span>
               {NETWORK_ITEMS.map(([label, href]) => (
@@ -177,11 +180,8 @@ export default function ClosingSection() {
           </div>
 
           <div className="closing-bottomline">
-            <span>© 2026 {settings.siteName}. {settings.footerText}.</span>
-            <span>
-              <a href="#tu-lieu"><KineticRollText>TƯ LIỆU</KineticRollText></a>
-              <a href="#dong-hanh"><KineticRollText>LIÊN HỆ</KineticRollText></a>
-            </span>
+            <span>BẢN QUYỀN © 2026 {settings.siteName.toUpperCase()}</span>
+            <span>THIẾT KẾ ĐỘC BẢN • HÀ NỘI</span>
           </div>
         </div>
       </div>

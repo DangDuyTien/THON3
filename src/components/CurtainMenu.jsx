@@ -1,7 +1,27 @@
 import React, { useEffect, useRef, useState } from "react";
-import { MapPin, X } from "lucide-react";
+import { MapPin, Menu, X } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
+import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
+
+function KineticRollText({ children }) {
+  const text = String(children);
+  return (
+    <span className="closing-kinetic-roll">
+      <span className="closing-kinetic-white">{text}</span>
+      <span className="closing-kinetic-green" aria-hidden="true">{text}</span>
+    </span>
+  );
+}
+
+function IconRoll({ isOpen }) {
+  return (
+    <span className="header-icon-roll">
+      <span className="header-icon-primary">{isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</span>
+      <span className="header-icon-hover" aria-hidden="true">{isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</span>
+    </span>
+  );
+}
 
 export default function CurtainMenu({ isOpen, onClose }) {
   const { content } = useSiteContent();
@@ -18,7 +38,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
       setVisible(true);
       setAnimating(true);
       let start = null;
-      const duration = 650;
+      const duration = 1250;
 
       const animateOpen = (timestamp) => {
         if (!start) start = timestamp;
@@ -44,7 +64,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
     } else if (visible) {
       setAnimating(true);
       let start = null;
-      const duration = 550;
+      const duration = 1000;
 
       const animateClose = (timestamp) => {
         if (!start) start = timestamp;
@@ -124,7 +144,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
           <path d="M-100 720 Q 500 480, 850 820 T 1540 720" stroke="rgba(0, 162, 255, 0.18)" strokeWidth="2.0" />
         </svg>
 
-        {/* Header Bar */}
+        {/* Header Bar inside Curtain Menu */}
         <header className="curtain-menu-header">
           <a className="curtain-brand-lando" href="#home" onClick={onClose}>
             <span>{siteName}</span>
@@ -132,20 +152,25 @@ export default function CurtainMenu({ isOpen, onClose }) {
           </a>
 
           <div className="curtain-header-actions">
-            <a className="curtain-store-btn" href="#lien-he" onClick={onClose}>
+            <a className="visit-link" href="#lien-he" onClick={onClose}>
               <MapPin aria-hidden="true" />
-              <span>GHÉ THĂM</span>
+              <KineticRollText>GHÉ THĂM</KineticRollText>
             </a>
-            <button className="curtain-close-btn" type="button" onClick={onClose} aria-label="Đóng menu">
-              <X aria-hidden="true" />
+            <button className="menu-button" type="button" onClick={onClose} aria-label="Đóng menu">
+              <IconRoll isOpen={true} />
+              <span className="sr-only">Đóng menu</span>
             </button>
           </div>
         </header>
 
         {/* Main Body Grid */}
-        <div className="curtain-menu-body" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+        <div className="curtain-menu-body">
           {/* Left Side: Clean 2x2 Staggered Photo Grid */}
-          <div className="curtain-photos-container">
+          <div
+            className="curtain-photos-container"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+          >
             <div
               className="curtain-photos-col curtain-photos-col-left"
               style={{ transform: `translate3d(0, ${-mouseY * 90}px, 0)` }}
@@ -190,20 +215,20 @@ export default function CurtainMenu({ isOpen, onClose }) {
 
             <div className="curtain-crest-section">
               <div className="curtain-crest-icon" aria-hidden="true">
-                <span>( ( 🌿 ) )</span>
+                <YouthUnionEmblem size={44} />
               </div>
-              <span className="curtain-crest-tag">ĐOÀN THANH NIÊN • SINCE 2026</span>
+              <span className="curtain-crest-tag">ĐOÀN THANH NIÊN CS HỒ CHÍ MINH • THÔN MÊ LINH</span>
             </div>
           </div>
         </div>
 
-       {/* Footer */}
-       <footer className="curtain-menu-footer">
+        {/* Footer */}
+        <footer className="curtain-menu-footer">
           <span className="curtain-footer-copy curtain-footer-roll">
             <span className="curtain-footer-text curtain-footer-text-white">THÔNG TIN LIÊN HỆ & TRUYỀN THÔNG</span>
             <span className="curtain-footer-text curtain-footer-text-green" aria-hidden="true">THÔNG TIN LIÊN HỆ & TRUYỀN THÔNG</span>
           </span>
-         <div className="curtain-social-links">
+          <div className="curtain-social-links">
             <a href="https://tiktok.com" target="_blank" rel="noreferrer" className="curtain-footer-roll">
               <span className="curtain-footer-text curtain-footer-text-white">TIKTOK</span>
               <span className="curtain-footer-text curtain-footer-text-green" aria-hidden="true">TIKTOK</span>
@@ -220,8 +245,8 @@ export default function CurtainMenu({ isOpen, onClose }) {
               <span className="curtain-footer-text curtain-footer-text-white">FACEBOOK</span>
               <span className="curtain-footer-text curtain-footer-text-green" aria-hidden="true">FACEBOOK</span>
             </a>
-         </div>
-       </footer>
+          </div>
+        </footer>
       </div>
     </div>
   );

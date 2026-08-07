@@ -63,24 +63,30 @@ function mergeWithDefaults(defaultValue, overrideValue) {
   if (overrideValue === undefined || overrideValue === null) return clone(defaultValue);
   if (defaultValue === undefined || defaultValue === null) return clone(overrideValue);
 
-  if (Array.isArray(overrideValue)) {
-    return overrideValue.map((item) => clone(item));
+  if (Array.isArray(defaultValue)) {
+    if (!Array.isArray(overrideValue)) return clone(defaultValue);
+    const objectArray = defaultValue.some((item) => item && typeof item === "object" && !Array.isArray(item));
+    const normalized = overrideValue.map((item, index) => {
+      const defaultItem = defaultValue[index];
+      if (defaultItem && typeof defaultItem === "object" && !Array.isArray(defaultItem)) {
+        return item && typeof item === "object" && !Array.isArray(item)
+          ? mergeWithDefaults(defaultItem, item)
+          : clone(defaultItem);
+      }
+      return item === null || item === undefined
+        ? (defaultItem === undefined ? null : clone(defaultItem))
+        : clone(item);
+    });
+    return objectArray ? normalized.filter((item) => item && typeof item === "object" && !Array.isArray(item)) : normalized;
   }
+
+  if (Array.isArray(overrideValue)) return clone(defaultValue);
 
   if (typeof overrideValue === "object" && typeof defaultValue === "object") {
     const allKeys = Array.from(new Set([...Object.keys(defaultValue), ...Object.keys(overrideValue)]));
     return allKeys.reduce((result, key) => {
       if (overrideValue[key] !== undefined) {
-        if (
-          defaultValue[key] !== undefined &&
-          typeof defaultValue[key] === "object" &&
-          defaultValue[key] !== null &&
-          !Array.isArray(defaultValue[key])
-        ) {
-          result[key] = mergeWithDefaults(defaultValue[key], overrideValue[key]);
-        } else {
-          result[key] = clone(overrideValue[key]);
-        }
+        result[key] = mergeWithDefaults(defaultValue[key], overrideValue[key]);
       } else {
         result[key] = clone(defaultValue[key]);
       }

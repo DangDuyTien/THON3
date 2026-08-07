@@ -1,12 +1,12 @@
 export const DEFAULT_SITE_APPEARANCE = {
   colors: {
-    background: "#edf0e8",
-    paper: "#f5f6ef",
-    paperDeep: "#e5e9dc",
-    ink: "#15271f",
-    inkSoft: "#294337",
-    lime: "#d2ff00",
-    lake: "#82c6c0",
+    background: "#edf4fa",
+    paper: "#f4f8fc",
+    paperDeep: "#e1edf8",
+    ink: "#0b1a30",
+    inkSoft: "#183054",
+    lime: "#0066ff",
+    lake: "#00a2ff",
   },
   fonts: {
     display: "noto-serif",
@@ -128,7 +128,12 @@ export function normalizeSiteAppearance(value) {
 
   return {
     colors: COLOR_KEYS.reduce((result, key) => {
-      result[key] = validHex(colors[key], DEFAULT_SITE_APPEARANCE.colors[key]);
+      let val = validHex(colors[key], DEFAULT_SITE_APPEARANCE.colors[key]);
+      // Migrate legacy yellow/cyan lime to Youth Union Blue (#0066ff)
+      if (key === "lime" && (val === "#d2ff00" || val === "#00f0ff")) {
+        val = "#0066ff";
+      }
+      result[key] = val;
       return result;
     }, {}),
     fonts: {

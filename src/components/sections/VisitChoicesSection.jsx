@@ -2,6 +2,7 @@ import { memo, useCallback, useRef } from "react";
 import { ArrowDownRight } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
+import RevealLines from "../RevealLines.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useSectionProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
@@ -120,6 +121,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
               <article
                 className="visit-choice"
                 key={choice.upper}
+                data-preview-target={`visit-${index}`}
                 ref={(node) => { choiceMotionRefs.current[index] = node; }}
               >
                 <p className="visit-choice-kicker"><RevealLine>{choice.kicker}</RevealLine></p>
@@ -127,7 +129,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
                   <RevealLine direction={index % 2 === 0 ? "right" : "left"}><span>{choice.upper}</span></RevealLine>
                   <RevealLine direction={index % 2 === 0 ? "left" : "right"}><strong>{choice.lower}</strong></RevealLine>
                 </h2>
-                <p className="visit-choice-copy"><RevealLine direction="left">{choice.copy}</RevealLine></p>
+                <p className="visit-choice-copy"><RevealLines direction="left">{choice.copy}</RevealLines></p>
                 <a className="visit-choice-command" href={choice.href} aria-label={choice.actionLabel} title={choice.actionLabel}>
                   <ArrowDownRight aria-hidden="true" />
                 </a>
@@ -138,7 +140,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
           <p className="visit-choice-caption"><RevealLine direction="right">{visitChoices.caption}</RevealLine></p>
         </div>
 
-        <figure className="visit-push-up-media" ref={pushUpMediaRef}>
+        <figure className="visit-push-up-media" ref={pushUpMediaRef} data-preview-target="visit-arrival">
           <AdaptiveImage
             src={fullBleedArrival.imageSrc}
             alt={fullBleedArrival.imageAlt}

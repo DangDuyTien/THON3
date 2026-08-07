@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function LoaderMark({ onAnimationEnd }) {
   return (
@@ -82,10 +82,11 @@ function waitForCriticalResources() {
   return Promise.all([imageReady, fontsReady, documentReady]);
 }
 
-export default function PageLoader() {
+export default function PageLoader({ onExitComplete }) {
   const [ready, setReady] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [running, setRunning] = useState(false);
+  const exitCompleteRef = useRef(false);
   const prefersReducedMotion = typeof window !== "undefined"
     && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -115,9 +116,15 @@ export default function PageLoader() {
 
   useEffect(() => {
     if (!ready) return undefined;
-    const removeTimer = window.setTimeout(() => setMounted(false), prefersReducedMotion ? 80 : 700);
+    const removeTimer = window.setTimeout(() => {
+      if (!exitCompleteRef.current) {
+        exitCompleteRef.current = true;
+        onExitComplete?.();
+      }
+      setMounted(false);
+    }, prefersReducedMotion ? 80 : 700);
     return () => window.clearTimeout(removeTimer);
-  }, [prefersReducedMotion, ready]);
+  }, [onExitComplete, prefersReducedMotion, ready]);
 
   const handleOrbitAnimationEnd = (event) => {
     if (running && (event.animationName === "sig-draw-line" || event.animationName === "site-loader-orbit-spin")) {
