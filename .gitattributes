@@ -1,0 +1,4 @@
+# Configure GitHub Linguist language detection
+.lighthouseci/* linguist-vendored
+*.report.html linguist-vendored
+*.html linguist-detectable=false
