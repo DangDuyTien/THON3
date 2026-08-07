@@ -1,0 +1,260 @@
+import { createContourRenderer } from "./contour-draw.js";
+import { markMotionScene, recordMotionSceneUpdate } from "./perf.js";
+
+const contourMounts = new WeakMap();
+
+function getContourQuality() {
+  const memory = Number(navigator.deviceMemory);
+  const cores = Number(navigator.hardwareConcurrency);
+  const saveData = navigator.connection?.saveData === true;
+  const hasLowMemoryHint = Number.isFinite(memory) && memory <= 4;
+  const hasLowCpuHint = Number.isFinite(cores) && cores <= 4;
+
+  return saveData || hasLowMemoryHint || hasLowCpuHint ? "low" : "standard";
+}
+
+function getPixelRatioCap(quality, inWorker) {
+  if (quality === "low") return 1;
+  return inWorker ? 1.5 : 1.25;
+}
+
+function getCanvasSize(canvas, maximumRatio = 1.5) {
+  const bounds = canvas.getBoundingClientRect();
+  return {
+    height: Math.max(bounds.height, 1),
+    ratio: Math.min(window.devicePixelRatio || 1, maximumRatio),
+    width: Math.max(bounds.width, 1),
+  };
+}
+
+function getTheme() {
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+/**
+ * Canvas duoc ve o moi display frame qua scheduler chung. rAF tu dong dong bo
+ * 60/120 Hz theo man hinh thay vi bi khoa o mot timer co dinh.
+ */
+function createSharedContourLoop({
+  canvas,
+  onDraw,
+  onPause,
+  onResize,
+  onResume,
+  onThemeChange,
+  pixelRatioCap = 1.5,
+  queueFrame,
+  subscribeAnimationFrame,
+}) {
+  let resizeObserver = null;
+  let stopped = false;
+  let theme = getTheme();
+  let themeObserver = null;
+
+  let unsubscribeAnimationFrame = subscribeAnimationFrame((time) => {
+    if (stopped || document.hidden) return;
+    onDraw(time, theme);
+  });
+
+  const stopSharedAnimationFrame = () => {
+    if (!unsubscribeAnimationFrame) return;
+    const unsubscribe = unsubscribeAnimationFrame;
+    unsubscribeAnimationFrame = null;
+    unsubscribe();
+  };
+
+  const resize = () => {
+    onResize(getCanvasSize(canvas, pixelRatioCap));
+  };
+
+  if (typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(canvas);
+  } else {
+    window.addEventListener("resize", resize, { passive: true });
+  }
+
+  if (typeof MutationObserver !== "undefined") {
+    themeObserver = new MutationObserver(() => {
+      theme = getTheme();
+      onThemeChange?.(theme);
+    });
+    themeObserver.observe(document.documentElement, {
+      attributeFilter: ["data-theme"],
+      attributes: true,
+    });
+  }
+
+  const onVisibilityChange = () => {
+    if (document.hidden) {
+      onPause?.();
+      return;
+    }
+    onResume?.();
+    queueFrame("contour-resume");
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  resize();
+
+  const cleanup = () => {
+    stopped = true;
+    stopSharedAnimationFrame();
+    resizeObserver?.disconnect();
+    themeObserver?.disconnect();
+    window.removeEventListener("resize", resize);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  };
+
+  cleanup.stopSharedAnimationFrame = stopSharedAnimationFrame;
+  return cleanup;
+}
+
+let currentPointerX = 0.5;
+let currentPointerY = 0.5;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pointermove", (e) => {
+    currentPointerX = e.clientX / window.innerWidth;
+    currentPointerY = e.clientY / window.innerHeight;
+  }, { passive: true });
+}
+
+function mountMainThreadFallback(canvas, scheduler, quality) {
+  const renderer = createContourRenderer(canvas, quality);
+  canvas.dataset.contourRenderer = "main";
+  canvas.dataset.contourQuality = quality;
+  markMotionScene("page-contour", "main-fallback");
+
+  return createSharedContourLoop({
+    canvas,
+    onDraw: (time, theme) => {
+      renderer.setTheme(theme);
+      renderer.setPointer(currentPointerX, currentPointerY);
+      const startedAt = performance.now();
+      if (renderer.draw(time)) {
+        recordMotionSceneUpdate("page-contour", performance.now() - startedAt);
+      }
+    },
+    onResize: ({ height, ratio, width }) => renderer.resize(width, height, ratio),
+    queueFrame: scheduler.queueFrame,
+    pixelRatioCap: getPixelRatioCap(quality, false),
+    subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
+  });
+}
+
+function supportsOffscreenCanvas(canvas) {
+  return typeof Worker !== "undefined"
+    && typeof OffscreenCanvas !== "undefined"
+    && typeof canvas.transferControlToOffscreen === "function";
+}
+
+function mountWorker(canvas, scheduler, quality) {
+  const worker = new Worker(`${import.meta.env.BASE_URL}contour-worker.js`, { type: "module" });
+  const offscreen = canvas.transferControlToOffscreen();
+  const pixelRatioCap = getPixelRatioCap(quality, true);
+  const initialSize = getCanvasSize(canvas, pixelRatioCap);
+  let workerOwnsFrameLoop = false;
+  const workerTheme = getTheme();
+  let stopLoop = null;
+  canvas.dataset.contourRenderer = "worker";
+  canvas.dataset.contourQuality = quality;
+
+  const onPointerMove = (e) => {
+    currentPointerX = e.clientX / window.innerWidth;
+    currentPointerY = e.clientY / window.innerHeight;
+    worker.postMessage({ type: "pointer", x: currentPointerX, y: currentPointerY });
+  };
+  window.addEventListener("pointermove", onPointerMove, { passive: true });
+
+  worker.postMessage({
+    canvas: offscreen,
+    height: initialSize.height,
+    quality,
+    ratio: initialSize.ratio,
+    theme: workerTheme,
+    type: "init",
+    width: initialSize.width,
+    x: currentPointerX,
+    y: currentPointerY,
+  }, [offscreen]);
+
+  worker.addEventListener("message", (event) => {
+    if (event.data?.type !== "ready") return;
+    workerOwnsFrameLoop = Boolean(event.data.animationLoop);
+    if (workerOwnsFrameLoop) stopLoop?.stopSharedAnimationFrame();
+  });
+  worker.addEventListener("error", () => markMotionScene("page-contour", "worker-error"));
+  markMotionScene("page-contour", "worker");
+
+  stopLoop = createSharedContourLoop({
+    canvas,
+    onDraw: (time) => {
+      if (!workerOwnsFrameLoop) worker.postMessage({ time, type: "draw", x: currentPointerX, y: currentPointerY });
+    },
+    onPause: () => worker.postMessage({ type: "pause" }),
+    onResize: ({ height, ratio, width }) => worker.postMessage({ height, ratio, type: "resize", width }),
+    onResume: () => worker.postMessage({ type: "resume" }),
+    onThemeChange: (theme) => worker.postMessage({ theme, type: "theme" }),
+    queueFrame: scheduler.queueFrame,
+    pixelRatioCap,
+    subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
+  });
+  if (workerOwnsFrameLoop) stopLoop.stopSharedAnimationFrame();
+
+  return () => {
+    window.removeEventListener("pointermove", onPointerMove);
+    stopLoop();
+    worker.terminate();
+  };
+}
+
+function releaseContourMount(canvas, mount) {
+  mount.references -= 1;
+  if (mount.references > 0 || mount.disposeTimer !== null) return;
+
+  // StrictMode cleanup/mount runs synchronously in development. Delaying one
+  // task lets the remount retain the transferred canvas instead of falling
+  // back to a main-thread renderer.
+  mount.disposeTimer = window.setTimeout(() => {
+    mount.disposeTimer = null;
+    if (mount.references > 0) return;
+    mount.cleanup();
+    delete canvas.dataset.contourRenderer;
+    delete canvas.dataset.contourQuality;
+    contourMounts.delete(canvas);
+  }, 0);
+}
+
+/**
+ * Worker la fast path tren ca dev va production. Cache theo canvas giu cho
+ * StrictMode khong transfer mot canvas hai lan, fallback van dung scheduler
+ * chung khi browser khong co OffscreenCanvas.
+ */
+export function mountContourRenderer(canvas, scheduler) {
+  let mount = contourMounts.get(canvas);
+  if (mount) {
+    mount.references += 1;
+    if (mount.disposeTimer !== null) {
+      window.clearTimeout(mount.disposeTimer);
+      mount.disposeTimer = null;
+    }
+    return () => releaseContourMount(canvas, mount);
+  }
+
+  const quality = getContourQuality();
+  let cleanup;
+  if (!supportsOffscreenCanvas(canvas)) {
+    cleanup = mountMainThreadFallback(canvas, scheduler, quality);
+  } else {
+    try {
+      cleanup = mountWorker(canvas, scheduler, quality);
+    } catch {
+      cleanup = mountMainThreadFallback(canvas, scheduler, quality);
+    }
+  }
+
+  mount = { cleanup, disposeTimer: null, references: 1 };
+  contourMounts.set(canvas, mount);
+  return () => releaseContourMount(canvas, mount);
+}

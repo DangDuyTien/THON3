@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80" role="img" aria-labelledby="title">
+  <title id="title">HTX</title>
+  <circle cx="33" cy="40" r="15" fill="none" stroke="#15271f" stroke-width="5"/>
+  <circle cx="62" cy="24" r="15" fill="none" stroke="#15271f" stroke-width="5"/>
+  <circle cx="62" cy="56" r="15" fill="none" stroke="#15271f" stroke-width="5"/>
+  <text x="117" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#15271f">HTX</text>
+</svg>

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CmsImage",
+  "type": "object",
+  "required": ["id", "alt", "width", "height", "focalPoint", "sources", "placeholder", "version"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "alt": { "type": "string" },
+    "width": { "type": "integer", "minimum": 1 },
+    "height": { "type": "integer", "minimum": 1 },
+    "focalPoint": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "required": ["webp"],
+      "properties": {
+        "avif": { "$ref": "#/$defs/responsiveSources" },
+        "webp": { "$ref": "#/$defs/responsiveSources" }
+      }
+    },
+    "variants": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/mediaVariant" }
+    },
+    "placeholder": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "responsiveSources": {
+      "type": "object",
+      "required": ["640", "960", "1440", "1920"],
+      "properties": {
+        "640": { "type": "string", "minLength": 1 },
+        "960": { "type": "string", "minLength": 1 },
+        "1440": { "type": "string", "minLength": 1 },
+        "1920": { "type": "string", "minLength": 1 }
+      }
+    },
+    "mediaVariant": {
+      "type": "object",
+      "required": ["sources"],
+      "properties": {
+        "sources": {
+          "type": "object",
+          "required": ["webp"],
+          "properties": {
+            "avif": { "$ref": "#/$defs/responsiveSources" },
+            "webp": { "$ref": "#/$defs/responsiveSources" }
+          }
+        },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "url": "http://localhost:64037/",
+    "isRepresentativeRun": false,
+    "htmlPath": "/Applications/du-an/THON#/.lighthouseci/desktop/localhost--2026_08_06_06_13_17.report.html",
+    "jsonPath": "/Applications/du-an/THON#/.lighthouseci/desktop/localhost--2026_08_06_06_13_17.report.json",
+    "summary": {
+      "performance": 0.97,
+      "accessibility": 0.92,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  },
+  {
+    "url": "http://localhost:64037/",
+    "isRepresentativeRun": false,
+    "htmlPath": "/Applications/du-an/THON#/.lighthouseci/desktop/localhost--2026_08_06_06_13_42.report.html",
+    "jsonPath": "/Applications/du-an/THON#/.lighthouseci/desktop/localhost--2026_08_06_06_13_42.report.json",
+    "summary": {
+      "performance": 0.97,
+      "accessibility": 0.92,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  },
+  {
+    "url": "http://localhost:64037/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Applications/du-an/THON#/.lighthouseci/desktop/localhost--2026_08_06_06_13_30.report.html",
+    "jsonPath": "/Applications/du-an/THON#/.lighthouseci/desktop/localhost--2026_08_06_06_13_30.report.json",
+    "summary": {
+      "performance": 0.97,
+      "accessibility": 0.92,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  }
+]

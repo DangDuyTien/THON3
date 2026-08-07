@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80" role="img" aria-labelledby="title">
+  <title id="title">UBND</title>
+  <rect x="5" y="5" width="150" height="70" rx="4" fill="none" stroke="#15271f" stroke-width="4"/>
+  <text x="80" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#15271f">UBND</text>
+</svg>

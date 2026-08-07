@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80" role="img" aria-labelledby="title">
+  <title id="title">TH</title>
+  <path d="m22 34 28-18 28 18v7H22Z" fill="none" stroke="#15271f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M29 42h42v20H29zM44 47h12v15H44z" fill="none" stroke="#15271f" stroke-width="5"/>
+  <text x="120" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#15271f">TH</text>
+</svg>

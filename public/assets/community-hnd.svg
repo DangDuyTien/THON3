@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80" role="img" aria-labelledby="title">
+  <title id="title">HND</title>
+  <path d="M47 59C30 56 21 45 23 29c15 1 25 10 24 25Z" fill="none" stroke="#15271f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M48 61c4-14 12-25 27-32 3 16-5 28-27 32Z" fill="none" stroke="#15271f" stroke-width="5" stroke-linejoin="round"/>
+  <text x="120" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#15271f">HND</text>
+</svg>

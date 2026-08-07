@@ -1,0 +1,37 @@
+[
+  {
+    "id": "village-hero",
+    "alt": "Toan canh phong canh lang que Me Linh, Ha Noi.",
+    "width": 1440,
+    "height": 1080,
+    "focalPoint": { "x": 0.5, "y": 0.58 },
+    "sources": {
+      "webp": {
+        "640": "/assets/village-hero-640.webp",
+        "960": "/assets/village-hero-960.webp",
+        "1440": "/assets/village-hero-1440.webp",
+        "1920": "/assets/village-hero-1920.webp"
+      }
+    },
+    "variants": {
+      "hero-home": { "sources": { "webp": { "640": "/assets/village-hero-hero-home-640.webp", "960": "/assets/village-hero-hero-home-960.webp", "1440": "/assets/village-hero-hero-home-1440.webp", "1920": "/assets/village-hero-hero-home-1920.webp" } } },
+      "hero-water": { "sources": { "webp": { "640": "/assets/village-hero-hero-water-640.webp", "960": "/assets/village-hero-hero-water-960.webp", "1440": "/assets/village-hero-hero-water-1440.webp", "1920": "/assets/village-hero-hero-water-1920.webp" } } },
+      "hero-road": { "sources": { "webp": { "640": "/assets/village-hero-hero-road-640.webp", "960": "/assets/village-hero-hero-road-960.webp", "1440": "/assets/village-hero-hero-road-1440.webp", "1920": "/assets/village-hero-hero-road-1920.webp" } } },
+      "hero-field": { "sources": { "webp": { "640": "/assets/village-hero-hero-field-640.webp", "960": "/assets/village-hero-hero-field-960.webp", "1440": "/assets/village-hero-hero-field-1440.webp", "1920": "/assets/village-hero-hero-field-1920.webp" } } },
+      "story-message": { "sources": { "webp": { "640": "/assets/village-hero-story-message-640.webp", "960": "/assets/village-hero-story-message-960.webp", "1440": "/assets/village-hero-story-message-1440.webp", "1920": "/assets/village-hero-story-message-1920.webp" } } },
+      "gallery-mono": { "sources": { "webp": { "640": "/assets/village-hero-gallery-mono-640.webp", "960": "/assets/village-hero-gallery-mono-960.webp", "1440": "/assets/village-hero-gallery-mono-1440.webp", "1920": "/assets/village-hero-gallery-mono-1920.webp" } } },
+      "gallery-vivid": { "sources": { "webp": { "640": "/assets/village-hero-gallery-vivid-640.webp", "960": "/assets/village-hero-gallery-vivid-960.webp", "1440": "/assets/village-hero-gallery-vivid-1440.webp", "1920": "/assets/village-hero-gallery-vivid-1920.webp" } } },
+      "gallery-warm": { "sources": { "webp": { "640": "/assets/village-hero-gallery-warm-640.webp", "960": "/assets/village-hero-gallery-warm-960.webp", "1440": "/assets/village-hero-gallery-warm-1440.webp", "1920": "/assets/village-hero-gallery-warm-1920.webp" } } },
+      "archive-default": { "sources": { "webp": { "640": "/assets/village-hero-archive-default-640.webp", "960": "/assets/village-hero-archive-default-960.webp", "1440": "/assets/village-hero-archive-default-1440.webp", "1920": "/assets/village-hero-archive-default-1920.webp" } } },
+      "archive-muted": { "sources": { "webp": { "640": "/assets/village-hero-archive-muted-640.webp", "960": "/assets/village-hero-archive-muted-960.webp", "1440": "/assets/village-hero-archive-muted-1440.webp", "1920": "/assets/village-hero-archive-muted-1920.webp" } } },
+      "archive-warm": { "sources": { "webp": { "640": "/assets/village-hero-archive-warm-640.webp", "960": "/assets/village-hero-archive-warm-960.webp", "1440": "/assets/village-hero-archive-warm-1440.webp", "1920": "/assets/village-hero-archive-warm-1920.webp" } } },
+      "archive-vivid": { "sources": { "webp": { "640": "/assets/village-hero-archive-vivid-640.webp", "960": "/assets/village-hero-archive-vivid-960.webp", "1440": "/assets/village-hero-archive-vivid-1440.webp", "1920": "/assets/village-hero-archive-vivid-1920.webp" } } },
+      "update-soft": { "sources": { "webp": { "640": "/assets/village-hero-update-soft-640.webp", "960": "/assets/village-hero-update-soft-960.webp", "1440": "/assets/village-hero-update-soft-1440.webp", "1920": "/assets/village-hero-update-soft-1920.webp" } } },
+      "update-mono": { "sources": { "webp": { "640": "/assets/village-hero-update-mono-640.webp", "960": "/assets/village-hero-update-mono-960.webp", "1440": "/assets/village-hero-update-mono-1440.webp", "1920": "/assets/village-hero-update-mono-1920.webp" } } },
+      "update-vivid": { "sources": { "webp": { "640": "/assets/village-hero-update-vivid-640.webp", "960": "/assets/village-hero-update-vivid-960.webp", "1440": "/assets/village-hero-update-vivid-1440.webp", "1920": "/assets/village-hero-update-vivid-1920.webp" } } },
+      "update-warm": { "sources": { "webp": { "640": "/assets/village-hero-update-warm-640.webp", "960": "/assets/village-hero-update-warm-960.webp", "1440": "/assets/village-hero-update-warm-1440.webp", "1920": "/assets/village-hero-update-warm-1920.webp" } } }
+    },
+    "placeholder": "#2a3b33",
+    "version": "20260804"
+  }
+]
