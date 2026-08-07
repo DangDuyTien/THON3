@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
+import RevealLine from "./RevealLine.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
 const NAV_ITEMS = [
@@ -91,8 +92,12 @@ export default function ClosingSection() {
     <section className="closing-section" id="ket-lai" aria-labelledby="closing-title">
       {/* 1. Full-bleed transition area (No green side bars) */}
       <div className="closing-transition">
-        <p className="closing-transition-kicker">CỘNG ĐỒNG / MÊ LINH</p>
-        <h2>Theo dõi Mê Linh</h2>
+        <p className="closing-transition-kicker">
+          <RevealLine>CỘNG ĐỒNG / MÊ LINH</RevealLine>
+        </p>
+        <h2>
+          <RevealLine>Theo dõi Mê Linh</RevealLine>
+        </h2>
         <nav className="closing-social-links" aria-label="Mạng xã hội của Mê Linh">
           {SOCIAL_ITEMS.map(([label, href]) => (
             <a href={href} key={label}>
@@ -118,10 +123,12 @@ export default function ClosingSection() {
           </div>
 
           <div className="closing-stage">
-            <p className="closing-kicker">MỘT NƠI ĐỂ TRỞ VỀ / {settings.tagline}</p>
+            <p className="closing-kicker">
+              <RevealLine>{`MỘT NƠI ĐỂ TRỞ VỀ / ${settings.tagline}`}</RevealLine>
+            </p>
             <h2 id="closing-title">
-              <span>LUÔN CÓ</span>
-              <em>MỘT LỐI VỀ.</em>
+              <RevealLine><span>LUÔN CÓ</span></RevealLine>
+              <RevealLine direction="left"><em>MỘT LỐI VỀ.</em></RevealLine>
             </h2>
 
             <figure className="closing-portrait">

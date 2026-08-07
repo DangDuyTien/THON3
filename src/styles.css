@@ -2240,24 +2240,24 @@ img {
   overflow: visible;
   position: relative;
   vertical-align: top;
-  padding-top: 0.16em;
-  padding-bottom: 0.1em;
-  margin-top: -0.16em;
-  margin-bottom: -0.1em;
+  padding-top: 0.06em;
+  padding-bottom: 0.04em;
+  margin-top: -0.06em;
+  margin-bottom: -0.04em;
 }
 
 .reveal-line::after {
-  background: linear-gradient(90deg, rgba(0, 240, 255, 0.35) 0%, var(--lime) 25%, var(--lime) 100%);
-  bottom: -6%;
+  background: currentColor;
+  bottom: 0;
   content: "";
   left: 0;
   opacity: 0;
   pointer-events: none;
   position: absolute;
-  top: -6%;
+  top: 0;
   transform: none;
   width: 0%;
-  z-index: 2;
+  z-index: 3;
   border-radius: 2px;
 }
 
@@ -2265,12 +2265,12 @@ img {
   clip-path: inset(-25% 100% -25% -25%);
   display: block;
   opacity: 0;
-  transform: translate3d(-14px, 0, 0);
-  transition: opacity 0.8s ease, transform 1.2s cubic-bezier(0.25, 1, 0.4, 1), clip-path 1.2s cubic-bezier(0.25, 1, 0.4, 1);
+  transform: translate3d(0, 0, 0);
+  transition: opacity 0.01s linear 0.42s, clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.42s;
 }
 
 .reveal-line[data-reveal-direction="left"]::after {
-  background: linear-gradient(-90deg, rgba(0, 240, 255, 0.35) 0%, var(--lime) 25%, var(--lime) 100%);
+  background: currentColor;
   left: auto;
   right: 0;
   transform: none;
@@ -2278,21 +2278,20 @@ img {
 
 .reveal-line[data-reveal-direction="left"] .reveal-line-copy {
   clip-path: inset(-25% -25% -25% 100%);
-  transform: translate3d(14px, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 .reveal-line.is-revealed::after {
-  animation: sweep-cover-reveal-right 1.25s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  animation: paper-sheet-wipe-right 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .reveal-line.is-revealed[data-reveal-direction="left"]::after {
-  animation: sweep-cover-reveal-left 1.25s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  animation: paper-sheet-wipe-left 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .reveal-line.is-revealed .reveal-line-copy {
   clip-path: inset(-25% -25% -25% -25%);
   opacity: 1;
-  transform: translate3d(0, 0, 0);
 }
 
 .reveal-line.is-revealed-done::after {
@@ -2310,13 +2309,13 @@ img {
   transform: translate3d(0, 0, 0) !important;
 }
 
-@keyframes sweep-cover-reveal-right {
+@keyframes paper-sheet-wipe-right {
   0% {
     left: 0%;
     width: 0%;
     opacity: 1;
   }
-  45% {
+  42% {
     left: 0%;
     width: 105%;
     opacity: 1;
@@ -2328,13 +2327,13 @@ img {
   }
 }
 
-@keyframes sweep-cover-reveal-left {
+@keyframes paper-sheet-wipe-left {
   0% {
     right: 0%;
     width: 0%;
     opacity: 1;
   }
-  45% {
+  42% {
     right: 0%;
     width: 105%;
     opacity: 1;
