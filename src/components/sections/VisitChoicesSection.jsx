@@ -124,6 +124,15 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
                 data-preview-target={`visit-${index}`}
                 ref={(node) => { choiceMotionRefs.current[index] = node; }}
               >
+                <div className="visit-choice-mobile-media" aria-hidden="true">
+                  <AdaptiveImage
+                    src={choice.imageSrc}
+                    alt={choice.imageAlt || ""}
+                    imagePosition={choice.imagePosition}
+                    imageVariant="small"
+                    sizes="(max-width: 680px) 90vw, 20vw"
+                  />
+                </div>
                 <p className="visit-choice-kicker"><RevealLine>{choice.kicker}</RevealLine></p>
                 <h2 id={choice === visitChoices.left ? "visit-title" : undefined}>
                   <RevealLine direction={index % 2 === 0 ? "right" : "left"}><span>{choice.upper}</span></RevealLine>
