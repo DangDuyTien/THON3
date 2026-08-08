@@ -3,26 +3,34 @@ import { ArrowUpRight, MapPin } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
-const NAV_ITEMS = [
-  ["Trang chủ", "#home"],
-  ["Câu chuyện", "#cau-chuyen"],
-  ["Nhịp sống", "#nhung-mua"],
-  ["Tư liệu", "#tu-lieu"],
-  ["Cộng đồng", "#dong-hanh"],
+const DEFAULT_SOCIAL_ITEMS = [
+  { label: "Facebook", href: "#dong-hanh" },
+  { label: "Instagram", href: "#dong-hanh" },
+  { label: "YouTube", href: "#dong-hanh" },
+  { label: "TikTok", href: "#dong-hanh" },
 ];
 
-const NETWORK_ITEMS = [
-  ["Mê Linh", "#home"],
-  ["Hà Nội", "#lien-he"],
-  ["Kết nối", "#dong-hanh"],
+const DEFAULT_NAV_ITEMS = [
+  { label: "Trang chủ", href: "#home" },
+  { label: "Câu chuyện", href: "#cau-chuyen" },
+  { label: "Nhịp sống", href: "#nhung-mua" },
+  { label: "Tư liệu", href: "#tu-lieu" },
+  { label: "Cộng đồng", href: "#dong-hanh" },
 ];
 
-const SOCIAL_ITEMS = [
-  ["Facebook", "#dong-hanh"],
-  ["Instagram", "#dong-hanh"],
-  ["YouTube", "#dong-hanh"],
-  ["TikTok", "#dong-hanh"],
+const DEFAULT_NETWORK_ITEMS = [
+  { label: "Mê Linh", href: "#home" },
+  { label: "Hà Nội", href: "#lien-he" },
+  { label: "Kết nối", href: "#dong-hanh" },
 ];
+
+function isExternalLink(href) {
+  return /^(?:https?:|mailto:|tel:)/i.test(String(href || ""));
+}
+
+function LinkProps({ href }) {
+  return isExternalLink(href) ? { target: "_blank", rel: "noopener noreferrer" } : {};
+}
 
 function KineticRollText({ children }) {
   const text = String(children);
@@ -37,8 +45,12 @@ function KineticRollText({ children }) {
 export default function ClosingSection() {
   const { content } = useSiteContent();
   const { settings, fullBleedArrival, communityPartners } = content;
+  const closing = content.closing || {};
   const nameLines = settings.siteName.split(" ");
   const organizations = communityPartners.organizations;
+  const socialItems = Array.isArray(closing.socialItems) && closing.socialItems.length ? closing.socialItems : DEFAULT_SOCIAL_ITEMS;
+  const navItems = Array.isArray(closing.navItems) && closing.navItems.length ? closing.navItems : DEFAULT_NAV_ITEMS;
+  const networkItems = Array.isArray(closing.networkItems) && closing.networkItems.length ? closing.networkItems : DEFAULT_NETWORK_ITEMS;
   const closingHeadline = Array.isArray(fullBleedArrival.headline) && fullBleedArrival.headline.length >= 2
     ? fullBleedArrival.headline
     : ["LUÔN CÓ", "MỘT LỐI VỀ."];
@@ -97,14 +109,18 @@ export default function ClosingSection() {
     <section className="closing-section" id="ket-lai" aria-labelledby="closing-title">
       {/* Top Section Transition Kicker */}
       <div className="closing-transition">
-        <p className="closing-transition-kicker">CỘNG ĐỒNG / MÊ LINH</p>
-        <h2>Theo dõi Mê Linh</h2>
+        <p className="closing-transition-kicker">{closing.transitionKicker || "CỘNG ĐỒNG / MÊ LINH"}</p>
+        <h2>{closing.transitionTitle || "Theo dõi Mê Linh"}</h2>
         <nav className="closing-social-links" aria-label="Mạng xã hội của Mê Linh">
-          {SOCIAL_ITEMS.map(([label, href]) => (
-            <a href={href} key={label} target="_blank" rel="noopener noreferrer">
-              <KineticRollText>{label}</KineticRollText>
-            </a>
-          ))}
+          {socialItems.map((item, index) => {
+            const label = item?.label || `Kênh ${index + 1}`;
+            const href = item?.href || "#dong-hanh";
+            return (
+              <a href={href} key={`${label}-${index}`} {...LinkProps({ href })}>
+                <KineticRollText>{label}</KineticRollText>
+              </a>
+            );
+          })}
         </nav>
       </div>
 
@@ -119,7 +135,7 @@ export default function ClosingSection() {
             </a>
             <a className="closing-visit-link" href="#lien-he">
               <MapPin aria-hidden="true" />
-              <KineticRollText>GHÉ MÊ LINH</KineticRollText>
+              <KineticRollText>{closing.visitLabel || "GHÉ MÊ LINH"}</KineticRollText>
             </a>
           </div>
 
@@ -145,26 +161,26 @@ export default function ClosingSection() {
 
             {/* Left Nav Column (TRANG) */}
             <nav className="closing-nav" aria-label="Điều hướng chân trang">
-              <span className="closing-nav-label">TRANG</span>
-              {NAV_ITEMS.map(([label, href]) => (
-                <a href={href} key={label}>
-                  <KineticRollText>{label}</KineticRollText>
-                </a>
-              ))}
+              <span className="closing-nav-label">{closing.navLabel || "TRANG"}</span>
+              {navItems.map((item, index) => {
+                const label = item?.label || `Trang ${index + 1}`;
+                const href = item?.href || "#home";
+                return <a href={href} key={`${label}-${index}`} {...LinkProps({ href })}><KineticRollText>{label}</KineticRollText></a>;
+              })}
             </nav>
 
             {/* Right Nav Column (THEO DÕI) */}
             <nav className="closing-network" aria-label="Kết nối Mê Linh">
-              <span className="closing-nav-label">THEO DÕI</span>
-              {NETWORK_ITEMS.map(([label, href]) => (
-                <a href={href} key={label}>
-                  <KineticRollText>{label}</KineticRollText>
-                </a>
-              ))}
+              <span className="closing-nav-label">{closing.networkLabel || "THEO DÕI"}</span>
+              {networkItems.map((item, index) => {
+                const label = item?.label || `Kênh ${index + 1}`;
+                const href = item?.href || "#dong-hanh";
+                return <a href={href} key={`${label}-${index}`} {...LinkProps({ href })}><KineticRollText>{label}</KineticRollText></a>;
+              })}
             </nav>
 
-            <a className="closing-contact" href="#dong-hanh">
-              <KineticRollText>KẾT NỐI CÙNG MÊ LINH</KineticRollText>
+            <a className="closing-contact" href={closing.contactHref || "#dong-hanh"} {...LinkProps({ href: closing.contactHref || "#dong-hanh" })}>
+              <KineticRollText>{closing.contactLabel || "KẾT NỐI CÙNG MÊ LINH"}</KineticRollText>
               <ArrowUpRight aria-hidden="true" />
             </a>
 
@@ -180,8 +196,8 @@ export default function ClosingSection() {
           </div>
 
           <div className="closing-bottomline">
-            <span>BẢN QUYỀN © 2026 {settings.siteName.toUpperCase()}</span>
-            <span>THIẾT KẾ ĐỘC BẢN • HÀ NỘI</span>
+            <span>{String(closing.copyrightTemplate || "BẢN QUYỀN © 2026 {siteName}").replace("{siteName}", settings.siteName.toUpperCase())}</span>
+            <span>{closing.designCredit || "THIẾT KẾ ĐỘC BẢN • HÀ NỘI"}</span>
           </div>
         </div>
       </div>

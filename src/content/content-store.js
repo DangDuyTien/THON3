@@ -1,5 +1,6 @@
 import {
   communityPartners,
+  closing,
   exploreStatement,
   fullBleedArrival,
   seasonalGallery,
@@ -31,6 +32,7 @@ export const defaultSiteContent = {
   seasonalGallery,
   visitChoices,
   fullBleedArrival,
+  closing,
   villageArchive: {
     ...villageArchive,
     cards: villageArchive.cards.map((card) => ({

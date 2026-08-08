@@ -112,7 +112,8 @@ export default function CurtainMenu({ isOpen, onClose }) {
     { id: 2, title: "NHỊP SỐNG", href: "#nhung-mua" },
     { id: 3, title: "BẢN ĐỒ", href: "#ban-do" },
     { id: 4, title: "ĐOÀN THANH NIÊN", href: "#dong-hanh" },
-    { id: 5, title: "KHO LƯU TRỮ", href: "#kho-luu-tru" },
+    { id: 5, title: "KHO LƯU TRỮ", href: "#tu-lieu" },
+    { id: 6, title: "THEO DÕI MÊ LINH", href: "#ket-lai" },
   ];
 
   const leftColumnPhotos = [

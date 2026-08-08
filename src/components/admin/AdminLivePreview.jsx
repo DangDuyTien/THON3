@@ -20,6 +20,7 @@ const SECTION_TARGETS = {
   archive: "tu-lieu",
   community: "dong-hanh",
   updates: "nhip-song-hom-nay",
+  closing: "ket-lai",
 };
 
 export default function AdminLivePreview({ draft, activeSection, dirty, focusTarget }) {

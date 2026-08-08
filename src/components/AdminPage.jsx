@@ -39,23 +39,12 @@ import {
   SITE_APPEARANCE_OPTIONS,
   SITE_FONT_OPTIONS,
 } from "../content/site-theme.js";
-
-const ADMIN_SECTIONS = [
-  { id: "settings", label: "Thông tin chung", description: "Tên, màu sắc, font và hiệu ứng" },
-  { id: "hero", label: "Mở đầu trang", description: "Bốn khung cảnh ở phần đầu" },
-  { id: "story", label: "Câu chuyện", description: "Lời nhắn và hình ảnh chính" },
-  { id: "statement", label: "Tuyên ngôn", description: "Thông điệp lớn giữa trang" },
-  { id: "seasons", label: "Nhịp sống", description: "Bộ ảnh theo mùa" },
-  { id: "visit", label: "Hai lối trở về", description: "Hai lựa chọn khám phá" },
-  { id: "archive", label: "Tư liệu", description: "Lưới ảnh lưu trữ" },
-  { id: "community", label: "Cộng đồng", description: "Đơn vị đồng hành" },
-  { id: "updates", label: "Đang diễn ra", description: "Các hoạt động hôm nay" },
-];
-
-const ADMIN_NAV_ITEMS = [
-  { id: "overview", label: "Tổng quan", description: "Toàn bộ nội dung", index: "00" },
-  ...ADMIN_SECTIONS.map((section, index) => ({ ...section, index: String(index + 1).padStart(2, "0") })),
-];
+import {
+  ADMIN_NAV_ITEMS,
+  ADMIN_SECTIONS,
+  getAdminSectionFromHash,
+  getAdminHash,
+} from "./admin/admin-registry.js";
 
 const AdminCardCommandContext = createContext(null);
 const AdminImageTargetContext = createContext(null);
@@ -692,6 +681,29 @@ function AdminUpdatesPreview({ draft, dirty }) {
   );
 }
 
+function AdminClosingPreview({ draft, dirty }) {
+  const closing = draft.closing;
+  const arrival = draft.fullBleedArrival;
+  const socialItems = closing.socialItems.filter((item) => item.label || item.href);
+  return (
+    <AdminPreviewFrame activeSection="closing" dirty={dirty} className="admin-live-preview-closing">
+      <div className="admin-preview-closing-transition">
+        <p>{closing.transitionKicker}</p>
+        <h3>{closing.transitionTitle}</h3>
+        <div>{socialItems.map((item) => <span key={item.id || item.label}>{item.label}</span>)}</div>
+      </div>
+      <div className="admin-preview-closing-card">
+        <div><p>{arrival.eyebrow}</p><h3><span>{arrival.headline[0]}</span><em>{arrival.headline[1]}</em></h3></div>
+        <AdaptiveImage src={arrival.portraitSrc || arrival.imageSrc} alt="" imagePosition={arrival.imagePosition} imageVariant="small" sizes="34vw" />
+      </div>
+      <div className="admin-preview-closing-links">
+        <span>{closing.navLabel}</span>
+        {closing.navItems.slice(0, 5).map((item) => <small key={item.id || item.label}>{item.label}</small>)}
+      </div>
+    </AdminPreviewFrame>
+  );
+}
+
 function AdminVisualPreview({ draft, activeSection, dirty, onEdit }) {
   let preview;
   switch (activeSection) {
@@ -704,6 +716,7 @@ function AdminVisualPreview({ draft, activeSection, dirty, onEdit }) {
     case "archive": preview = <AdminArchivePreview draft={draft} dirty={dirty} />; break;
     case "community": preview = <AdminCommunityPreview draft={draft} dirty={dirty} />; break;
     case "updates": preview = <AdminUpdatesPreview draft={draft} dirty={dirty} />; break;
+    case "closing": preview = <AdminClosingPreview draft={draft} dirty={dirty} />; break;
     default: preview = <AdminOverviewPreview draft={draft} dirty={dirty} />;
   }
 
@@ -711,6 +724,44 @@ function AdminVisualPreview({ draft, activeSection, dirty, onEdit }) {
     <AdminPreviewAppearanceContext.Provider value={draft.settings.appearance}>
       <AdminPreviewEditContext.Provider value={onEdit}>{preview}</AdminPreviewEditContext.Provider>
     </AdminPreviewAppearanceContext.Provider>
+  );
+}
+
+function ClosingEditor({ draft, update }) {
+  const closing = draft.closing;
+  const arrival = draft.fullBleedArrival;
+  const updateRow = (group, index, key, value) => update(`closing.${group}[${index}].${key}`, value);
+  return (
+    <AdminPanel eyebrow="10 / THEO DÕI MÊ LINH" title="Phần kết, liên kết và kênh theo dõi" description="Chỉnh nội dung hiển thị ở cuối trang, các liên kết tổng hợp và kênh mạng xã hội.">
+      <div className="admin-form-grid">
+        <AdminField label="Nhãn chuyển cảnh" value={closing.transitionKicker} onChange={(value) => update("closing.transitionKicker", value)} />
+        <AdminField label="Tiêu đề chuyển cảnh" value={closing.transitionTitle} onChange={(value) => update("closing.transitionTitle", value)} />
+        <AdminField label="Nhãn nút ghé thăm" value={closing.visitLabel} onChange={(value) => update("closing.visitLabel", value)} />
+        <AdminField label="Nhãn cột điều hướng" value={closing.navLabel} onChange={(value) => update("closing.navLabel", value)} />
+        <AdminField label="Nhãn cột theo dõi" value={closing.networkLabel} onChange={(value) => update("closing.networkLabel", value)} />
+        <AdminField label="Nhãn liên hệ" value={closing.contactLabel} onChange={(value) => update("closing.contactLabel", value)} />
+        <AdminField label="Liên kết liên hệ" value={closing.contactHref} onChange={(value) => update("closing.contactHref", value)} hint="Ví dụ: #dong-hanh hoặc https://…" />
+        <AdminField label="Dòng thiết kế" value={closing.designCredit} onChange={(value) => update("closing.designCredit", value)} />
+        <AdminField label="Bản quyền" value={closing.copyrightTemplate} onChange={(value) => update("closing.copyrightTemplate", value)} hint="Dùng {siteName} để chèn tên trang." />
+      </div>
+      <div className="admin-divider" />
+      <div className="admin-form-grid">
+        <AdminField label="Tiêu đề closing — dòng 1" value={arrival.headline[0]} onChange={(value) => update("fullBleedArrival.headline[0]", value)} />
+        <AdminField label="Tiêu đề closing — dòng 2" value={arrival.headline[1]} onChange={(value) => update("fullBleedArrival.headline[1]", value)} />
+        <AdminImageField label="Ảnh chân dung closing" value={arrival.portraitSrc || ""} onChange={(value) => update("fullBleedArrival.portraitSrc", value)} alt={arrival.portraitAlt} onAltChange={(value) => update("fullBleedArrival.portraitAlt", value)} position={arrival.imagePosition} onPositionChange={(value) => update("fullBleedArrival.imagePosition", value)} target="closing-portrait" hint="Để trống để dùng ảnh toàn cảnh của phần Hai lối trở về." />
+      </div>
+      <div className="admin-card-stack admin-card-stack-compact">
+        <AdminCard title="Mạng xã hội" index={0}>
+          <div className="admin-card-stack admin-card-stack-compact">{closing.socialItems.map((item, index) => <div className="admin-form-grid admin-form-grid-wide" key={item.id || index}><AdminField label="Tên kênh" value={item.label} onChange={(value) => updateRow("socialItems", index, "label", value)} /><AdminField label="Liên kết" value={item.href} onChange={(value) => updateRow("socialItems", index, "href", value)} /></div>)}</div>
+        </AdminCard>
+        <AdminCard title="Điều hướng trang" index={1}>
+          <div className="admin-card-stack admin-card-stack-compact">{closing.navItems.map((item, index) => <div className="admin-form-grid admin-form-grid-wide" key={item.id || index}><AdminField label="Nhãn" value={item.label} onChange={(value) => updateRow("navItems", index, "label", value)} /><AdminField label="Anchor / URL" value={item.href} onChange={(value) => updateRow("navItems", index, "href", value)} /></div>)}</div>
+        </AdminCard>
+        <AdminCard title="Mạng lưới liên kết" index={2}>
+          <div className="admin-card-stack admin-card-stack-compact">{closing.networkItems.map((item, index) => <div className="admin-form-grid admin-form-grid-wide" key={item.id || index}><AdminField label="Nhãn" value={item.label} onChange={(value) => updateRow("networkItems", index, "label", value)} /><AdminField label="Anchor / URL" value={item.href} onChange={(value) => updateRow("networkItems", index, "href", value)} /></div>)}</div>
+        </AdminCard>
+      </div>
+    </AdminPanel>
   );
 }
 
@@ -1069,8 +1120,7 @@ function AdminOverview({ draft, onSelect }) {
 
 function getInitialSection() {
   if (typeof window === "undefined") return "overview";
-  const hash = window.location.hash.replace(/^#admin-?/, "");
-  return ADMIN_SECTIONS.some((section) => section.id === hash) ? hash : "overview";
+  return getAdminSectionFromHash(window.location.hash);
 }
 
 export default function AdminPage({ onLogout }) {
@@ -1144,7 +1194,7 @@ export default function AdminPage({ onLogout }) {
     setActiveSection(section);
     setPreviewFocusTarget("");
     setSectionQuery("");
-    window.history.replaceState(null, "", `#admin-${section}`);
+    window.history.replaceState(null, "", getAdminHash(section));
   };
 
   const jumpToEditor = () => {
@@ -1222,6 +1272,7 @@ export default function AdminPage({ onLogout }) {
       case "archive": return <ArchiveEditor draft={draft} update={update} />;
       case "community": return <CommunityEditor draft={draft} update={update} />;
       case "updates": return <UpdatesEditor draft={draft} update={update} />;
+      case "closing": return <ClosingEditor draft={draft} update={update} />;
       default: return <AdminOverview draft={draft} onSelect={selectSection} />;
     }
   };

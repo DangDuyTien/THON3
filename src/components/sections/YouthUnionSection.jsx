@@ -39,10 +39,10 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
                 <a href="#home">TRANG CHỦ</a>
                 <a href="#cau-chuyen">CÂU CHUYỆN LÀNG</a>
                 <a href="#nhung-mua">NHỊP SỐNG MÙA</a>
-                <a href="#kho-luu-tru">KHO LƯU TRỮ</a>
-                <a href="#tin-tuc">HOẠT ĐỘNG ĐOÀN</a>
+                <a href="#tu-lieu">KHO LƯU TRỮ</a>
+                <a href="#nhip-song-hom-nay">HOẠT ĐỘNG ĐOÀN</a>
               </nav>
-              <a className="youth-union-tag-btn" href="#tin-tuc">
+              <a className="youth-union-tag-btn" href="#nhip-song-hom-nay">
                 THÔNG TIN TỔ CHỨC <ArrowUpRight className="icon-sm" aria-hidden="true" />
               </a>
             </div>
@@ -74,7 +74,7 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
 
           {/* Bottom Action Pill Button */}
           <div className="youth-union-cta-wrap">
-            <a className="youth-union-cta-btn" href="#tin-tuc">
+            <a className="youth-union-cta-btn" href="#nhip-song-hom-nay">
               LIÊN HỆ THƯỜNG TRỰC ĐOÀN <ArrowUpRight aria-hidden="true" />
             </a>
           </div>

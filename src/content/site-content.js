@@ -140,9 +140,43 @@ export const visitChoices = {
 };
 
 export const fullBleedArrival = {
+  eyebrow: "MỘT NƠI ĐỂ TRỞ VỀ / HÀ NỘI",
+  headline: ["LUÔN CÓ", "MỘT LỐI VỀ."],
+  portraitSrc: "",
+  portraitAlt: "",
   imageAlt: "Toàn cảnh phong cảnh làng quê Mê Linh, Hà Nội.",
   imagePosition: "center 58%",
   imageSrc: "/assets/village-hero.jpg",
+};
+
+export const closing = {
+  transitionKicker: "CỘNG ĐỒNG / MÊ LINH",
+  transitionTitle: "Theo dõi Mê Linh",
+  socialItems: [
+    { label: "Facebook", href: "#dong-hanh" },
+    { label: "Instagram", href: "#dong-hanh" },
+    { label: "YouTube", href: "#dong-hanh" },
+    { label: "TikTok", href: "#dong-hanh" },
+  ],
+  visitLabel: "GHÉ MÊ LINH",
+  navLabel: "TRANG",
+  navItems: [
+    { label: "Trang chủ", href: "#home" },
+    { label: "Câu chuyện", href: "#cau-chuyen" },
+    { label: "Nhịp sống", href: "#nhung-mua" },
+    { label: "Tư liệu", href: "#tu-lieu" },
+    { label: "Cộng đồng", href: "#dong-hanh" },
+  ],
+  networkLabel: "THEO DÕI",
+  networkItems: [
+    { label: "Mê Linh", href: "#home" },
+    { label: "Hà Nội", href: "#lien-he" },
+    { label: "Kết nối", href: "#dong-hanh" },
+  ],
+  contactLabel: "KẾT NỐI CÙNG MÊ LINH",
+  contactHref: "#dong-hanh",
+  copyrightTemplate: "BẢN QUYỀN © 2026 {siteName}",
+  designCredit: "THIẾT KẾ ĐỘC BẢN • HÀ NỘI",
 };
 
 export const villageArchive = {
