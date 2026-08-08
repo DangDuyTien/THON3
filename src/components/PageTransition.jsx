@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { getRouteKeyForHref, getTransitionTitle, isTransitionNavigation } from "../route-transition.js";
 import { LoaderMark } from "./PageLoader.jsx";
 
-const COVER_DURATION = 720;
-const RETRACT_DURATION = 820;
-const READY_TIMEOUT = 5000;
+const COVER_DURATION = 1000;
+const RETRACT_DURATION = 1100;
+const READY_TIMEOUT = 7000;
 
 function toClipPath(progress, retracting = false) {
   const edge = Math.max(0, Math.min(100, progress));
@@ -40,6 +40,7 @@ function scrollToHash(hash) {
 export default function PageTransition({ currentRouteKey, reducedMotion = false }) {
   const [phase, setPhase] = useState("idle");
   const [title, setTitle] = useState("");
+  const [drawCycle, setDrawCycle] = useState(0);
   const [clipPath, setClipPath] = useState(toClipPath(0));
   const targetKeyRef = useRef("");
   const targetLocationRef = useRef("");
@@ -121,6 +122,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       targetKeyRef.current = destinationKey;
       targetLocationRef.current = destinationLocation;
       setTitle(getTransitionTitle(destination.href));
+      setDrawCycle((cycle) => cycle + 1);
       document.body.classList.add("page-transition-active");
       document.documentElement.setAttribute("aria-busy", "true");
       const token = ++tokenRef.current;
@@ -183,7 +185,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       </svg>
       <div className="page-transition-curtain" style={{ clipPath: "url(#page-transition-clip-path)" }}>
         <div className="page-transition-center">
-          <LoaderMark label={title} />
+          <LoaderMark label={title} key={`${title}-${drawCycle}`} />
           <p className="page-transition-title">{title}</p>
           <span className="page-transition-caption">XÃ MÊ LINH</span>
         </div>
