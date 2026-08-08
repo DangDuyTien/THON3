@@ -15,7 +15,7 @@ export default function SiteLoaderMark({ onAnimationEnd, label = "" }) {
         </g>
         {dynamicLabel ? (
           <g className="sig-draw sig-dynamic-label">
-            <text x="235" y="76" textAnchor="middle" textLength="400" lengthAdjust="spacingAndGlyphs">
+            <text className="sig-label-text" x="235" y="76" textAnchor="middle" textLength="400" lengthAdjust="spacingAndGlyphs">
               {dynamicLabel}
             </text>
             <path d="M 35,110 H 435" pathLength="1" className="sig-path sig-line" onAnimationEnd={onAnimationEnd} />

@@ -30,68 +30,25 @@ export function useMomentumScroll(reducedMotion) {
       return () => destroyMotionRuntime();
     }
 
-    const profile = getPerformanceProfile();
-    const useNativeScroll = profile === PERFORMANCE_PROFILE.LOW;
-    if (useNativeScroll) {
-      return () => destroyMotionRuntime();
-    }
-
     const lenis = new Lenis({
       anchors: true,
-      autoRaf: false,
-      lerp: 0.041,
+      autoRaf: true,
+      duration: 1.6,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       overscroll: false,
       smoothWheel: true,
-      stopInertiaOnNavigate: true,
       syncTouch: false,
-      touchMultiplier: 0.77,
-      wheelMultiplier: 0.5,
+      touchInertiaMultiplier: 1.2,
+      wheelMultiplier: 0.9,
     });
-    let unsubscribeAnimationFrame = null;
-
-    const animate = (time) => {
-      lenis.raf(time);
-    };
-
-    const startAnimation = () => {
-      if (document.hidden || unsubscribeAnimationFrame) return;
-      unsubscribeAnimationFrame = subscribeContinuousFrame(animate);
-    };
-
-    const stopAnimation = () => {
-      if (!unsubscribeAnimationFrame) return;
-      const unsubscribe = unsubscribeAnimationFrame;
-      unsubscribeAnimationFrame = null;
-      unsubscribe();
-    };
-
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        stopAnimation();
-      } else {
-        startAnimation();
-      }
-    };
 
     const onLenisScroll = () => {
       queueMotionFrame("scroll");
     };
 
-    const onAnchorClick = (event) => {
-      if (event.target instanceof Element && event.target.closest('a[href^="#"]')) {
-        startAnimation();
-      }
-    };
-
     const unsubscribeScroll = lenis.on("scroll", onLenisScroll);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    document.addEventListener("click", onAnchorClick, { passive: true });
-    startAnimation();
 
     return () => {
-      stopAnimation();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      document.removeEventListener("click", onAnchorClick);
       unsubscribeScroll();
       lenis.destroy();
       destroyMotionRuntime();

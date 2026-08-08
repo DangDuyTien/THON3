@@ -16,10 +16,10 @@ function flushMotionFrame(time) {
   pendingFrameReasons = new Set();
   frameNumber += 1;
 
-  if (reasons.size) updateAllScenes();
   continuousFrameSubscribers.forEach((subscriber) => {
     subscriber.callback(time, reasons);
   });
+  if (reasons.size) updateAllScenes();
 
   if (continuousFrameSubscribers.size) scheduleSharedFrame();
 }
