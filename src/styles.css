@@ -662,10 +662,8 @@ body.page-transition-active {
 
 .page-transition-curtain {
   align-items: center;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(0, 240, 255, 0.13), transparent 42%),
-    linear-gradient(160deg, #111712 0%, #0b1a30 100%);
-  color: var(--paper);
+  background: var(--page-background);
+  color: var(--ink);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -676,20 +674,20 @@ body.page-transition-active {
 
 .page-transition-curtain::before,
 .page-transition-curtain::after {
-  border: 1px solid rgba(0, 240, 255, 0.18);
+  border: 1px solid rgba(11, 26, 48, 0.05);
   border-radius: 50%;
   content: "";
-  height: min(70vw, 820px);
+  height: min(72vw, 860px);
   left: 50%;
   pointer-events: none;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%) scale(1.1);
-  width: min(70vw, 820px);
+  width: min(72vw, 860px);
 }
 
 .page-transition-curtain::after {
-  border-color: rgba(0, 102, 255, 0.18);
+  border-color: rgba(11, 26, 48, 0.04);
   transform: translate(-50%, -50%) scale(0.76);
 }
 
@@ -697,41 +695,50 @@ body.page-transition-active {
   align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 15px;
   position: relative;
   text-align: center;
   z-index: 1;
 }
 
 .page-transition-center .site-loader-mark {
-  height: 74px;
-  width: min(280px, 62vw);
+  height: clamp(90px, 20vw, 150px);
+  width: clamp(280px, 60vw, 520px);
 }
 
-.page-transition-center .site-loader-signature .sig-guide path {
-  stroke: rgba(244, 248, 252, 0.22);
+.page-transition-center .site-loader-mark.has-dynamic-label .sig-guide {
+  opacity: 0;
 }
 
 .page-transition-center .site-loader-signature .sig-draw .sig-path {
   animation: sig-draw-line 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: 120ms;
-  stroke: var(--lime);
+  stroke: var(--ink);
+}
+
+.page-transition-center .site-loader-signature .sig-dynamic-label text {
+  fill: var(--ink);
+  font-family: var(--sans);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  text-transform: uppercase;
+  animation: page-transition-label-in 600ms 150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .page-transition-title {
-  font-family: var(--display);
-  font-size: clamp(28px, 5vw, 68px);
-  letter-spacing: 0.02em;
-  line-height: 1;
-  margin: 0;
-  text-transform: uppercase;
+  display: none;
 }
 
 .page-transition-caption {
-  color: rgba(244, 248, 252, 0.58);
+  color: var(--ink);
   font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.2em;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  opacity: 0.9;
 }
 
 .page-transition.is-retracting .page-transition-center {
@@ -745,17 +752,28 @@ body.page-transition-active {
   stroke-dashoffset: 0;
 }
 
+.page-transition.is-reduced-motion .page-transition-center .sig-dynamic-label text {
+  animation: none;
+  opacity: 1;
+}
+
+@keyframes page-transition-label-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 680px) {
   .page-transition-center {
     gap: 14px;
   }
 
   .page-transition-center .site-loader-mark {
-    height: 56px;
+    height: 90px;
+    width: min(88vw, 440px);
   }
 
-  .page-transition-title {
-    font-size: clamp(25px, 9vw, 44px);
+  .page-transition-center .site-loader-signature .sig-dynamic-label text {
+    font-size: 30px;
   }
 }
 @keyframes sig-draw-t {

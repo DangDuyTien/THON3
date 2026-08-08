@@ -39,13 +39,13 @@ export function useMomentumScroll(reducedMotion) {
     const lenis = new Lenis({
       anchors: true,
       autoRaf: false,
-      lerp: 0.058,
+      lerp: 0.041,
       overscroll: false,
       smoothWheel: true,
       stopInertiaOnNavigate: true,
       syncTouch: false,
-      touchMultiplier: 1.1,
-      wheelMultiplier: 0.72,
+      touchMultiplier: 0.77,
+      wheelMultiplier: 0.5,
     });
     let unsubscribeAnimationFrame = null;
 
