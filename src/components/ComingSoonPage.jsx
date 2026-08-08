@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowUpRight, MapPin, Music2, X } from "lucide-react";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
+import SiteLoaderMark from "./SiteLoaderMark.jsx";
+
 function KineticRollText({ children }) {
   const text = String(children);
   return (
@@ -14,27 +16,7 @@ function KineticRollText({ children }) {
 }
 
 function LoaderSignature() {
-  return (
-    <span className="site-loader-mark coming-soon-loader-mark" aria-hidden="true">
-      <svg className="site-loader-signature" viewBox="0 0 470 128">
-        <g className="sig-guide">
-          <path d="M 35,34 H 105" /><path d="M 70,34 V 94" /><path d="M 130,34 V 94" />
-          <path d="M 130,64 H 180" /><path d="M 180,34 V 94" />
-          <path d="M 235,34 C 200,34 200,94 235,94 C 270,94 270,34 235,34 Z" />
-          <path d="M 220,22 L 235,10 L 250,22" /><path d="M 295,94 V 34 L 350,94 V 34" />
-          <path d="M 385,34 H 430 L 406,60 C 428,60 436,72 436,83 C 436,94 416,94 385,94" />
-          <path d="M 35,110 H 435" />
-        </g>
-        <g className="sig-draw">
-          <path d="M 35,34 H 105" pathLength="1" className="sig-path" /><path d="M 70,34 V 94" pathLength="1" className="sig-path" />
-          <path d="M 130,34 V 94" pathLength="1" className="sig-path" /><path d="M 130,64 H 180" pathLength="1" className="sig-path" />
-          <path d="M 180,34 V 94" pathLength="1" className="sig-path" /><path d="M 235,34 C 200,34 200,94 235,94 C 270,94 270,34 235,34 Z" pathLength="1" className="sig-path" />
-          <path d="M 220,22 L 235,10 L 250,22" pathLength="1" className="sig-path" /><path d="M 295,94 V 34 L 350,94 V 34" pathLength="1" className="sig-path" />
-          <path d="M 385,34 H 430 L 406,60 C 428,60 436,72 436,83 C 436,94 416,94 385,94" pathLength="1" className="sig-path" /><path d="M 35,110 H 435" pathLength="1" className="sig-path" />
-        </g>
-      </svg>
-    </span>
-  );
+  return <SiteLoaderMark />;
 }
 
 export default function ComingSoonPage({ description = "Không gian này đang được biên tập và hoàn thiện.", heroRevealReady = false }) {

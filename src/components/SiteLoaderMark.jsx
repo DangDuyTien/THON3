@@ -1,37 +1,41 @@
+import React from "react";
+
 export default function SiteLoaderMark({ onAnimationEnd, label = "" }) {
   const dynamicLabel = String(label || "").trim().toUpperCase();
 
   return (
     <span className={`site-loader-mark${dynamicLabel ? " has-dynamic-label" : ""}`}>
-      <svg aria-hidden="true" className="site-loader-signature" viewBox="0 0 470 128">
-        <g className="sig-guide">
-          <path d="M 35,34 H 105" /><path d="M 70,34 V 94" />
-          <path d="M 130,34 V 94" /><path d="M 130,64 H 180" /><path d="M 180,34 V 94" />
-          <path d="M 235,34 C 200,34 200,94 235,94 C 270,94 270,34 235,34 Z" />
-          <path d="M 220,22 L 235,10 L 250,22" />
-          <path d="M 295,94 V 34 L 350,94 V 34" />
-          <path d="M 385,34 H 430 L 406,60 C 428,60 436,72 436,83 C 436,94 416,94 385,94" />
-          <path d="M 35,110 H 435" />
-        </g>
+      <svg aria-hidden="true" className="site-loader-signature" viewBox="0 0 500 146">
         {dynamicLabel ? (
           <g className="sig-draw sig-dynamic-label">
-            <text className="sig-label-text" x="235" y="76" textAnchor="middle" textLength="400" lengthAdjust="spacingAndGlyphs">
+            <text className="sig-label-text" x="250" y="78" textAnchor="middle">
               {dynamicLabel}
             </text>
-            <path d="M 35,110 H 435" pathLength="1" className="sig-path sig-line" onAnimationEnd={onAnimationEnd} />
+            <path d="M 30,132 H 470" pathLength="1" className="sig-path sig-line" onAnimationEnd={onAnimationEnd} />
           </g>
         ) : (
           <g className="sig-draw">
-            <path d="M 35,34 H 105" pathLength="1" className="sig-path sig-t" />
-            <path d="M 70,34 V 94" pathLength="1" className="sig-path sig-t" />
-            <path d="M 130,34 V 94" pathLength="1" className="sig-path sig-h" />
-            <path d="M 130,64 H 180" pathLength="1" className="sig-path sig-h" />
-            <path d="M 180,34 V 94" pathLength="1" className="sig-path sig-h" />
-            <path d="M 235,34 C 200,34 200,94 235,94 C 270,94 270,34 235,34 Z" pathLength="1" className="sig-path sig-o" />
-            <path d="M 220,22 L 235,10 L 250,22" pathLength="1" className="sig-path sig-o" />
-            <path d="M 295,94 V 34 L 350,94 V 34" pathLength="1" className="sig-path sig-n" />
-            <path d="M 385,34 H 430 L 406,60 C 428,60 436,72 436,83 C 436,94 416,94 385,94" pathLength="1" className="sig-path sig-3" />
-            <path d="M 35,110 H 435" pathLength="1" className="sig-path sig-line" onAnimationEnd={onAnimationEnd} />
+            {/* T */}
+            <path d="M 30,22 H 95" pathLength="1" className="sig-path sig-t" />
+            <path d="M 62.5,22 V 110" pathLength="1" className="sig-path sig-t" />
+
+            {/* H */}
+            <path d="M 125,22 V 110" pathLength="1" className="sig-path sig-h" />
+            <path d="M 125,66 H 175" pathLength="1" className="sig-path sig-h" />
+            <path d="M 175,22 V 110" pathLength="1" className="sig-path sig-h" />
+
+            {/* Ô */}
+            <path d="M 228,14 L 240,4 L 252,14" pathLength="1" className="sig-path sig-o" />
+            <path d="M 240,22 C 205,22 205,110 240,110 C 275,110 275,22 240,22 Z" pathLength="1" className="sig-path sig-o" />
+
+            {/* N */}
+            <path d="M 305,110 V 22 L 365,110 V 22" pathLength="1" className="sig-path sig-n" />
+
+            {/* 3 */}
+            <path d="M 395,22 H 455 L 425,60 C 455,60 465,74 465,90 C 465,108 440,110 395,110" pathLength="1" className="sig-path sig-3" />
+
+            {/* Underline accent line */}
+            <path d="M 30,132 H 470" pathLength="1" className="sig-path sig-line" onAnimationEnd={onAnimationEnd} />
           </g>
         )}
       </svg>

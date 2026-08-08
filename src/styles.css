@@ -709,9 +709,7 @@ body.page-transition-active {
   width: clamp(280px, 60vw, 520px);
 }
 
-.page-transition-center .site-loader-mark.has-dynamic-label .sig-guide {
-  opacity: 0.14;
-}
+
 
 .page-transition-center .site-loader-signature .sig-draw .sig-path {
   animation: sig-draw-line var(--loader-draw-duration) var(--loader-draw-ease) 2 forwards;
@@ -722,9 +720,9 @@ body.page-transition-active {
   clip-path: inset(0 100% 0 0);
   fill: var(--ink);
   font-family: var(--mono);
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: var(--loader-label-tracking);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
   opacity: 1;
   text-transform: uppercase;
   animation: sig-draw-label var(--loader-draw-duration) var(--loader-draw-ease) 2 forwards;
@@ -777,8 +775,8 @@ body.page-transition-active {
   }
 
   .page-transition-center .site-loader-signature .sig-dynamic-label .sig-label-text {
-    font-size: 22px;
-    letter-spacing: 0.1em;
+    font-size: 28px;
+    letter-spacing: 0.22em;
   }
 }
 @keyframes sig-draw-t {
