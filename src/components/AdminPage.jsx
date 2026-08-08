@@ -29,6 +29,9 @@ import {
   normalizeSiteContent,
   persistSiteContentDraft,
 } from "../content/content-store.js";
+import { getDraftContent, saveDraftContent, deleteDraftContent } from "../lib/content-api.js";
+import { getSession } from "../lib/auth-api.js";
+import { isSupabaseConfigured } from "../lib/supabase.js";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import { getPendingSubmissions, rejectPendingSubmission } from "../content/submission-store.js";
 import {
@@ -795,6 +798,8 @@ function getInitialSection() {
 
 export default function AdminPage({ onLogout }) {
   const { content, saveContent } = useSiteContent();
+  const [serverDraft, setServerDraft] = useState(null);
+  const [serverDraftLoading, setServerDraftLoading] = useState(isSupabaseConfigured);
   const restoredDraftRef = useRef();
   if (restoredDraftRef.current === undefined) restoredDraftRef.current = loadSiteContentDraft();
   const [draft, setDraft] = useState(() => restoredDraftRef.current || clone(content));
@@ -821,6 +826,21 @@ export default function AdminPage({ onLogout }) {
   }, [normalizedSectionQuery]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return undefined;
+    let active = true;
+    getSession()
+      .then((session) => session?.user ? getDraftContent(session.user.id) : null)
+      .then((result) => {
+        if (!active) return;
+        setServerDraft(result);
+        if (result?.content) setDraft(result.content);
+      })
+      .catch((error) => active && setSaveError(error?.message || "Không thể tải bản nháp từ máy chủ."))
+      .finally(() => active && setServerDraftLoading(false));
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     if (publishedSnapshotRef.current !== contentSnapshot) {
       const previousPublishedSnapshot = publishedSnapshotRef.current;
       setDraft((current) => JSON.stringify(current) === previousPublishedSnapshot ? clone(content) : current);
@@ -830,23 +850,30 @@ export default function AdminPage({ onLogout }) {
 
   useEffect(() => {
     if (!dirty) {
-      clearSiteContentDraft();
+      if (!isSupabaseConfigured) clearSiteContentDraft();
       lastDraftSnapshotRef.current = draftSnapshot;
       return undefined;
     }
-    if (lastDraftSnapshotRef.current === draftSnapshot) return undefined;
+    if (lastDraftSnapshotRef.current === draftSnapshot || serverDraftLoading) return undefined;
 
-    const persistTimer = window.setTimeout(() => {
+    const persistTimer = window.setTimeout(async () => {
       try {
-        persistSiteContentDraft(draft);
+        if (isSupabaseConfigured) {
+          const session = await getSession();
+          if (!session?.user) throw new Error("Phiên quản trị đã hết hạn.");
+          const result = await saveDraftContent(draft, session.user.id, serverDraft?.version ?? null);
+          setServerDraft(result);
+        } else {
+          persistSiteContentDraft(draft);
+        }
         lastDraftSnapshotRef.current = draftSnapshot;
       } catch (error) {
-        setSaveError(error?.name === "QuotaExceededError" ? "Bộ nhớ tạm đã đầy. Hãy dùng ảnh nhỏ hơn hoặc xóa ảnh cũ." : "Không thể lưu bản nháp trên trình duyệt này.");
+        setSaveError(error?.name === "QuotaExceededError" ? "Bộ nhớ tạm đã đầy. Hãy dùng ảnh nhỏ hơn hoặc xóa ảnh cũ." : error?.message || "Không thể lưu bản nháp.");
       }
     }, 450);
 
     return () => window.clearTimeout(persistTimer);
-  }, [dirty, draft, draftSnapshot]);
+  }, [dirty, draft, draftSnapshot, serverDraft?.version, serverDraftLoading]);
 
   useEffect(() => {
     const handleHashChange = () => setActiveSection(getInitialSection());
@@ -871,16 +898,16 @@ export default function AdminPage({ onLogout }) {
     editorRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      const normalizedContent = saveContent(draft);
-      clearSiteContentDraft();
+      const normalizedContent = await saveContent(draft);
+      if (!isSupabaseConfigured) clearSiteContentDraft();
       publishedSnapshotRef.current = JSON.stringify(normalizedContent);
       lastDraftSnapshotRef.current = publishedSnapshotRef.current;
-      setNotice("Đã lưu nội dung trang chủ.");
+      setNotice("Đã lưu nội dung trang chủ trên máy chủ.");
       setSaveError("");
     } catch (error) {
-      setSaveError(error?.name === "QuotaExceededError" ? "Bộ nhớ trình duyệt đã đầy. Hãy dùng ảnh nhỏ hơn hoặc xóa ảnh cũ." : "Không thể lưu nội dung trên trình duyệt này.");
+      setSaveError(error?.message || "Không thể lưu nội dung.");
     }
   };
 
@@ -893,7 +920,7 @@ export default function AdminPage({ onLogout }) {
 
   const handleDiscardDraft = () => {
     if (!window.confirm("Bỏ toàn bộ bản nháp hiện tại? Nội dung đã lưu trên trang chủ sẽ được giữ nguyên.")) return;
-    clearSiteContentDraft();
+    if (!isSupabaseConfigured) clearSiteContentDraft();
     setDraft(clone(content));
     setNotice("Đã bỏ bản nháp. Trang chủ vẫn giữ nội dung đã lưu.");
     setSaveError("");

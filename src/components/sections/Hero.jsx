@@ -49,6 +49,7 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
               alt={settings.siteName}
               colorVariant={frame.colorVariant}
               imagePosition={frame.position}
+              imageVariant="ultra"
               loading="eager"
               priority
               sizes="100vw"

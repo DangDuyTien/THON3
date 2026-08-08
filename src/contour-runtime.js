@@ -39,6 +39,7 @@ function createSharedContourLoop({
   onThemeChange,
   pixelRatioCap = 1.5,
   queueFrame,
+  sceneName = "page-contour",
   subscribeAnimationFrame,
 }) {
   let resizeObserver = null;
@@ -133,11 +134,11 @@ if (typeof window !== "undefined") {
   }, { passive: true });
 }
 
-function mountMainThreadFallback(canvas, scheduler, quality) {
+function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
   const renderer = createContourRenderer(canvas, quality);
   canvas.dataset.contourRenderer = "main";
   canvas.dataset.contourQuality = quality;
-  markMotionScene("page-contour", "main-fallback");
+  markMotionScene(sceneName, "main-fallback");
 
   return createSharedContourLoop({
     canvas,
@@ -146,12 +147,13 @@ function mountMainThreadFallback(canvas, scheduler, quality) {
       renderer.setPointer(currentPointerX, currentPointerY);
       const startedAt = performance.now();
       if (renderer.draw(time)) {
-        recordMotionSceneUpdate("page-contour", performance.now() - startedAt);
+        recordMotionSceneUpdate(sceneName, performance.now() - startedAt);
       }
     },
     onResize: ({ height, ratio, width }) => renderer.resize(width, height, ratio),
     queueFrame: scheduler.queueFrame,
     pixelRatioCap: getPixelRatioCap(quality, false),
+    sceneName,
     subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
   });
 }
@@ -162,7 +164,7 @@ function supportsOffscreenCanvas(canvas) {
     && typeof canvas.transferControlToOffscreen === "function";
 }
 
-function mountWorker(canvas, scheduler, quality) {
+function mountWorker(canvas, scheduler, quality, sceneName) {
   const worker = new Worker(`${import.meta.env.BASE_URL}contour-worker.js`, { type: "module" });
   const offscreen = canvas.transferControlToOffscreen();
   const pixelRatioCap = getPixelRatioCap(quality, true);
@@ -205,10 +207,10 @@ function mountWorker(canvas, scheduler, quality) {
     worker.terminate();
   };
   worker.addEventListener("error", () => {
-    markMotionScene("page-contour", "worker-error");
+    markMotionScene(sceneName, "worker-error");
     cleanup();
   }, { once: true });
-  markMotionScene("page-contour", "worker");
+  markMotionScene(sceneName, "worker");
 
   stopLoop = createSharedContourLoop({
     canvas,
@@ -221,6 +223,7 @@ function mountWorker(canvas, scheduler, quality) {
     onThemeChange: (theme) => worker.postMessage({ theme, type: "theme" }),
     queueFrame: scheduler.queueFrame,
     pixelRatioCap,
+    sceneName,
     subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
   });
   if (workerOwnsFrameLoop) stopLoop.stopSharedAnimationFrame();
@@ -254,7 +257,7 @@ function releaseContourMount(canvas, mount) {
  * StrictMode khong transfer mot canvas hai lan, fallback van dung scheduler
  * chung khi browser khong co OffscreenCanvas.
  */
-export function mountContourRenderer(canvas, scheduler) {
+export function mountContourRenderer(canvas, scheduler, options = {}) {
   let mount = contourMounts.get(canvas);
   if (mount) {
     mount.references += 1;
@@ -266,14 +269,15 @@ export function mountContourRenderer(canvas, scheduler) {
   }
 
   const quality = getContourQuality();
+  const sceneName = options.sceneName || "page-contour";
   let cleanup;
   if (!supportsOffscreenCanvas(canvas)) {
-    cleanup = mountMainThreadFallback(canvas, scheduler, quality);
+    cleanup = mountMainThreadFallback(canvas, scheduler, quality, sceneName);
   } else {
     try {
-      cleanup = mountWorker(canvas, scheduler, quality);
+      cleanup = mountWorker(canvas, scheduler, quality, sceneName);
     } catch {
-      cleanup = mountMainThreadFallback(canvas, scheduler, quality);
+      cleanup = mountMainThreadFallback(canvas, scheduler, quality, sceneName);
     }
   }
 

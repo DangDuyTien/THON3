@@ -391,6 +391,7 @@ function createRenderer(canvas, quality = "standard") {
 let renderer = null;
 let paused = false;
 let animationFrame = null;
+let animationCadence = 1;
 const hasAnimationFrame = typeof self.requestAnimationFrame === "function";
 
 function stopAnimation() {

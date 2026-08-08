@@ -1,54 +1,61 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import {
-  cloneDefaultSiteContent,
-  loadSiteContent,
-  normalizeSiteContent,
-  persistSiteContent,
-  SITE_CONTENT_STORAGE_KEY,
-} from "./content-store.js";
+import { cloneDefaultSiteContent, loadSiteContent, normalizeSiteContent } from "./content-store.js";
+import { getPublishedContent, publishContent } from "../lib/content-api.js";
+import { getSession } from "../lib/auth-api.js";
+import { isSupabaseConfigured } from "../lib/supabase.js";
 
 const SiteContentContext = createContext(null);
 
 export function SiteContentProvider({ children }) {
-  const [content, setContent] = useState(loadSiteContent);
+  const [content, setContent] = useState(() => (isSupabaseConfigured ? cloneDefaultSiteContent() : loadSiteContent()));
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const handleStorage = (event) => {
-      if (event && event.key && event.key !== SITE_CONTENT_STORAGE_KEY) return;
-      setContent(loadSiteContent());
-    };
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("site-content-updated", handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("site-content-updated", handleStorage);
-    };
+    if (!isSupabaseConfigured) return undefined;
+    let active = true;
+    getPublishedContent()
+      .then((nextContent) => active && setContent(nextContent))
+      .catch((loadError) => active && setError(loadError?.message || "Không thể tải nội dung từ máy chủ."))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
   }, []);
 
-  const saveContent = useCallback((nextContent) => {
-    const normalizedContent = persistSiteContent(nextContent);
-    setContent(normalizedContent);
-    return normalizedContent;
+  const saveContent = useCallback(async (nextContent) => {
+    const normalizedContent = normalizeSiteContent(nextContent);
+    if (!isSupabaseConfigured) {
+      setContent(normalizedContent);
+      return normalizedContent;
+    }
+    const session = await getSession();
+    if (!session?.user) throw new Error("Phiên quản trị đã hết hạn. Hãy đăng nhập lại.");
+    const result = await publishContent(normalizedContent, session.user.id);
+    setContent(result.content);
+    setError("");
+    return result.content;
   }, []);
 
-  const resetContent = useCallback(() => {
+  const resetContent = useCallback(async () => {
     const defaultContent = cloneDefaultSiteContent();
-    window.localStorage.removeItem(SITE_CONTENT_STORAGE_KEY);
-    setContent(defaultContent);
+    if (isSupabaseConfigured) {
+      await saveContent(defaultContent);
+    } else {
+      setContent(defaultContent);
+    }
     return defaultContent;
-  }, []);
+  }, [saveContent]);
 
-  const replaceContent = useCallback((nextContent) => {
-    setContent(normalizeSiteContent(nextContent));
-  }, []);
+  const replaceContent = useCallback((nextContent) => setContent(normalizeSiteContent(nextContent)), []);
 
   const value = useMemo(() => ({
     content,
+    error,
+    loading,
+    configured: isSupabaseConfigured,
     replaceContent,
     resetContent,
     saveContent,
-  }), [content, replaceContent, resetContent, saveContent]);
+  }), [content, error, loading, replaceContent, resetContent, saveContent]);
 
   return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>;
 }

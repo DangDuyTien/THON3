@@ -5,7 +5,7 @@ import {
   subscribeContinuousFrame,
 } from "../motion-frame-scheduler.js";
 
-export default function PageContour({ canvasRef, reducedMotion }) {
+export default function PageContour({ canvasRef, className = "page-contour-canvas", reducedMotion, sceneName = "page-contour" }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || reducedMotion) return undefined;
@@ -13,8 +13,8 @@ export default function PageContour({ canvasRef, reducedMotion }) {
     return mountContourRenderer(canvas, {
       queueFrame: queueMotionFrame,
       subscribeAnimationFrame: subscribeContinuousFrame,
-    });
-  }, [canvasRef, reducedMotion]);
+    }, { sceneName });
+  }, [canvasRef, reducedMotion, sceneName]);
 
-  return reducedMotion ? null : <canvas className="page-contour-canvas" ref={canvasRef} aria-hidden="true" />;
+  return reducedMotion ? null : <canvas className={className} ref={canvasRef} aria-hidden="true" />;
 }

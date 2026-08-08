@@ -6,6 +6,7 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, "..");
 const manifestPath = join(projectRoot, "media", "cms-images.json");
 const requiredWidths = ["640", "960", "1440", "1920"];
+const optionalUltraWidths = ["3840", "4096"];
 
 function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
@@ -33,6 +34,15 @@ function validateSources(sources, label, errors) {
       if (!isNonEmptyString(url)) {
         errors.push(`${label}.${format}.${width} is required`);
       } else if (!localAssetExists(url)) {
+        errors.push(`${label}.${format}.${width} points to a missing local asset: ${url}`);
+      }
+    }
+
+    for (const width of optionalUltraWidths) {
+      const url = sourceSet[width];
+      if (url !== undefined && !isNonEmptyString(url)) {
+        errors.push(`${label}.${format}.${width} must be a non-empty string when present`);
+      } else if (isNonEmptyString(url) && !localAssetExists(url)) {
         errors.push(`${label}.${format}.${width} points to a missing local asset: ${url}`);
       }
     }

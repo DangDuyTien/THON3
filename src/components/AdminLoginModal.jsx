@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Lock, ShieldCheck, User, X } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
+import { useAuth } from "../lib/AuthProvider.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
 function KineticRollText({ children }) {
@@ -25,6 +26,7 @@ function IconRoll() {
 
 export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
   const { content } = useSiteContent();
+  const { login } = useAuth();
   const { siteName, tagline } = content.settings;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -122,23 +124,18 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
     setMouseY(0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const validUser = username.trim().toLowerCase() === "admin";
-      const validPass = password === "admin" || password === "thon3@2026" || password === "123456";
-
-      if (validUser && validPass) {
-        localStorage.setItem("thon3_admin_authenticated", "true");
-        onLoginSuccess();
-      } else {
-        setErrorMsg("Tài khoản hoặc mật khẩu không chính xác!");
-        setIsSubmitting(false);
-      }
-    }, 300);
+    try {
+      await login({ email: username.trim(), password });
+      onLoginSuccess();
+    } catch (error) {
+      setErrorMsg(error?.message || "Tài khoản hoặc mật khẩu không chính xác!");
+      setIsSubmitting(false);
+    }
   };
 
   const leftColumnPhotos = [

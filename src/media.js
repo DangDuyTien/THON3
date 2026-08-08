@@ -17,6 +17,7 @@ import cmsImages from "../media/cms-images.json";
 
 const VARIANT_MAX_WIDTH = Object.freeze({
   full: 1920,
+  ultra: 4096,
   large: 1440,
   medium: 960,
   small: 640,

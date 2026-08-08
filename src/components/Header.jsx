@@ -34,14 +34,8 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
           <span className="wordmark-tagline">{tagline}</span>
         </a>
 
-        <nav className="desktop-nav" aria-label="Điều hướng chính">
-          <a href="#cau-chuyen">Câu chuyện</a>
-          <a href="#ban-do">Bản đồ</a>
-          <a href="#nhung-mua">Nhịp sống</a>
-        </nav>
-
         <div className="header-actions">
-          <a className="visit-link" href="#lien-he">
+          <a className="visit-link" href="/lien-he">
             <MapPin aria-hidden="true" />
             <KineticRollText>Ghé thăm</KineticRollText>
           </a>

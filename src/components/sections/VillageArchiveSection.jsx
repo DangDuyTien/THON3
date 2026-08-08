@@ -7,8 +7,11 @@ import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useViewportEntryProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
 import { addPendingSubmission } from "../../content/submission-store.js";
+import { createSubmission } from "../../lib/submission-api.js";
+import { createSignedMediaUrl, uploadMedia, SUBMISSION_MEDIA_BUCKET } from "../../lib/media-api.js";
+import { isSupabaseConfigured } from "../../lib/supabase.js";
 
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+const MAX_IMAGE_SIZE = isSupabaseConfigured ? 50 * 1024 * 1024 : 4 * 1024 * 1024;
 const FOCUSABLE_SELECTOR = "button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])";
 
 function getArchiveImageSize(card) {
@@ -163,7 +166,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     return next;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSubmitting) return;
     const nextErrors = validateForm();
@@ -172,15 +175,21 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
       return;
     }
     setIsSubmitting(true);
-    addPendingSubmission({
-      name: name.trim(),
-      age: age.trim(),
-      school: school.trim(),
-      imageSrc,
-      altImageSrc,
-    });
-    setFormSubmitted(true);
-    setIsSubmitting(false);
+    try {
+      if (isSupabaseConfigured) {
+        const primary = await uploadMedia(await fetch(imageSrc).then((response) => response.blob()), { bucket: SUBMISSION_MEDIA_BUCKET });
+        const alternate = altImageSrc ? await uploadMedia(await fetch(altImageSrc).then((response) => response.blob()), { bucket: SUBMISSION_MEDIA_BUCKET }) : null;
+        await createSubmission({ name: name.trim(), age: age.trim(), school: school.trim(), imageAssetId: primary.id, altImageAssetId: alternate?.id });
+      } else {
+        addPendingSubmission({ name: name.trim(), age: age.trim(), school: school.trim(), imageSrc, altImageSrc });
+      }
+      setFormSubmitted(true);
+      setErrors({});
+    } catch (error) {
+      setErrors({ submit: error?.message || "Không thể gửi dữ liệu lên máy chủ." });
+    } finally {
+      setIsSubmitting(false);
+    }
     successTimerRef.current = window.setTimeout(() => {
       closeModal();
       setName("");

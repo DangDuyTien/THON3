@@ -1,8 +1,11 @@
 import { ImagePlus, Link, LocateFixed, RotateCcw, Trash2, Upload } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
+import { uploadMedia } from "../../lib/media-api.js";
+import { getSession } from "../../lib/auth-api.js";
+import { isSupabaseConfigured } from "../../lib/supabase.js";
 
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 
 function axisToPercent(value, axis) {
   if (typeof value !== "string") return 50;
@@ -60,6 +63,8 @@ export default function AdminImageEditor({
   const [urlValue, setUrlValue] = useState(typeof value === "string" && !value.startsWith("data:") ? value : "");
   const [error, setError] = useState("");
   const [imageInfo, setImageInfo] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const objectUrlRef = useRef("");
   const effectiveSrc = value || fallbackSrc;
   const usingFallback = !value && Boolean(fallbackSrc);
   const focal = parseImagePosition(position);
@@ -69,6 +74,10 @@ export default function AdminImageEditor({
     if (typeof value === "string" && !value.startsWith("data:")) setUrlValue(value);
   }, [value]);
 
+  useEffect(() => () => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+  }, []);
+
   const commitUrl = () => {
     const next = urlValue.trim();
     if (!next || next === value) return;
@@ -77,27 +86,39 @@ export default function AdminImageEditor({
     onTarget?.(target);
   };
 
-  const acceptFile = (file) => {
+  const acceptFile = async (file) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Chỉ nhận tệp hình ảnh JPG, PNG, WebP, AVIF hoặc SVG.");
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      setError("Ảnh cần nhỏ hơn 4 MB để tránh đầy bộ nhớ bản nháp.");
+      setError("Ảnh cần nhỏ hơn 50 MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setError("");
-      setUrlValue("");
-      setImageInfo((current) => ({ ...current, name: file.name, bytes: file.size, type: file.type }));
-      onChange(reader.result);
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    objectUrlRef.current = URL.createObjectURL(file);
+    setError("");
+    setImageInfo({ name: file.name, bytes: file.size, type: file.type });
+
+    if (!isSupabaseConfigured) {
+      setError("Backend chưa cấu hình nên chưa thể lưu ảnh lên máy chủ. Hãy dán URL ảnh hoặc cấu hình Supabase.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const session = await getSession();
+      const asset = await uploadMedia(file, { ownerId: session?.user?.id });
+      onChange(asset.storage_path);
+      setUrlValue(asset.storage_path);
       onTarget?.(target);
-    };
-    reader.onerror = () => setError("Không thể đọc tệp ảnh này.");
-    reader.readAsDataURL(file);
+    } catch (uploadError) {
+      setError(uploadError?.message || "Không thể tải ảnh lên máy chủ.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleFile = (event) => {
@@ -135,7 +156,7 @@ export default function AdminImageEditor({
             src={effectiveSrc}
             alt=""
             imagePosition={position}
-            imageVariant="medium"
+            imageVariant="ultra"
             loading="lazy"
             onLoad={(event) => {
               const image = event.currentTarget;
@@ -170,8 +191,8 @@ export default function AdminImageEditor({
             aria-label={`${label} - URL ảnh`}
           />
         </div>
-        <button className="admin-secondary-button admin-image-upload-button" type="button" onClick={() => fileInputRef.current?.click()}>
-          <Upload aria-hidden="true" /><span>Tải ảnh</span>
+        <button className="admin-secondary-button admin-image-upload-button" type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+          <Upload aria-hidden="true" /><span>{uploading ? "Đang tải..." : "Tải ảnh"}</span>
         </button>
         {value && (
           <button className="admin-quiet-button admin-image-remove-button" type="button" onClick={() => { onChange(""); setUrlValue(""); }} aria-label={`Xóa ${label.toLowerCase()}`} title={fallbackSrc ? "Bỏ ảnh riêng và dùng ảnh mặc định" : "Xóa ảnh"}>
@@ -207,7 +228,7 @@ export default function AdminImageEditor({
         {imageInfo?.width && <span>{imageInfo.width} × {imageInfo.height}px</span>}
         {(imageInfo?.bytes || uploadedBytes) > 0 && <span>{formatBytes(imageInfo?.bytes || uploadedBytes)}</span>}
         {imageInfo?.type && <span>{imageInfo.type.replace("image/", "").toUpperCase()}</span>}
-        {value?.startsWith("data:") && <span>Lưu kèm bản nháp trình duyệt</span>}
+        {value?.startsWith("data:") && <span>Ảnh cũ trong bản nháp trình duyệt</span>}
       </div>
       {hint && <p className="admin-field-hint">{hint}</p>}
       {uploadedBytes > MAX_IMAGE_BYTES * 0.75 && <p className="admin-image-warning">Ảnh này chiếm nhiều bộ nhớ. Nên nén ảnh trước khi thêm ảnh khác.</p>}

@@ -4,7 +4,12 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-const widths = [640, 960, 1440, 1920];
+const widths = [640, 960, 1440, 1920, 3840, 4096];
+const originalSources = [
+  "village-hero-original.webp",
+  "village-hero-original.jpg",
+  "village-hero-original.png",
+];
 const profiles = [
   ["hero-home", "eq=contrast=1.04:brightness=-0.085:saturation=0.84"],
   ["hero-water", "eq=contrast=1.05:brightness=-0.06:saturation=0.98"],
@@ -27,25 +32,39 @@ const profiles = [
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const assetDirectory = join(scriptDirectory, "..", "public", "assets");
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "thon-media-"));
+const originalSource = originalSources
+  .map((filename) => join(assetDirectory, filename))
+  .find((filename) => existsSync(filename));
+
+if (!originalSource) {
+  console.warn("No high-resolution original found; 3840/4096 variants will be skipped.");
+}
 
 function run(command, args) {
   execFileSync(command, args, { stdio: "inherit" });
 }
 
 try {
+  let generatedCount = 0;
   for (const [profile, filter] of profiles) {
     for (const width of widths) {
-      const source = join(assetDirectory, `village-hero-${width}.webp`);
+      const source = width > 1920
+        ? originalSource
+        : join(assetDirectory, `village-hero-${width}.webp`);
       const png = join(temporaryDirectory, `${profile}-${width}.png`);
       const target = join(assetDirectory, `village-hero-${profile}-${width}.webp`);
-      if (!existsSync(source)) throw new Error(`Missing source asset: ${source}`);
+      if (!source || !existsSync(source)) {
+        console.warn(`Skipping ${profile}-${width}: source asset is unavailable.`);
+        continue;
+      }
 
-      run("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-i", source, "-frames:v", "1", "-vf", filter, png]);
+      run("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-i", source, "-frames:v", "1", "-vf", `scale=w='min(${width},iw)':h=-2:force_original_aspect_ratio=decrease,${filter}`, png]);
       run("cwebp", ["-quiet", "-m", "6", "-q", "82", png, "-o", target]);
+      generatedCount += 1;
     }
   }
 
-  console.log(`Generated ${profiles.length * widths.length} baked WebP variants.`);
+  console.log(`Generated ${generatedCount} baked WebP variants.`);
 } finally {
   rmSync(temporaryDirectory, { force: true, recursive: true });
 }

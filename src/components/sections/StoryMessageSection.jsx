@@ -98,6 +98,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
             alt={villageMessage.imageAlt}
             colorVariant={villageMessage.colorVariant}
             imagePosition={villageMessage.imagePosition}
+            imageVariant="ultra"
             sizes="100vw"
           />
         </figure>

@@ -29,7 +29,19 @@
       "additionalProperties": { "$ref": "#/$defs/mediaVariant" }
     },
     "placeholder": { "type": "string", "minLength": 1 },
-    "version": { "type": "string", "minLength": 1 }
+    "version": { "type": "string", "minLength": 1 },
+    "supportsUltra": { "type": "boolean" },
+    "original": {
+      "type": "object",
+      "required": ["url", "width", "height"],
+      "properties": {
+        "url": { "type": "string", "minLength": 1 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "mimeType": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    }
   },
   "$defs": {
     "responsiveSources": {
@@ -39,7 +51,9 @@
         "640": { "type": "string", "minLength": 1 },
         "960": { "type": "string", "minLength": 1 },
         "1440": { "type": "string", "minLength": 1 },
-        "1920": { "type": "string", "minLength": 1 }
+        "1920": { "type": "string", "minLength": 1 },
+        "3840": { "type": "string", "minLength": 1 },
+        "4096": { "type": "string", "minLength": 1 }
       }
     },
     "mediaVariant": {
