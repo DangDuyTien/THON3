@@ -96,7 +96,7 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
             <span>© 2026 ĐOÀN THANH NIÊN XÃ MÊ LINH — HÀ NỘI. BẢN QUYỀN THUỘC VỀ TUỔI TRẺ MÊ LINH.</span>
           </div>
           <div className="youth-union-footer-right">
-            <a href="/#admin" className="youth-footer-link" title="Mở trang quản trị">
+            <a href="/admin" className="youth-footer-link" title="Mở trang quản trị">
               <Settings className="icon-xs" aria-hidden="true" /> QUẢN TRỊ ADMIN
             </a>
             <a href="#home" className="youth-footer-link" aria-label="Lên đầu trang">

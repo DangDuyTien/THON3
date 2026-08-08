@@ -9,6 +9,7 @@ import SeasonsSection from "./components/sections/SeasonsSection.jsx";
 import { SiteContentProvider, useSiteContent } from "./content/SiteContentProvider.jsx";
 import { getSiteAppearanceClassName, getSiteAppearanceStyle } from "./content/site-theme.js";
 import { useMomentumScroll, useReducedMotion } from "./hooks/useMotion.js";
+import { getPublicHomeHref } from "./components/admin/admin-registry.js";
 
 const AdminPage = lazy(() => import("./components/AdminPage.jsx"));
 const AdminLoginModal = lazy(() => import("./components/AdminLoginModal.jsx"));
@@ -41,7 +42,7 @@ class AdminRouteErrorBoundary extends React.Component {
         <p>Bản nháp trong trình duyệt có thể không còn tương thích. Hãy tạo lại bản nháp mặc định rồi mở lại phần quản trị.</p>
         <div className="admin-error-actions">
           <button className="admin-primary-button" type="button" onClick={this.handleReset}>Tạo lại bản nháp</button>
-          <a className="admin-secondary-button" href="/#home">Về trang chủ</a>
+          <a className="admin-secondary-button" href={getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, "home")}>Về trang chủ</a>
         </div>
       </main>
     );
@@ -50,7 +51,7 @@ class AdminRouteErrorBoundary extends React.Component {
 
 function isAdminRoute() {
   if (typeof window === "undefined") return false;
-  return window.location.pathname === "/admin"
+  return window.location.pathname.replace(/\/+$/, "") === "/admin"
     || window.location.hash === "#admin"
     || window.location.hash.startsWith("#admin-");
 }
@@ -81,12 +82,22 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
 
       replaceContent(event.data.content);
       const target = event.data.sectionTarget || "home";
-      window.setTimeout(() => {
-        document.getElementById(target)?.scrollIntoView({ behavior: "auto", block: "start" });
-        if (event.data.focusTarget) {
-          document.querySelector(`[data-preview-target="${CSS.escape(event.data.focusTarget)}"]`)?.scrollIntoView({ behavior: "auto", block: "center" });
+      const focusTarget = event.data.focusTarget || "";
+      let attempts = 0;
+      const scrollToPreviewTarget = () => {
+        const section = document.getElementById(target);
+        const focus = focusTarget
+          ? document.querySelector(`[data-preview-target="${CSS.escape(focusTarget)}"]`)
+          : null;
+        if (section || focus || attempts >= 24) {
+          section?.scrollIntoView({ behavior: "auto", block: "start" });
+          focus?.scrollIntoView({ behavior: "auto", block: "center" });
+          return;
         }
-      }, 0);
+        attempts += 1;
+        window.setTimeout(scrollToPreviewTarget, 50);
+      };
+      window.setTimeout(scrollToPreviewTarget, 0);
     };
 
     window.parent.postMessage({ source: "thon3-admin-preview", type: "ready" }, window.location.origin);
@@ -167,11 +178,11 @@ function AppRouter({ heroRevealReady = false }) {
   const handleAdminLogout = () => {
     localStorage.removeItem("thon3_admin_authenticated");
     setIsAdminAuthenticated(false);
-    window.location.hash = "#home";
+    window.location.assign(getPublicHomeHref(window.location.pathname, "home"));
   };
 
   const handleAdminCancel = () => {
-    window.location.hash = "#home";
+    window.location.assign(getPublicHomeHref(window.location.pathname, "home"));
   };
 
   if (previewRoute) {

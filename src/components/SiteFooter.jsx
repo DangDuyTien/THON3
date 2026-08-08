@@ -8,7 +8,7 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <p>{content.settings.siteName} <span>—</span> {content.settings.footerText}</p>
       <div className="site-footer-actions">
-        <a className="footer-admin-link" href="/#admin" title="Mở quản trị nội dung">
+        <a className="footer-admin-link" href="/admin" title="Mở quản trị nội dung">
           <Settings aria-hidden="true" />
           <span>Quản trị</span>
         </a>

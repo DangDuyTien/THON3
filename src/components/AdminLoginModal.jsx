@@ -104,7 +104,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
       if (p < 1) {
         rafRef.current = requestAnimationFrame(animateClose);
       } else {
-        window.location.hash = "#home";
+        window.location.assign("/#home");
         onCancel();
       }
     };

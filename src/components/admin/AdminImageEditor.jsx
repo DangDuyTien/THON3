@@ -138,8 +138,9 @@ export default function AdminImageEditor({
             imageVariant="medium"
             loading="lazy"
             onLoad={(event) => {
+              const image = event.currentTarget;
               setError("");
-              setImageInfo((current) => ({ ...current, width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight }));
+              setImageInfo((current) => ({ ...current, width: image.naturalWidth, height: image.naturalHeight }));
             }}
             onError={() => setError("Không tải được ảnh. Hãy kiểm tra lại URL hoặc chọn tệp khác.")}
           />

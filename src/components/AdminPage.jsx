@@ -11,7 +11,6 @@ import {
   FileJson,
   ImagePlus,
   LogOut,
-  PencilLine,
   RotateCcw,
   Save,
   Search,
@@ -21,7 +20,6 @@ import {
   Waves,
   X,
 } from "lucide-react";
-import AdaptiveImage from "./AdaptiveImage.jsx";
 import AdminLivePreview from "./admin/AdminLivePreview.jsx";
 import AdminImageEditor from "./admin/AdminImageEditor.jsx";
 import {
@@ -34,8 +32,6 @@ import {
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import { getPendingSubmissions, rejectPendingSubmission } from "../content/submission-store.js";
 import {
-  getSiteAppearanceClassName,
-  getSiteAppearanceStyle,
   SITE_APPEARANCE_OPTIONS,
   SITE_FONT_OPTIONS,
 } from "../content/site-theme.js";
@@ -44,12 +40,12 @@ import {
   ADMIN_SECTIONS,
   getAdminSectionFromHash,
   getAdminHash,
+  getAdminPublicTarget,
+  getPublicHomeHref,
 } from "./admin/admin-registry.js";
 
 const AdminCardCommandContext = createContext(null);
 const AdminImageTargetContext = createContext(null);
-const AdminPreviewEditContext = createContext(null);
-const AdminPreviewAppearanceContext = createContext(null);
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -398,332 +394,6 @@ function StoryEditor({ draft, update }) {
         />
       </div>
     </AdminPanel>
-  );
-}
-
-function getAdminPreviewMeta(activeSection) {
-  const sectionIndex = activeSection === "overview" ? 0 : ADMIN_SECTIONS.findIndex((section) => section.id === activeSection) + 1;
-  const section = ADMIN_SECTIONS.find((item) => item.id === activeSection);
-  return {
-    eyebrow: activeSection === "overview" ? "TỔNG QUAN / TRANG CHỦ" : `${String(sectionIndex).padStart(2, "0")} / ${section.label.toUpperCase()}`,
-    label: section?.label || "Trang chủ",
-    number: `${String(Math.max(sectionIndex, 0)).padStart(2, "0")} / ${String(ADMIN_SECTIONS.length).padStart(2, "0")}`,
-    progress: Math.max(sectionIndex, 0) / ADMIN_SECTIONS.length * 100,
-  };
-}
-
-function AdminPreviewFrame({ activeSection, dirty, children, className = "" }) {
-  const meta = getAdminPreviewMeta(activeSection);
-  const onEdit = useContext(AdminPreviewEditContext);
-  const appearance = useContext(AdminPreviewAppearanceContext);
-  const appearanceClassName = appearance ? getSiteAppearanceClassName(appearance) : "";
-  return (
-    <section className={`admin-live-preview ${appearanceClassName} ${className}`} style={appearance ? getSiteAppearanceStyle(appearance) : undefined} aria-label={`Xem trước ${meta.label}`}>
-      <div className="admin-live-preview-top">
-        <p className="admin-live-preview-eyebrow"><span aria-hidden="true" />{meta.eyebrow}</p>
-        <div className="admin-live-preview-status">
-          <span className={dirty ? "is-draft" : ""}>{dirty ? "BẢN NHÁP" : "ĐÃ ĐỒNG BỘ"}</span>
-          <strong>{meta.number}</strong>
-        </div>
-      </div>
-      <div className="admin-live-preview-canvas">{children}</div>
-      <div className="admin-live-preview-footer">
-        <span>{meta.label}</span>
-        <span className="admin-preview-progress" style={{ "--admin-preview-progress": `${meta.progress}%` }} aria-hidden="true" />
-        <div className="admin-live-preview-footer-actions">
-          <span>LIVE CONTENT / MÊ LINH</span>
-          {onEdit && (
-            <button className="admin-preview-edit-button" type="button" onClick={onEdit} title="Đi tới phần chỉnh sửa" aria-label="Chỉnh sửa phần này">
-              <PencilLine aria-hidden="true" />
-              <span>Chỉnh sửa phần này</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AdminOverviewPreview({ draft, dirty }) {
-  const frame = draft.storyFrames[0];
-  return (
-    <AdminPreviewFrame activeSection="overview" dirty={dirty} className="admin-live-preview-overview">
-      <div className="admin-preview-overview-copy">
-        <p>{draft.settings.tagline}</p>
-        <h3>{draft.settings.siteName}</h3>
-        <span>{frame.description}</span>
-        <div><small>{draft.settings.coordinates[0]}</small><small>{draft.settings.coordinates[1]}</small></div>
-      </div>
-      <figure className="admin-preview-overview-image">
-        <AdaptiveImage src={frame.imageSrc} alt="" imagePosition={frame.position} imageVariant="medium" sizes="42vw" />
-        <figcaption><span>{frame.lead}</span><em>{frame.accent}</em></figcaption>
-      </figure>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminSettingsPreview({ draft, dirty }) {
-  const { settings } = draft;
-  const { appearance } = settings;
-  const frame = draft.storyFrames[0];
-  const palette = [
-    { key: "background", label: "Nền ngoài" },
-    { key: "paper", label: "Nền sáng" },
-    { key: "paperDeep", label: "Nền đậm" },
-    { key: "ink", label: "Chữ" },
-    { key: "lime", label: "Nhấn" },
-    { key: "lake", label: "Nước" },
-  ];
-  return (
-    <AdminPreviewFrame activeSection="settings" dirty={dirty} className="admin-live-preview-settings">
-      <div className="admin-preview-settings-board">
-        <div className="admin-preview-settings-top">
-          <div>
-            <p>XEM TRƯỚC TRỰC TIẾP / BẢN NHÁP</p>
-            <strong>{settings.siteName}</strong>
-          </div>
-          <span>{settings.tagline}</span>
-          <div><small>{settings.coordinates[0]}</small><small>{settings.coordinates[1]}</small></div>
-        </div>
-
-        <div className="admin-preview-settings-grid">
-          <article className="admin-preview-settings-card admin-preview-settings-typography">
-            <div className="admin-preview-settings-card-label"><span>01</span><strong>PHÔNG CHỮ</strong></div>
-            <h3 className="admin-preview-settings-display-sample">Ở lại <em>Mê Linh</em></h3>
-            <p className="admin-preview-settings-sans-sample">Mỗi dòng chữ vẫn giữ rõ dấu tiếng Việt ở mọi kích thước.</p>
-            <code className="admin-preview-settings-mono-sample">{getAppearanceChoiceLabel("display", appearance.fonts.display)} · {getAppearanceChoiceLabel("sans", appearance.fonts.sans)}</code>
-          </article>
-
-          <article className="admin-preview-settings-card admin-preview-settings-colors">
-            <div className="admin-preview-settings-card-label"><span>02</span><strong>MÀU SẮC & NỀN</strong></div>
-            <div className="admin-preview-settings-palette" aria-label="Bảng màu bản nháp">
-              {palette.map(({ key, label }) => (
-                <div key={key}>
-                  <i style={{ backgroundColor: appearance.colors[key] }} />
-                  <span>{label}</span>
-                  <code>{appearance.colors[key]}</code>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="admin-preview-settings-card admin-preview-settings-layout">
-            <div className="admin-preview-settings-card-label"><span>03</span><strong>BỐ CỤC</strong></div>
-            <div className="admin-preview-settings-layout-demo" aria-hidden="true">
-              <div><span>01</span><span>02</span><span>03</span></div>
-              <div><span>VĂN BẢN</span><span>ẢNH</span></div>
-            </div>
-            <p>{getAppearanceChoiceLabel("density", appearance.layout.density)} · {getAppearanceChoiceLabel("frame", appearance.layout.frame)} · {getAppearanceChoiceLabel("radius", appearance.layout.radius)}</p>
-          </article>
-
-          <article className="admin-preview-settings-card admin-preview-settings-effects">
-            <div className="admin-preview-settings-card-label"><span>04</span><strong>HIỆU ỨNG</strong></div>
-            <div className="admin-preview-settings-effect-demo">
-              <div className="admin-preview-settings-effect-image">
-                <AdaptiveImage src={frame.imageSrc} alt="" imagePosition={frame.position} imageVariant="small" sizes="120px" />
-              </div>
-              <div className="admin-preview-settings-effect-signal" aria-hidden="true"><i /><i /><i /></div>
-              <span className="admin-preview-settings-hover-label">RÊ CHUỘT</span>
-            </div>
-            <p>{getAppearanceChoiceLabel("motion", appearance.effects.motion)} · {getAppearanceChoiceLabel("imageTreatment", appearance.effects.imageTreatment)} · {getAppearanceChoiceLabel("hover", appearance.effects.hover)}</p>
-          </article>
-        </div>
-
-        <div className="admin-preview-settings-footer">
-          <span>{settings.footerText}</span>
-          <div className="admin-preview-settings-swatches" aria-label="Bảng màu đang chọn">
-            {palette.map(({ key }) => <i key={key} style={{ backgroundColor: appearance.colors[key] }} />)}
-          </div>
-          <span>{getAppearanceChoiceLabel("mono", appearance.fonts.mono)}</span>
-        </div>
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminHeroPreview({ draft, dirty }) {
-  return (
-    <AdminPreviewFrame activeSection="hero" dirty={dirty} className="admin-live-preview-hero">
-      <div className="admin-preview-hero-strip">
-        {draft.storyFrames.map((frame, index) => (
-          <article className={`admin-preview-hero-frame${index === 0 ? " is-featured" : ""}`} key={frame.number}>
-            <AdaptiveImage src={frame.imageSrc} alt="" colorVariant={frame.colorVariant} imagePosition={frame.position} imageVariant="small" sizes="(max-width: 680px) 72vw, 24vw" />
-            <div className="admin-preview-hero-frame-copy">
-              <p>{frame.eyebrow}</p>
-              <h3><span>{frame.lead}</span><em>{frame.accent}</em></h3>
-              <small>{frame.note}</small>
-            </div>
-            <strong>{frame.number} / {String(draft.storyFrames.length).padStart(2, "0")}</strong>
-          </article>
-        ))}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminStoryPreview({ draft, dirty }) {
-  const message = draft.villageMessage;
-  return (
-    <AdminPreviewFrame activeSection="story" dirty={dirty} className="admin-live-preview-story">
-      <div className="admin-preview-story-copy">
-        <p>{message.eyebrow}</p>
-        <h3><span>{message.headlineTop}</span><em>{message.headlineBottom}</em></h3>
-        <span>{message.summary}</span>
-        <strong>{message.signatureText}</strong>
-      </div>
-      <figure className="admin-preview-story-image">
-        <AdaptiveImage src={message.imageSrc} alt={message.imageAlt} imagePosition={message.imagePosition} imageVariant="medium" sizes="46vw" />
-      </figure>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminStatementPreview({ draft, dirty }) {
-  const statement = draft.exploreStatement;
-  return (
-    <AdminPreviewFrame activeSection="statement" dirty={dirty} className="admin-live-preview-statement">
-      <div className="admin-preview-statement-mark"><Waves aria-hidden="true" /><span>{statement.eyebrow}</span></div>
-      <div className="admin-preview-statement-lines">
-        {statement.lines.map((line, index) => (
-          <p key={`${line.accent}-${index}`}>
-            {line.before && <span>{line.before} </span>}
-            <em>{line.accent}</em>
-            {line.after && <span> {line.after}</span>}
-          </p>
-        ))}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminSeasonsPreview({ draft, dirty }) {
-  const gallery = draft.seasonalGallery;
-  return (
-    <AdminPreviewFrame activeSection="seasons" dirty={dirty} className="admin-live-preview-seasons">
-      <div className="admin-preview-seasons-head"><p>{gallery.eyebrow}</p><span>{gallery.quote}</span><strong>{gallery.signature}</strong></div>
-      <div className="admin-preview-seasons-track">
-        {gallery.photos.map((photo) => (
-          <figure key={photo.id}>
-            <AdaptiveImage src={photo.imageSrc} alt="" colorVariant={photo.colorVariant} imagePosition={photo.imagePosition} imageVariant="small" sizes="(max-width: 680px) 34vw, 16vw" />
-            <figcaption>{photo.label}</figcaption>
-          </figure>
-        ))}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminVisitPreview({ draft, dirty }) {
-  const choices = [draft.visitChoices.left, draft.visitChoices.right];
-  return (
-    <AdminPreviewFrame activeSection="visit" dirty={dirty} className="admin-live-preview-visit">
-      <div className="admin-preview-visit-choices">
-        {choices.map((choice) => (
-          <article key={choice.upper}>
-            <AdaptiveImage src={choice.imageSrc} alt="" imagePosition={choice.imagePosition} imageVariant="small" sizes="(max-width: 680px) 50vw, 24vw" />
-            <div><p>{choice.kicker}</p><h3><span>{choice.upper}</span><strong>{choice.lower}</strong></h3><span>{choice.copy}</span></div>
-          </article>
-        ))}
-      </div>
-      <AdaptiveImage className="admin-preview-visit-arrival" src={draft.fullBleedArrival.imageSrc} alt="" imagePosition={draft.fullBleedArrival.imagePosition} imageVariant="small" sizes="100vw" />
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminArchivePreview({ draft, dirty }) {
-  const archive = draft.villageArchive;
-  return (
-    <AdminPreviewFrame activeSection="archive" dirty={dirty} className="admin-live-preview-archive">
-      <div className="admin-preview-archive-head"><p>{archive.eyebrow}</p><h3>{archive.title.split("\n").map((line) => <span key={line}>{line}</span>)}</h3></div>
-      <div className="admin-preview-archive-grid">
-        {archive.cards.map((card) => (
-          <figure key={card.id}>
-            <AdaptiveImage src={card.imageSrc || archive.imageSrc} alt="" imagePosition={card.imagePosition} imageVariant="small" sizes="(max-width: 680px) 30vw, 14vw" />
-            <figcaption><span>{card.label}</span><strong>{card.year}</strong></figcaption>
-          </figure>
-        ))}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminCommunityPreview({ draft, dirty }) {
-  const partners = draft.communityPartners;
-  return (
-    <AdminPreviewFrame activeSection="community" dirty={dirty} className="admin-live-preview-community">
-      <div className="admin-preview-community-head"><p>{partners.eyebrow}</p><h3>{partners.headline.map((line) => <span key={line}>{line}</span>)}</h3><span>{partners.copy}</span></div>
-      <div className="admin-preview-community-list">
-        {partners.organizations.map((organization) => (
-          <div key={organization.id}>
-            {organization.logo ? <img src={organization.logo} alt="" /> : <strong>{organization.mark}</strong>}
-            <span>{organization.label}</span>
-          </div>
-        ))}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminUpdatesPreview({ draft, dirty }) {
-  const updates = draft.villageUpdates;
-  return (
-    <AdminPreviewFrame activeSection="updates" dirty={dirty} className="admin-live-preview-updates">
-      <div className="admin-preview-updates-head"><p>{updates.eyebrow}</p><h3><span>{updates.headline[0]}</span><strong>{updates.headline[1]}</strong></h3></div>
-      <div className="admin-preview-updates-grid">
-        {updates.cards.map((card) => (
-          <article key={card.id}>
-            <AdaptiveImage src={card.imageSrc || updates.imageSrc} alt="" colorVariant={`update-${card.tone}`} imagePosition={card.imagePosition} imageVariant="small" sizes="(max-width: 680px) 30vw, 14vw" />
-            <div><span>{card.label}</span><strong>{card.meta}</strong></div>
-          </article>
-        ))}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminClosingPreview({ draft, dirty }) {
-  const closing = draft.closing;
-  const arrival = draft.fullBleedArrival;
-  const socialItems = closing.socialItems.filter((item) => item.label || item.href);
-  return (
-    <AdminPreviewFrame activeSection="closing" dirty={dirty} className="admin-live-preview-closing">
-      <div className="admin-preview-closing-transition">
-        <p>{closing.transitionKicker}</p>
-        <h3>{closing.transitionTitle}</h3>
-        <div>{socialItems.map((item) => <span key={item.id || item.label}>{item.label}</span>)}</div>
-      </div>
-      <div className="admin-preview-closing-card">
-        <div><p>{arrival.eyebrow}</p><h3><span>{arrival.headline[0]}</span><em>{arrival.headline[1]}</em></h3></div>
-        <AdaptiveImage src={arrival.portraitSrc || arrival.imageSrc} alt="" imagePosition={arrival.imagePosition} imageVariant="small" sizes="34vw" />
-      </div>
-      <div className="admin-preview-closing-links">
-        <span>{closing.navLabel}</span>
-        {closing.navItems.slice(0, 5).map((item) => <small key={item.id || item.label}>{item.label}</small>)}
-      </div>
-    </AdminPreviewFrame>
-  );
-}
-
-function AdminVisualPreview({ draft, activeSection, dirty, onEdit }) {
-  let preview;
-  switch (activeSection) {
-    case "settings": preview = <AdminSettingsPreview draft={draft} dirty={dirty} />; break;
-    case "hero": preview = <AdminHeroPreview draft={draft} dirty={dirty} />; break;
-    case "story": preview = <AdminStoryPreview draft={draft} dirty={dirty} />; break;
-    case "statement": preview = <AdminStatementPreview draft={draft} dirty={dirty} />; break;
-    case "seasons": preview = <AdminSeasonsPreview draft={draft} dirty={dirty} />; break;
-    case "visit": preview = <AdminVisitPreview draft={draft} dirty={dirty} />; break;
-    case "archive": preview = <AdminArchivePreview draft={draft} dirty={dirty} />; break;
-    case "community": preview = <AdminCommunityPreview draft={draft} dirty={dirty} />; break;
-    case "updates": preview = <AdminUpdatesPreview draft={draft} dirty={dirty} />; break;
-    case "closing": preview = <AdminClosingPreview draft={draft} dirty={dirty} />; break;
-    default: preview = <AdminOverviewPreview draft={draft} dirty={dirty} />;
-  }
-
-  return (
-    <AdminPreviewAppearanceContext.Provider value={draft.settings.appearance}>
-      <AdminPreviewEditContext.Provider value={onEdit}>{preview}</AdminPreviewEditContext.Provider>
-    </AdminPreviewAppearanceContext.Provider>
   );
 }
 
@@ -1280,7 +950,7 @@ export default function AdminPage({ onLogout }) {
   return (
     <div className="admin-shell">
       <header className="admin-topbar">
-        <a className="admin-back-link" href="/#home" title="Về trang chủ">
+        <a className="admin-back-link" href={getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, getAdminPublicTarget("overview"))} title="Về trang chủ">
           <ArrowLeft aria-hidden="true" />
           <span>{content.settings.siteName}</span>
         </a>
@@ -1290,7 +960,7 @@ export default function AdminPage({ onLogout }) {
           <span className={`admin-save-state${dirty ? " is-dirty" : ""}`}>{dirty ? "Bản nháp tạm" : "Đã đồng bộ"}</span>
         </div>
         <div className="admin-topbar-actions">
-          <a className="admin-secondary-button admin-icon-text-button" href="/#home" target="_blank" rel="noreferrer" aria-label="Xem trang chủ">
+          <a className="admin-secondary-button admin-icon-text-button" href={getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, getAdminPublicTarget("overview"))} target="_blank" rel="noreferrer" aria-label="Xem trang chủ">
             <Eye aria-hidden="true" />
             <span>Xem trang</span>
           </a>

@@ -1,6 +1,8 @@
 import { RotateCcw, Smartphone, Tablet, Monitor } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { getAdminPublicTarget, getPublicHomeHref } from "./admin-registry.js";
+
 const PREVIEW_MESSAGE = "thon3-admin-preview";
 
 const VIEWPORTS = {
@@ -9,23 +11,11 @@ const VIEWPORTS = {
   mobile: { label: "Mobile", width: 390, height: 844, icon: Smartphone },
 };
 
-const SECTION_TARGETS = {
-  overview: "home",
-  settings: "home",
-  hero: "home",
-  story: "cau-chuyen",
-  statement: "ban-do",
-  seasons: "nhung-mua",
-  visit: "lien-he",
-  archive: "tu-lieu",
-  community: "dong-hanh",
-  updates: "nhip-song-hom-nay",
-  closing: "ket-lai",
-};
 
 export default function AdminLivePreview({ draft, activeSection, dirty, focusTarget }) {
   const iframeRef = useRef(null);
   const stageRef = useRef(null);
+  const pendingPayloadRef = useRef(null);
   const sendTimerRef = useRef(0);
   const [viewport, setViewport] = useState("desktop");
   const [ready, setReady] = useState(false);
@@ -33,16 +23,21 @@ export default function AdminLivePreview({ draft, activeSection, dirty, focusTar
   const [reloadVersion, setReloadVersion] = useState(0);
   const viewportConfig = VIEWPORTS[viewport];
 
-  const previewSrc = useMemo(() => `/#site-preview&v=${reloadVersion}`, [reloadVersion]);
+  const previewSrc = useMemo(() => `${getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, "site-preview")}&v=${reloadVersion}`, [reloadVersion]);
+  const sectionTarget = getAdminPublicTarget(activeSection);
 
   const sendPreviewMessage = (payload) => {
+    pendingPayloadRef.current = payload;
     iframeRef.current?.contentWindow?.postMessage({ source: PREVIEW_MESSAGE, ...payload }, window.location.origin);
   };
 
   useEffect(() => {
     const handleMessage = (event) => {
       if (event.origin !== window.location.origin || event.source !== iframeRef.current?.contentWindow) return;
-      if (event.data?.source === PREVIEW_MESSAGE && event.data.type === "ready") setReady(true);
+      if (event.data?.source === PREVIEW_MESSAGE && event.data.type === "ready") {
+        setReady(true);
+        if (pendingPayloadRef.current) sendPreviewMessage(pendingPayloadRef.current);
+      }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
@@ -75,7 +70,7 @@ export default function AdminLivePreview({ draft, activeSection, dirty, focusTar
       sendPreviewMessage({
         type: "content",
         content: draft,
-        sectionTarget: SECTION_TARGETS[activeSection] || "home",
+        sectionTarget,
         focusTarget: focusTarget || "",
       });
     }, 140);
