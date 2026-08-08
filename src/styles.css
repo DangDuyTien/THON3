@@ -9333,3 +9333,360 @@ button:hover .closing-kinetic-green {
     width: 7px;
   }
 }
+
+/* Dribbble Style Light Paper & Luminous Dome Coming Soon Page */
+.coming-soon-wrapper {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: #dce4ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  font-family: var(--sans);
+}
+
+.coming-soon-window {
+  background: #edf2f7;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  box-shadow: 0 40px 100px rgba(11, 26, 48, 0.18), 0 10px 30px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 1100px;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  color: #1a2533;
+}
+
+.coming-soon-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 36px;
+  position: relative;
+  z-index: 10;
+}
+
+.coming-soon-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 15px;
+  color: #0b1a30;
+  letter-spacing: -0.2px;
+}
+
+.coming-soon-brand-sep {
+  color: rgba(11, 26, 48, 0.25);
+  font-weight: 300;
+  margin: 0 2px;
+}
+
+.coming-soon-brand-tag {
+  color: #0066ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.coming-soon-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.coming-soon-nav a {
+  color: #4a5a6e;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.coming-soon-nav a:hover {
+  color: #0066ff;
+}
+
+.coming-soon-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.coming-soon-talk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #0b1a30;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  padding-bottom: 2px;
+}
+
+.coming-soon-talk-link:hover {
+  color: #0066ff;
+}
+
+.coming-soon-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #1a2533;
+  background: transparent;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.coming-soon-close-btn:hover {
+  background: rgba(0, 102, 255, 0.08);
+  color: #0066ff;
+  transform: rotate(90deg);
+}
+
+.coming-soon-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  padding: 40px 24px 20px;
+  text-align: center;
+}
+
+/* Sunset Orange & Youth Union Blue Luminous Dome Glow */
+.coming-soon-dome-glow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 620px;
+  height: 380px;
+  background: 
+    radial-gradient(ellipse at 50% 60%, rgba(255, 148, 51, 0.45) 0%, rgba(255, 120, 0, 0.25) 35%, rgba(0, 102, 255, 0.15) 60%, transparent 80%);
+  border-top-left-radius: 380px;
+  border-top-right-radius: 380px;
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 1;
+  animation: coming-soon-glow-pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes coming-soon-glow-pulse {
+  0% { opacity: 0.85; transform: translateX(-50%) scale(0.98); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1.03); }
+}
+
+.coming-soon-dome-svg {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 680px;
+  height: 380px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.coming-soon-dome-arc-guide {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.5;
+}
+
+.coming-soon-dome-arc-draw {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: coming-soon-arc-draw 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes coming-soon-arc-draw {
+  0% { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.coming-soon-stage-content {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 640px;
+  margin-bottom: 20px;
+}
+
+.coming-soon-sig-box {
+  margin-bottom: 8px;
+}
+
+.coming-soon-loader-mark .site-loader-signature {
+  width: 180px;
+  height: 52px;
+}
+
+.coming-soon-loader-mark .sig-guide path {
+  stroke: rgba(11, 26, 48, 0.15);
+}
+
+.coming-soon-loader-mark .sig-draw .sig-path {
+  stroke: #0b1a30;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: coming-soon-sig-draw 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+@keyframes coming-soon-sig-draw {
+  0% { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.coming-soon-hero-title {
+  font-family: var(--sans);
+  font-size: clamp(38px, 5.2vw, 64px);
+  font-weight: 700;
+  color: #0b1a30;
+  letter-spacing: -1.2px;
+  margin-bottom: 12px;
+  line-height: 1.05;
+}
+
+.coming-soon-hero-sub {
+  font-family: var(--sans);
+  font-size: clamp(14px, 1.6vw, 16px);
+  color: #4a5a6e;
+  font-weight: 500;
+  max-width: 480px;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.coming-soon-pulse-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(11, 26, 48, 0.18);
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.coming-soon-pulse-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background: #0066ff;
+  border-radius: 2px;
+  animation: coming-soon-pulse-drop 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes coming-soon-pulse-drop {
+  0% { top: 0; opacity: 0; }
+  30% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.coming-soon-social-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.coming-soon-social-title {
+  font-size: 13px;
+  color: #3b4b5e;
+  font-weight: 500;
+}
+
+.coming-soon-social-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.coming-soon-social-pill {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(11, 26, 48, 0.15);
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #2a3a4e;
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+.coming-soon-social-pill:hover {
+  background: #0066ff;
+  border-color: #0066ff;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
+}
+
+.coming-soon-window-footer {
+  padding: 24px 36px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.coming-soon-return-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2a3a4e;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.coming-soon-return-link:hover {
+  color: #0066ff;
+}
+
+@media (max-width: 680px) {
+  .coming-soon-window {
+    border-radius: 20px;
+    min-height: 580px;
+  }
+
+  .coming-soon-window-header {
+    padding: 18px 20px;
+  }
+
+  .coming-soon-nav {
+    display: none;
+  }
+
+  .coming-soon-stage {
+    padding-bottom: 12px;
+  }
+
+  .coming-soon-dome-glow,
+  .coming-soon-dome-svg {
+    width: 100%;
+    max-width: 360px;
+    height: 280px;
+  }
+
+  .coming-soon-window-footer {
+    padding: 18px 20px;
+  }
+}

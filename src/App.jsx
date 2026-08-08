@@ -143,10 +143,43 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
   );
 }
 
+const ComingSoonPage = lazy(() => import("./components/ComingSoonPage.jsx"));
+
+const COMING_SOON_ROUTES = {
+  "#kho-luu-tru": {
+    title: "Coming soon!",
+    description: "This page is under construction • Kho lưu trữ ký ức Mê Linh đang được chuẩn bị.",
+  },
+  "#tin-tuc": {
+    title: "Coming soon!",
+    description: "This page is under construction • Nhịp sống tin tức Mê Linh đang được biên tập.",
+  },
+  "#sap-ra-mat": {
+    title: "Coming soon!",
+    description: "This page is under construction • Không gian này đang được biên tập & hoàn thiện.",
+  },
+  "#coming-soon": {
+    title: "Coming soon!",
+    description: "This page is under construction • Không gian này đang được biên tập & hoàn thiện.",
+  },
+};
+
+function getRouteSnapshot() {
+  if (typeof window === "undefined") return { type: "home", hash: "" };
+  const { pathname, hash } = window.location;
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+
+  if (hash.startsWith("#site-preview")) return { type: "preview", hash };
+  if (normalizedPath === "/admin" || hash === "#admin" || hash.startsWith("#admin-")) {
+    return { type: "admin", hash };
+  }
+  if (COMING_SOON_ROUTES[hash]) return { type: "coming-soon", hash };
+  return { type: "home", hash };
+}
+
 function AppRouter({ heroRevealReady = false }) {
   const { content } = useSiteContent();
-  const [adminRoute, setAdminRoute] = useState(isAdminRoute);
-  const previewRoute = isPreviewRoute();
+  const [route, setRoute] = useState(getRouteSnapshot);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("thon3_admin_authenticated") === "true";
@@ -154,7 +187,7 @@ function AppRouter({ heroRevealReady = false }) {
 
   useEffect(() => {
     const updateRoute = () => {
-      setAdminRoute(isAdminRoute());
+      setRoute(getRouteSnapshot());
       setIsAdminAuthenticated(localStorage.getItem("thon3_admin_authenticated") === "true");
     };
     window.addEventListener("hashchange", updateRoute);
@@ -166,14 +199,16 @@ function AppRouter({ heroRevealReady = false }) {
   }, []);
 
   useEffect(() => {
-    document.title = adminRoute
+    document.title = route.type === "admin"
       ? `Quản trị nội dung | ${content.settings.siteName}`
-      : `${content.settings.siteName} | ${content.settings.tagline}`;
+      : route.type === "coming-soon"
+        ? `Coming soon | ${content.settings.siteName}`
+        : `${content.settings.siteName} | ${content.settings.tagline}`;
     const description = document.querySelector('meta[name="description"]');
-    if (description && !adminRoute) {
+    if (description && route.type !== "admin") {
       description.setAttribute("content", `${content.settings.siteName} - ${content.settings.tagline}`);
     }
-  }, [adminRoute, content.settings.siteName, content.settings.tagline]);
+  }, [route.type, content.settings.siteName, content.settings.tagline]);
 
   const handleAdminLogout = () => {
     localStorage.removeItem("thon3_admin_authenticated");
@@ -185,11 +220,20 @@ function AppRouter({ heroRevealReady = false }) {
     window.location.assign(getPublicHomeHref(window.location.pathname, "home"));
   };
 
-  if (previewRoute) {
+  if (route.type === "preview") {
     return <PublicHome previewMode heroRevealReady={heroRevealReady} />;
   }
 
-  if (!adminRoute) {
+  if (route.type === "coming-soon") {
+    const routeInfo = COMING_SOON_ROUTES[route.hash] || COMING_SOON_ROUTES["#sap-ra-mat"];
+    return (
+      <Suspense fallback={<div className="route-state-loading" aria-label="Đang mở..." />}>
+        <ComingSoonPage {...routeInfo} />
+      </Suspense>
+    );
+  }
+
+  if (route.type !== "admin") {
     return <PublicHome heroRevealReady={heroRevealReady} />;
   }
 

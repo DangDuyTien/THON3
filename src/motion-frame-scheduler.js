@@ -1,8 +1,9 @@
 import { updateAllScenes } from "./motion-runtime.js";
 
-const continuousFrameSubscribers = new Set();
+const continuousFrameSubscribers = new Map();
 let pendingFrameReasons = new Set();
 let scheduledFrame = null;
+let frameNumber = 0;
 
 function scheduleSharedFrame() {
   if (scheduledFrame !== null || document.hidden) return;
@@ -13,9 +14,12 @@ function flushMotionFrame(time) {
   scheduledFrame = null;
   const reasons = pendingFrameReasons;
   pendingFrameReasons = new Set();
+  frameNumber += 1;
 
   if (reasons.size) updateAllScenes();
-  continuousFrameSubscribers.forEach((callback) => callback(time, reasons));
+  continuousFrameSubscribers.forEach((subscriber) => {
+    subscriber.callback(time, reasons);
+  });
 
   if (continuousFrameSubscribers.size) scheduleSharedFrame();
 }
@@ -25,8 +29,9 @@ export function queueMotionFrame(reason = "runtime") {
   scheduleSharedFrame();
 }
 
-export function subscribeContinuousFrame(callback) {
-  continuousFrameSubscribers.add(callback);
+export function subscribeContinuousFrame(callback, options = {}) {
+  const subscriber = { callback };
+  continuousFrameSubscribers.set(callback, subscriber);
   queueMotionFrame("continuous");
 
   return () => {

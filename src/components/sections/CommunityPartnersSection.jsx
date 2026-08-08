@@ -2,6 +2,7 @@ import { memo, useEffect, useRef } from "react";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import RevealLine from "../RevealLine.jsx";
 import RevealLines from "../RevealLines.jsx";
+import { subscribeContinuousFrame } from "../../motion-frame-scheduler.js";
 
 const CommunityReveal = RevealLine;
 
@@ -11,83 +12,69 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
   const sectionRef = useRef(null);
   const marqueeRef = useRef(null);
   const trackRef = useRef(null);
-
-  // Motion State Refs
+  const groupWidthRef = useRef(0);
   const positionRef = useRef(0);
   const scrollOffsetRef = useRef(0);
+  const visibleRef = useRef(false);
 
-  // 1. Instant 60fps Continuous Loop (Pure gliding marquee motion)
   useEffect(() => {
-    if (reducedMotion) return undefined;
+    const section = sectionRef.current;
+    const track = trackRef.current;
+    if (!section || !track || reducedMotion) return undefined;
 
-    let animationFrameId;
-    let lastTime = performance.now();
-
-    const getGroupWidth = () => {
-      if (!trackRef.current) return 0;
-      const firstGroup = trackRef.current.firstElementChild;
-      if (firstGroup) {
-        const rectWidth = firstGroup.getBoundingClientRect().width;
-        const scrollWidth = firstGroup.scrollWidth;
-        const width = Math.max(rectWidth, scrollWidth);
-        if (width > 40) return width;
-      }
-      return 0;
+    const firstGroup = track.firstElementChild;
+    const measure = () => {
+      if (!firstGroup) return;
+      const width = Math.max(firstGroup.getBoundingClientRect().width, firstGroup.scrollWidth);
+      if (width > 40) groupWidthRef.current = width;
     };
+    measure();
 
-    const loop = (timestamp) => {
+    const resizeObserver = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(measure);
+    resizeObserver?.observe(firstGroup || track);
+    if (!resizeObserver) window.addEventListener("resize", measure, { passive: true });
+
+    const intersectionObserver = typeof IntersectionObserver === "undefined"
+      ? null
+      : new IntersectionObserver(([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+      }, { rootMargin: "80% 0px 80% 0px" });
+    if (intersectionObserver) intersectionObserver.observe(section);
+    else visibleRef.current = true;
+
+    let lastTime = performance.now();
+    const onFrame = (timestamp) => {
+      if (!visibleRef.current || !marqueeRef.current || !groupWidthRef.current) return;
       const delta = Math.min(timestamp - lastTime, 32);
       lastTime = timestamp;
-
-      const groupWidth = getGroupWidth();
-      if (groupWidth > 0 && marqueeRef.current) {
-        // Smoothly decay scroll momentum
-        scrollOffsetRef.current *= 0.92;
-        if (Math.abs(scrollOffsetRef.current) < 0.01) scrollOffsetRef.current = 0;
-
-        // Speed: 1.5px/frame base + scroll impulse
-        const speed = (1.5 + scrollOffsetRef.current * 0.12) * (delta / 16.66);
-        positionRef.current += speed;
-
-        // Wrap around seamlessly
-        if (positionRef.current >= groupWidth) {
-          positionRef.current -= groupWidth;
-        } else if (positionRef.current < 0) {
-          positionRef.current += groupWidth;
-        }
-
-        marqueeRef.current.style.transform = `translate3d(-${positionRef.current.toFixed(2)}px, 0, 0)`;
-      }
-
-      animationFrameId = requestAnimationFrame(loop);
+      scrollOffsetRef.current *= 0.92;
+      if (Math.abs(scrollOffsetRef.current) < 0.01) scrollOffsetRef.current = 0;
+      const speed = (1.5 + scrollOffsetRef.current * 0.12) * (delta / 16.66);
+      positionRef.current += speed;
+      if (positionRef.current >= groupWidthRef.current) positionRef.current -= groupWidthRef.current;
+      marqueeRef.current.style.transform = `translate3d(-${positionRef.current.toFixed(2)}px, 0, 0)`;
     };
+    const unsubscribe = subscribeContinuousFrame(onFrame);
 
-    animationFrameId = requestAnimationFrame(loop);
-
-    return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    };
-  }, [reducedMotion]);
-
-  // 2. Scroll Momentum Listener
-  useEffect(() => {
-    if (reducedMotion) return undefined;
-
-    let lastScrollY = typeof window !== "undefined" ? window.scrollY : 0;
-
+    let lastScrollY = window.scrollY;
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollY;
       lastScrollY = currentScrollY;
-
-      if (Math.abs(delta) > 0.5) {
-        scrollOffsetRef.current += delta * 0.45;
-        scrollOffsetRef.current = Math.min(Math.max(scrollOffsetRef.current, -100), 100);
-      }
+      if (!visibleRef.current || Math.abs(delta) <= 0.5) return;
+      scrollOffsetRef.current = Math.min(Math.max(scrollOffsetRef.current + delta * 0.45, -100), 100);
     };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      unsubscribe();
+      resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
+      if (!resizeObserver) window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [reducedMotion]);
 
   const organizations = communityPartners.organizations;
@@ -102,7 +89,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
         aria-hidden={ariaHidden}
       >
         {organization.logo ? (
-          <img src={organization.logo} alt={organization.logoAlt} decoding="async" height="178" loading="eager" width="160" />
+          <img alt={organization.logoAlt} decoding="async" height="178" loading="lazy" src={organization.logo} width="160" />
         ) : (
           <span className="community-partner-mark" aria-hidden="true">{organization.mark}</span>
         )}
@@ -113,49 +100,26 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
     ));
 
   return (
-    <section
-      className="community-partners-section"
-      id="dong-hanh"
-      ref={sectionRef}
-      aria-labelledby="community-title"
-    >
+    <section className="community-partners-section" id="dong-hanh" ref={sectionRef} aria-labelledby="community-title">
       <p className="community-script" aria-hidden="true">ĐỒNG HÀNH</p>
       <div className="community-partners-layout">
         <div className="community-partners-copy">
-          <p className="community-eyebrow">
-            <span /> <CommunityReveal>{communityPartners.eyebrow}</CommunityReveal>
-          </p>
+          <p className="community-eyebrow"><span /> <CommunityReveal>{communityPartners.eyebrow}</CommunityReveal></p>
           <h2 id="community-title">
             {communityPartners.headline.map((line, index) => (
               <CommunityReveal key={line} direction={index % 2 === 0 ? "right" : "left"}>{line}</CommunityReveal>
             ))}
           </h2>
         </div>
-
-        <p className="community-partners-intro">
-          <RevealLines direction="left">{communityPartners.copy}</RevealLines>
-        </p>
+        <p className="community-partners-intro"><RevealLines direction="left">{communityPartners.copy}</RevealLines></p>
       </div>
-
-      <div
-        className="community-partners-list"
-        role="list"
-        aria-label="Các đơn vị đồng hành"
-      >
+      <div className="community-partners-list" role="list" aria-label="Các đơn vị đồng hành">
         <div className="community-partners-marquee" ref={marqueeRef}>
           <div className="community-partners-track" ref={trackRef}>
-            <div className="community-partners-group" role="presentation">
-              {renderOrganizationGroup(false)}
-            </div>
-            <div className="community-partners-group" role="presentation" aria-hidden="true">
-              {renderOrganizationGroup(true)}
-            </div>
-            <div className="community-partners-group" role="presentation" aria-hidden="true">
-              {renderOrganizationGroup(true)}
-            </div>
-            <div className="community-partners-group" role="presentation" aria-hidden="true">
-              {renderOrganizationGroup(true)}
-            </div>
+            <div className="community-partners-group" role="presentation">{renderOrganizationGroup(false)}</div>
+            <div className="community-partners-group" role="presentation" aria-hidden="true">{renderOrganizationGroup(true)}</div>
+            <div className="community-partners-group" role="presentation" aria-hidden="true">{renderOrganizationGroup(true)}</div>
+            <div className="community-partners-group" role="presentation" aria-hidden="true">{renderOrganizationGroup(true)}</div>
           </div>
         </div>
       </div>

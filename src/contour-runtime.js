@@ -1,16 +1,11 @@
 import { createContourRenderer } from "./contour-draw.js";
 import { markMotionScene, recordMotionSceneUpdate } from "./perf.js";
+import { getPerformanceProfile, PERFORMANCE_PROFILE } from "./perf-profile.js";
 
 const contourMounts = new WeakMap();
 
 function getContourQuality() {
-  const memory = Number(navigator.deviceMemory);
-  const cores = Number(navigator.hardwareConcurrency);
-  const saveData = navigator.connection?.saveData === true;
-  const hasLowMemoryHint = Number.isFinite(memory) && memory <= 4;
-  const hasLowCpuHint = Number.isFinite(cores) && cores <= 4;
-
-  return saveData || hasLowMemoryHint || hasLowCpuHint ? "low" : "standard";
+  return getPerformanceProfile() === PERFORMANCE_PROFILE.LOW ? "low" : "standard";
 }
 
 function getPixelRatioCap(quality, inWorker) {
@@ -50,9 +45,13 @@ function createSharedContourLoop({
   let stopped = false;
   let theme = getTheme();
   let themeObserver = null;
+  let canvasVisible = true;
+  const profile = getPerformanceProfile();
+  let frameNumber = 0;
 
   let unsubscribeAnimationFrame = subscribeAnimationFrame((time) => {
-    if (stopped || document.hidden) return;
+    frameNumber += 1;
+    if (stopped || document.hidden || !canvasVisible) return;
     onDraw(time, theme);
   });
 
@@ -85,6 +84,19 @@ function createSharedContourLoop({
     });
   }
 
+  const visibilityObserver = typeof IntersectionObserver === "undefined"
+    ? null
+    : new IntersectionObserver(([entry]) => {
+      canvasVisible = entry.isIntersecting;
+      if (canvasVisible) {
+        onResume?.();
+        queueFrame("contour-visible");
+      } else {
+        onPause?.();
+      }
+    }, { rootMargin: "100% 0px 100% 0px" });
+  visibilityObserver?.observe(canvas);
+
   const onVisibilityChange = () => {
     if (document.hidden) {
       onPause?.();
@@ -100,6 +112,7 @@ function createSharedContourLoop({
   const cleanup = () => {
     stopped = true;
     stopSharedAnimationFrame();
+    visibilityObserver?.disconnect();
     resizeObserver?.disconnect();
     themeObserver?.disconnect();
     window.removeEventListener("resize", resize);
@@ -154,6 +167,7 @@ function mountWorker(canvas, scheduler, quality) {
   const offscreen = canvas.transferControlToOffscreen();
   const pixelRatioCap = getPixelRatioCap(quality, true);
   const initialSize = getCanvasSize(canvas, pixelRatioCap);
+  const profile = getPerformanceProfile();
   let workerOwnsFrameLoop = false;
   const workerTheme = getTheme();
   let stopLoop = null;
@@ -177,6 +191,7 @@ function mountWorker(canvas, scheduler, quality) {
     width: initialSize.width,
     x: currentPointerX,
     y: currentPointerY,
+    cadence: 1,
   }, [offscreen]);
 
   worker.addEventListener("message", (event) => {
@@ -184,7 +199,15 @@ function mountWorker(canvas, scheduler, quality) {
     workerOwnsFrameLoop = Boolean(event.data.animationLoop);
     if (workerOwnsFrameLoop) stopLoop?.stopSharedAnimationFrame();
   });
-  worker.addEventListener("error", () => markMotionScene("page-contour", "worker-error"));
+  const cleanup = () => {
+    window.removeEventListener("pointermove", onPointerMove);
+    stopLoop?.();
+    worker.terminate();
+  };
+  worker.addEventListener("error", () => {
+    markMotionScene("page-contour", "worker-error");
+    cleanup();
+  }, { once: true });
   markMotionScene("page-contour", "worker");
 
   stopLoop = createSharedContourLoop({

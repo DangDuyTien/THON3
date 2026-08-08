@@ -5,10 +5,8 @@ import {
   initMotionRuntime,
   registerScene,
 } from "../motion-runtime.js";
-import {
-  queueMotionFrame,
-  subscribeContinuousFrame,
-} from "../motion-frame-scheduler.js";
+import { queueMotionFrame, subscribeContinuousFrame } from "../motion-frame-scheduler.js";
+import { getPerformanceProfile, PERFORMANCE_PROFILE } from "../perf-profile.js";
 
 export function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -29,6 +27,12 @@ export function useMomentumScroll(reducedMotion) {
     initMotionRuntime({ scheduleUpdate: queueMotionFrame });
 
     if (reducedMotion) {
+      return () => destroyMotionRuntime();
+    }
+
+    const profile = getPerformanceProfile();
+    const useNativeScroll = profile === PERFORMANCE_PROFILE.LOW;
+    if (useNativeScroll) {
       return () => destroyMotionRuntime();
     }
 

@@ -415,6 +415,7 @@ self.onmessage = (event) => {
   const message = event.data;
   if (message.type === "init") {
     renderer = createRenderer(message.canvas, message.quality);
+    animationCadence = 1;
     renderer.resize(message.width, message.height, message.ratio);
     renderer.setTheme(message.theme || "light");
     if (message.x !== undefined && message.y !== undefined) renderer.setPointer(message.x, message.y);
