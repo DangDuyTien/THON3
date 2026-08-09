@@ -10138,6 +10138,8 @@ button:hover .closing-kinetic-green {
   color: var(--archive-ink);
   padding: 0 clamp(12px, 1.25vw, 24px) clamp(24px, 4vw, 48px);
   min-height: auto;
+  position: relative;
+  z-index: 15;
 }
 
 .village-archive-heading {
