@@ -10,6 +10,7 @@ import { SiteContentProvider, useSiteContent } from "./content/SiteContentProvid
 import { getSiteAppearanceClassName, getSiteAppearanceStyle } from "./content/site-theme.js";
 import { useMomentumScroll, useReducedMotion } from "./hooks/useMotion.js";
 import { AuthProvider, useAuth } from "./lib/AuthProvider.jsx";
+import { isBackendConfigured } from "./lib/backend-api.js";
 import { getPublicHomeHref } from "./components/admin/admin-registry.js";
 import { getRouteKeyFromSnapshot } from "./route-transition.js";
 import PageTransition from "./components/PageTransition.jsx";
@@ -31,7 +32,6 @@ class AdminRouteErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
-    localStorage.removeItem("xa-me-linh-site-content-draft-v6");
     window.location.reload();
   };
 
@@ -277,7 +277,7 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
       <main className="admin-error-state">
         <p className="admin-error-eyebrow">QUẢN TRỊ NỘI DUNG</p>
         <h1>Backend chưa được cấu hình</h1>
-        <p>Hãy thêm VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY để đăng nhập và lưu dữ liệu trên máy chủ.</p>
+        <p>Hãy khởi động backend MySQL và đặt VITE_API_BASE_URL để đăng nhập và lưu dữ liệu trên máy chủ.</p>
         <button className="admin-secondary-button" type="button" onClick={handleAdminCancel}>Về trang chủ</button>
       </main>
     );

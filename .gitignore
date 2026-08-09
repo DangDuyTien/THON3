@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Backend secrets and uploaded media
+.env
+.env.*
+!.env.example
+server/storage/*
+!server/storage/.gitkeep
+
 # Lighthouse reports
 .lighthouseci
 

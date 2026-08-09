@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, "..");
 const runtimeRoot = mkdtempSync(join(tmpdir(), "thon-vite-"));
-const projectEntries = ["index.html", "package.json", "vite.config.js", "src", "public", "media", "node_modules"];
+const projectEntries = ["index.html", "package.json", ".env", "vite.config.js", "src", "public", "media", "server", "node_modules"];
 
 for (const entry of projectEntries) {
   symlinkSync(join(projectRoot, entry), join(runtimeRoot, entry));

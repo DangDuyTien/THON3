@@ -1,18 +1,22 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { cloneDefaultSiteContent, loadSiteContent, normalizeSiteContent } from "./content-store.js";
+import { cloneDefaultSiteContent, normalizeSiteContent } from "./content-store.js";
 import { getPublishedContent, publishContent } from "../lib/content-api.js";
+import { isBackendConfigured } from "../lib/backend-api.js";
 import { getSession } from "../lib/auth-api.js";
-import { isSupabaseConfigured } from "../lib/supabase.js";
 
 const SiteContentContext = createContext(null);
 
 export function SiteContentProvider({ children }) {
-  const [content, setContent] = useState(() => (isSupabaseConfigured ? cloneDefaultSiteContent() : loadSiteContent()));
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [content, setContent] = useState(cloneDefaultSiteContent);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return undefined;
+    if (!isBackendConfigured) {
+      setError("Backend MySQL chưa được cấu hình. Hãy đặt VITE_API_BASE_URL.");
+      setLoading(false);
+      return undefined;
+    }
     let active = true;
     getPublishedContent()
       .then((nextContent) => active && setContent(nextContent))
@@ -22,11 +26,8 @@ export function SiteContentProvider({ children }) {
   }, []);
 
   const saveContent = useCallback(async (nextContent) => {
+    if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
     const normalizedContent = normalizeSiteContent(nextContent);
-    if (!isSupabaseConfigured) {
-      setContent(normalizedContent);
-      return normalizedContent;
-    }
     const session = await getSession();
     if (!session?.user) throw new Error("Phiên quản trị đã hết hạn. Hãy đăng nhập lại.");
     const result = await publishContent(normalizedContent, session.user.id);
@@ -37,11 +38,7 @@ export function SiteContentProvider({ children }) {
 
   const resetContent = useCallback(async () => {
     const defaultContent = cloneDefaultSiteContent();
-    if (isSupabaseConfigured) {
-      await saveContent(defaultContent);
-    } else {
-      setContent(defaultContent);
-    }
+    await saveContent(defaultContent);
     return defaultContent;
   }, [saveContent]);
 
@@ -51,7 +48,7 @@ export function SiteContentProvider({ children }) {
     content,
     error,
     loading,
-    configured: isSupabaseConfigured,
+    configured: isBackendConfigured,
     replaceContent,
     resetContent,
     saveContent,

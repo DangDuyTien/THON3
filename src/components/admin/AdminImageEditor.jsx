@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import { uploadMedia } from "../../lib/media-api.js";
 import { getSession } from "../../lib/auth-api.js";
-import { isSupabaseConfigured } from "../../lib/supabase.js";
+import { isBackendConfigured } from "../../lib/backend-api.js";
 
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 
@@ -64,8 +64,9 @@ export default function AdminImageEditor({
   const [error, setError] = useState("");
   const [imageInfo, setImageInfo] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [previewSrc, setPreviewSrc] = useState("");
   const objectUrlRef = useRef("");
-  const effectiveSrc = value || fallbackSrc;
+  const effectiveSrc = previewSrc || value || fallbackSrc;
   const usingFallback = !value && Boolean(fallbackSrc);
   const focal = parseImagePosition(position);
   const uploadedBytes = estimateDataUrlBytes(value);
@@ -99,11 +100,12 @@ export default function AdminImageEditor({
 
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     objectUrlRef.current = URL.createObjectURL(file);
+    setPreviewSrc(objectUrlRef.current);
     setError("");
     setImageInfo({ name: file.name, bytes: file.size, type: file.type });
 
-    if (!isSupabaseConfigured) {
-      setError("Backend chưa cấu hình nên chưa thể lưu ảnh lên máy chủ. Hãy dán URL ảnh hoặc cấu hình Supabase.");
+    if (!isBackendConfigured) {
+      setError("Backend MySQL chưa được cấu hình. Không thể lưu ảnh.");
       return;
     }
 
@@ -111,8 +113,13 @@ export default function AdminImageEditor({
     try {
       const session = await getSession();
       const asset = await uploadMedia(file, { ownerId: session?.user?.id });
-      onChange(asset.storage_path);
-      setUrlValue(asset.storage_path);
+      const durableSrc = asset.storage_path || asset.url;
+      if (!durableSrc) throw new Error("Máy chủ không trả về URL ảnh.");
+      onChange(durableSrc);
+      setUrlValue(durableSrc);
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = "";
+      setPreviewSrc("");
       onTarget?.(target);
     } catch (uploadError) {
       setError(uploadError?.message || "Không thể tải ảnh lên máy chủ.");
@@ -163,7 +170,7 @@ export default function AdminImageEditor({
               setError("");
               setImageInfo((current) => ({ ...current, width: image.naturalWidth, height: image.naturalHeight }));
             }}
-            onError={() => setError("Không tải được ảnh. Hãy kiểm tra lại URL hoặc chọn tệp khác.")}
+            onError={() => setError("Không tải được ảnh. Hãy kiểm tra backend hoặc URL ảnh.")}
           />
         ) : (
           <div className="admin-image-empty"><ImagePlus aria-hidden="true" /><span>Thêm ảnh để xem crop thực tế</span></div>

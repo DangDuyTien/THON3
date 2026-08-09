@@ -1,36 +1,33 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getCurrentUserRole, getSession, signIn, signOut, subscribeToAuth } from "./auth-api.js";
-import { isSupabaseConfigured } from "./supabase.js";
+import { isBackendConfigured } from "./backend-api.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return undefined;
     let active = true;
+    if (!isBackendConfigured) {
+      setLoading(false);
+      return undefined;
+    }
     getSession()
       .then(async (nextSession) => {
         if (!active) return;
         setSession(nextSession);
         setRole(nextSession?.user ? await getCurrentUserRole(nextSession.user.id) : null);
       })
-      .catch(() => {
-        if (active) setSession(null);
-      })
+      .catch(() => active && setSession(null))
       .finally(() => active && setLoading(false));
-
-    return subscribeToAuth(async (nextSession) => {
-      setSession(nextSession);
-      setRole(nextSession?.user ? await getCurrentUserRole(nextSession.user.id) : null);
-    });
+    return subscribeToAuth();
   }, []);
 
   const value = useMemo(() => ({
-    configured: isSupabaseConfigured,
+    configured: isBackendConfigured,
     loading,
     session,
     user: session?.user || null,

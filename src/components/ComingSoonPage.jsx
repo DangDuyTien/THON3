@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, MapPin, Music2, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, MapPin, X } from "lucide-react";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
@@ -40,13 +40,7 @@ export default function ComingSoonPage({ description = "Không gian này đang �
 
   const { content } = useSiteContent();
   const { siteName, tagline } = content.settings;
-  const socialLinks = [
-    { name: "TikTok", href: "https://tiktok.com", icon: Music2 },
-    { name: "Instagram", href: "https://instagram.com", icon: Music2 },
-    { name: "X", href: "https://x.com", icon: X },
-    { name: "Facebook", href: "https://facebook.com", icon: Music2 },
-    { name: "YouTube", href: "https://youtube.com", icon: Music2 },
-  ];
+
 
   return (
     <div className={`coming-soon-wrapper${entered || reducedMotion ? " is-entered" : ""}`}>
@@ -88,14 +82,25 @@ export default function ComingSoonPage({ description = "Không gian này đang �
           <div className="coming-soon-copy">
             <p className="coming-soon-kicker" style={{ "--coming-delay": "80ms" }}><span /> THÔNG TIN ĐANG ĐƯỢC CHUẨN BỊ</p>
             <LoaderSignature />
-            <h1 id="coming-soon-title" style={{ "--coming-delay": "420ms" }}>Coming soon!</h1>
+            <h1 id="coming-soon-title" className="cs-draw-title" style={{ "--coming-delay": "420ms" }} aria-label="Coming soon!">
+              <svg className="cs-draw-svg" viewBox="0 0 820 100" aria-hidden="true">
+                <text className="cs-draw-text cs-draw-text-fill" x="410" y="78" textAnchor="middle">Coming soon!</text>
+                <text className="cs-draw-text cs-draw-text-stroke" x="410" y="78" textAnchor="middle">Coming soon!</text>
+              </svg>
+            </h1>
             <p className="coming-soon-description" style={{ "--coming-delay": "620ms" }}>{description}</p>
             <span className="coming-soon-divider" aria-hidden="true" style={{ "--coming-delay": "820ms" }} />
             <p className="coming-soon-follow" style={{ "--coming-delay": "960ms" }}>THEO DÕI NHỮNG CÂU CHUYỆN MỚI TỪ MÊ LINH</p>
-            <div className="coming-soon-social-icons" aria-label="Mạng xã hội" style={{ "--coming-delay": "1040ms" }}>
-              {socialLinks.map(({ name, href, icon: Icon }) => (
-                <a className="coming-soon-social-pill" href={href} key={name} target="_blank" rel="noreferrer" aria-label={name} title={name}><Icon size={14} aria-hidden="true" /></a>
-              ))}
+            <div className="coming-soon-youth-icons" aria-hidden="true" style={{ "--coming-delay": "1040ms" }}>
+              <span className="cs-youth-flag" title="Cờ Đoàn TNCS Hồ Chí Minh">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/dd/Flag_of_HCM_Communist_Youth_Union.svg" alt="Cờ Đoàn TNCS Hồ Chí Minh" width="72" height="48" loading="lazy" />
+              </span>
+              <span className="cs-youth-flag" title="Biểu trưng Hội LHTN Việt Nam" style={{ background: '#fff', padding: '4px' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/66/Bi%E1%BB%83u_tr%C6%B0ng_H%E1%BB%99i_Li%C3%AAn_hi%E1%BB%87p_Thanh_ni%C3%AAn_Vi%E1%BB%87t_Nam.svg" alt="Biểu trưng Hội LHTN Việt Nam" width="72" height="48" loading="lazy" style={{ objectFit: 'contain' }} />
+              </span>
+              <span className="cs-youth-flag" title="Biểu trưng Đội TNTP Hồ Chí Minh" style={{ background: '#fff', padding: '4px' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/vi/a/a2/Logo_Doi_TNTP.png" alt="Biểu trưng Đội TNTP Hồ Chí Minh" width="72" height="48" loading="lazy" style={{ objectFit: 'contain' }} />
+              </span>
             </div>
           </div>
         </main>

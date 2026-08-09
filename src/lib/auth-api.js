@@ -1,38 +1,29 @@
-import { requireSupabase, supabase } from "./supabase.js";
+import { apiRequest, isBackendConfigured } from "./backend-api.js";
 
-export async function signIn({ email, password }) {
-  const client = requireSupabase();
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return data;
+export async function signIn(credentials) {
+  if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
+  return (await apiRequest("/api/auth/login", { method: "POST", body: JSON.stringify(credentials) })).data;
 }
 
 export async function signOut() {
-  if (!supabase) return;
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  if (isBackendConfigured) await apiRequest("/api/auth/logout", { method: "POST" });
 }
 
 export async function getSession() {
-  if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
+  if (!isBackendConfigured) return null;
+  try {
+    return (await apiRequest("/api/auth/session")).data;
+  } catch (error) {
+    if (error.status === 401) return null;
+    throw error;
+  }
 }
 
-export function subscribeToAuth(callback) {
-  if (!supabase) return () => {};
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session));
-  return () => data.subscription.unsubscribe();
+export function subscribeToAuth() {
+  return () => {};
 }
 
-export async function getCurrentUserRole(userId) {
-  if (!userId || !supabase) return null;
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  return data?.role || null;
+export async function getCurrentUserRole() {
+  const session = await getSession();
+  return session?.user?.role || null;
 }

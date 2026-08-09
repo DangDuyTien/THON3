@@ -12,9 +12,6 @@ import {
 } from "./site-content.js";
 import { DEFAULT_SITE_APPEARANCE } from "./site-theme.js";
 
-export const SITE_CONTENT_STORAGE_KEY = "xa-me-linh-site-content-v6";
-export const SITE_CONTENT_DRAFT_STORAGE_KEY = "xa-me-linh-site-content-draft-v6";
-
 export const defaultSiteContent = {
   settings: {
     siteName: "XÃ MÊ LINH",
@@ -23,10 +20,7 @@ export const defaultSiteContent = {
     coordinates: ["MÊ LINH", "HÀ NỘI"],
     appearance: DEFAULT_SITE_APPEARANCE,
   },
-  storyFrames: storyFrames.map((frame) => ({
-    ...frame,
-    imageSrc: frame.imageSrc || "/assets/village-hero.jpg",
-  })),
+  storyFrames: storyFrames.map((frame) => ({ ...frame, imageSrc: frame.imageSrc || "/assets/village-hero.jpg" })),
   villageMessage,
   exploreStatement,
   seasonalGallery,
@@ -35,10 +29,7 @@ export const defaultSiteContent = {
   closing,
   villageArchive: {
     ...villageArchive,
-    cards: villageArchive.cards.map((card) => ({
-      ...card,
-      imageSrc: card.imageSrc || "",
-    })),
+    cards: villageArchive.cards.map((card) => ({ ...card, imageSrc: card.imageSrc || "" })),
   },
   communityPartners: {
     ...communityPartners,
@@ -50,10 +41,7 @@ export const defaultSiteContent = {
   },
   villageUpdates: {
     ...villageUpdates,
-    cards: villageUpdates.cards.map((card) => ({
-      ...card,
-      imageSrc: card.imageSrc || "",
-    })),
+    cards: villageUpdates.cards.map((card) => ({ ...card, imageSrc: card.imageSrc || "" })),
   },
 };
 
@@ -64,7 +52,6 @@ function clone(value) {
 function mergeWithDefaults(defaultValue, overrideValue) {
   if (overrideValue === undefined || overrideValue === null) return clone(defaultValue);
   if (defaultValue === undefined || defaultValue === null) return clone(overrideValue);
-
   if (Array.isArray(defaultValue)) {
     if (!Array.isArray(overrideValue)) return clone(defaultValue);
     const objectArray = defaultValue.some((item) => item && typeof item === "object" && !Array.isArray(item));
@@ -75,27 +62,18 @@ function mergeWithDefaults(defaultValue, overrideValue) {
           ? mergeWithDefaults(defaultItem, item)
           : clone(defaultItem);
       }
-      return item === null || item === undefined
-        ? (defaultItem === undefined ? null : clone(defaultItem))
-        : clone(item);
+      return item === null || item === undefined ? (defaultItem === undefined ? null : clone(defaultItem)) : clone(item);
     });
     return objectArray ? normalized.filter((item) => item && typeof item === "object" && !Array.isArray(item)) : normalized;
   }
-
   if (Array.isArray(overrideValue)) return clone(defaultValue);
-
   if (typeof overrideValue === "object" && typeof defaultValue === "object") {
     const allKeys = Array.from(new Set([...Object.keys(defaultValue), ...Object.keys(overrideValue)]));
     return allKeys.reduce((result, key) => {
-      if (overrideValue[key] !== undefined) {
-        result[key] = mergeWithDefaults(defaultValue[key], overrideValue[key]);
-      } else {
-        result[key] = clone(defaultValue[key]);
-      }
+      result[key] = overrideValue[key] === undefined ? clone(defaultValue[key]) : mergeWithDefaults(defaultValue[key], overrideValue[key]);
       return result;
     }, {});
   }
-
   return overrideValue;
 }
 
@@ -105,54 +83,4 @@ export function cloneDefaultSiteContent() {
 
 export function normalizeSiteContent(value) {
   return mergeWithDefaults(defaultSiteContent, value);
-}
-
-export function loadSiteContent() {
-  if (typeof window === "undefined") return cloneDefaultSiteContent();
-
-  try {
-    const storedValue = window.localStorage.getItem(SITE_CONTENT_STORAGE_KEY);
-    if (storedValue) {
-      const parsed = JSON.parse(storedValue);
-      if (parsed && typeof parsed === "object") {
-        return normalizeSiteContent(parsed);
-      }
-    }
-    return cloneDefaultSiteContent();
-  } catch (err) {
-    console.error("Error loading site content from localStorage:", err);
-    return cloneDefaultSiteContent();
-  }
-}
-
-export function persistSiteContent(value) {
-  const normalizedValue = normalizeSiteContent(value);
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(SITE_CONTENT_STORAGE_KEY, JSON.stringify(normalizedValue));
-    window.dispatchEvent(new Event("site-content-updated"));
-  }
-  return normalizedValue;
-}
-
-export function loadSiteContentDraft() {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const storedValue = window.localStorage.getItem(SITE_CONTENT_DRAFT_STORAGE_KEY);
-    return storedValue ? normalizeSiteContent(JSON.parse(storedValue)) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function persistSiteContentDraft(value) {
-  const normalizedValue = normalizeSiteContent(value);
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(SITE_CONTENT_DRAFT_STORAGE_KEY, JSON.stringify(normalizedValue));
-  }
-  return normalizedValue;
-}
-
-export function clearSiteContentDraft() {
-  if (typeof window !== "undefined") window.localStorage.removeItem(SITE_CONTENT_DRAFT_STORAGE_KEY);
 }

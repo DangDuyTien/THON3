@@ -6,12 +6,11 @@ import YouthUnionPartyLogo from "../icons/YouthUnionPartyLogo.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useViewportEntryProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
-import { addPendingSubmission } from "../../content/submission-store.js";
 import { createSubmission } from "../../lib/submission-api.js";
 import { createSignedMediaUrl, uploadMedia, SUBMISSION_MEDIA_BUCKET } from "../../lib/media-api.js";
-import { isSupabaseConfigured } from "../../lib/supabase.js";
+import { isBackendConfigured } from "../../lib/backend-api.js";
 
-const MAX_IMAGE_SIZE = isSupabaseConfigured ? 50 * 1024 * 1024 : 4 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 50 * 1024 * 1024;
 const FOCUSABLE_SELECTOR = "button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])";
 
 function getArchiveImageSize(card) {
@@ -145,14 +144,11 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
       setErrors((current) => ({ ...current, [field]: "Ảnh cần có dung lượng tối đa 4 MB." }));
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setField(evt.target.result);
-      setErrors((current) => ({ ...current, [field]: "" }));
-      setImageErrors((current) => ({ ...current, [field]: false }));
-    };
-    reader.onerror = () => setErrors((current) => ({ ...current, [field]: "Không thể đọc tệp ảnh này. Hãy thử lại." }));
-    reader.readAsDataURL(file);
+    if (!isBackendConfigured) {
+      setErrors((current) => ({ ...current, [field]: "Backend MySQL chưa kết nối nên chưa thể tải ảnh." }));
+      return;
+    }
+    setField(URL.createObjectURL(file));
   };
 
   const validateForm = () => {
@@ -176,12 +172,12 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     }
     setIsSubmitting(true);
     try {
-      if (isSupabaseConfigured) {
+      if (isBackendConfigured) {
         const primary = await uploadMedia(await fetch(imageSrc).then((response) => response.blob()), { bucket: SUBMISSION_MEDIA_BUCKET });
         const alternate = altImageSrc ? await uploadMedia(await fetch(altImageSrc).then((response) => response.blob()), { bucket: SUBMISSION_MEDIA_BUCKET }) : null;
         await createSubmission({ name: name.trim(), age: age.trim(), school: school.trim(), imageAssetId: primary.id, altImageAssetId: alternate?.id });
       } else {
-        addPendingSubmission({ name: name.trim(), age: age.trim(), school: school.trim(), imageSrc, altImageSrc });
+        throw new Error("Backend MySQL chưa kết nối nên chưa thể gửi đăng ký.");
       }
       setFormSubmitted(true);
       setErrors({});

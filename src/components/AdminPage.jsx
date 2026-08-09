@@ -23,17 +23,14 @@ import {
 import AdminLivePreview from "./admin/AdminLivePreview.jsx";
 import AdminImageEditor from "./admin/AdminImageEditor.jsx";
 import {
-  clearSiteContentDraft,
   cloneDefaultSiteContent,
-  loadSiteContentDraft,
   normalizeSiteContent,
-  persistSiteContentDraft,
 } from "../content/content-store.js";
-import { getDraftContent, saveDraftContent, deleteDraftContent } from "../lib/content-api.js";
+import { getDraftContent, saveDraftContent } from "../lib/content-api.js";
+import { isBackendConfigured } from "../lib/backend-api.js";
 import { getSession } from "../lib/auth-api.js";
-import { isSupabaseConfigured } from "../lib/supabase.js";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
-import { getPendingSubmissions, rejectPendingSubmission } from "../content/submission-store.js";
+import { listPendingSubmissions, rejectSubmission, approveSubmission } from "../lib/submission-api.js";
 import {
   SITE_APPEARANCE_OPTIONS,
   SITE_FONT_OPTIONS,
@@ -544,15 +541,17 @@ function VisitEditor({ draft, update }) {
 }
 
 function PendingYouthUnionApproval({ draft, update }) {
-  const [pendingList, setPendingList] = useState(getPendingSubmissions);
+  const [pendingList, setPendingList] = useState([]);
 
   useEffect(() => {
-    const handleStorage = () => setPendingList(getPendingSubmissions());
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    let active = true;
+    listPendingSubmissions()
+      .then((items) => active && setPendingList(items))
+      .catch(() => active && setPendingList([]));
+    return () => { active = false; };
   }, []);
 
-  const handleApprove = (item) => {
+  const handleApprove = async (item) => {
     const newCard = {
       colorVariant: "archive-default",
       id: `member-${Date.now()}`,
@@ -560,21 +559,18 @@ function PendingYouthUnionApproval({ draft, update }) {
       year: `${item.age} • ${item.school}`,
       imageAlt: `Đoàn viên ${item.name}`,
       imagePosition: "center 30%",
-      imageSrc: item.imageSrc || "",
-      altImageSrc: item.altImageSrc || "",
+      imageSrc: item.imageSrc || item.image_src || "",
+      altImageSrc: item.altImageSrc || item.alt_image_src || "",
       size: "medium",
     };
-    
-    const updatedCards = [...draft.villageArchive.cards, newCard];
-    update("villageArchive.cards", updatedCards);
-    
-    const remaining = rejectPendingSubmission(item.id);
-    setPendingList(remaining);
+    update("villageArchive.cards", [...draft.villageArchive.cards, newCard]);
+    await approveSubmission(item.id, newCard);
+    setPendingList((current) => current.filter((entry) => entry.id !== item.id));
   };
 
-  const handleReject = (id) => {
-    const remaining = rejectPendingSubmission(id);
-    setPendingList(remaining);
+  const handleReject = async (id) => {
+    await rejectSubmission(id);
+    setPendingList((current) => current.filter((item) => item.id !== id));
   };
 
   if (!pendingList.length) return null;
@@ -799,10 +795,8 @@ function getInitialSection() {
 export default function AdminPage({ onLogout }) {
   const { content, saveContent } = useSiteContent();
   const [serverDraft, setServerDraft] = useState(null);
-  const [serverDraftLoading, setServerDraftLoading] = useState(isSupabaseConfigured);
-  const restoredDraftRef = useRef();
-  if (restoredDraftRef.current === undefined) restoredDraftRef.current = loadSiteContentDraft();
-  const [draft, setDraft] = useState(() => restoredDraftRef.current || clone(content));
+  const [serverDraftLoading, setServerDraftLoading] = useState(true);
+  const [draft, setDraft] = useState(() => clone(content));
   const [activeSection, setActiveSection] = useState(getInitialSection);
   const [sectionQuery, setSectionQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -826,7 +820,11 @@ export default function AdminPage({ onLogout }) {
   }, [normalizedSectionQuery]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return undefined;
+    if (!isBackendConfigured) {
+      setSaveError("Backend MySQL chưa được cấu hình.");
+      setServerDraftLoading(false);
+      return undefined;
+    }
     let active = true;
     getSession()
       .then((session) => session?.user ? getDraftContent(session.user.id) : null)
@@ -850,7 +848,6 @@ export default function AdminPage({ onLogout }) {
 
   useEffect(() => {
     if (!dirty) {
-      if (!isSupabaseConfigured) clearSiteContentDraft();
       lastDraftSnapshotRef.current = draftSnapshot;
       return undefined;
     }
@@ -858,17 +855,13 @@ export default function AdminPage({ onLogout }) {
 
     const persistTimer = window.setTimeout(async () => {
       try {
-        if (isSupabaseConfigured) {
-          const session = await getSession();
-          if (!session?.user) throw new Error("Phiên quản trị đã hết hạn.");
-          const result = await saveDraftContent(draft, session.user.id, serverDraft?.version ?? null);
-          setServerDraft(result);
-        } else {
-          persistSiteContentDraft(draft);
-        }
+        const session = await getSession();
+        if (!session?.user) throw new Error("Phiên quản trị đã hết hạn.");
+        const result = await saveDraftContent(draft, session.user.id, serverDraft?.version ?? null);
+        setServerDraft(result);
         lastDraftSnapshotRef.current = draftSnapshot;
       } catch (error) {
-        setSaveError(error?.name === "QuotaExceededError" ? "Bộ nhớ tạm đã đầy. Hãy dùng ảnh nhỏ hơn hoặc xóa ảnh cũ." : error?.message || "Không thể lưu bản nháp.");
+        setSaveError(error?.message || "Không thể lưu bản nháp trên máy chủ.");
       }
     }, 450);
 
@@ -901,7 +894,6 @@ export default function AdminPage({ onLogout }) {
   const handleSave = async () => {
     try {
       const normalizedContent = await saveContent(draft);
-      if (!isSupabaseConfigured) clearSiteContentDraft();
       publishedSnapshotRef.current = JSON.stringify(normalizedContent);
       lastDraftSnapshotRef.current = publishedSnapshotRef.current;
       setNotice("Đã lưu nội dung trang chủ trên máy chủ.");
@@ -920,7 +912,6 @@ export default function AdminPage({ onLogout }) {
 
   const handleDiscardDraft = () => {
     if (!window.confirm("Bỏ toàn bộ bản nháp hiện tại? Nội dung đã lưu trên trang chủ sẽ được giữ nguyên.")) return;
-    if (!isSupabaseConfigured) clearSiteContentDraft();
     setDraft(clone(content));
     setNotice("Đã bỏ bản nháp. Trang chủ vẫn giữ nội dung đã lưu.");
     setSaveError("");
@@ -984,7 +975,7 @@ export default function AdminPage({ onLogout }) {
         <div className="admin-topbar-title">
           <Settings aria-hidden="true" />
           <strong>Quản trị nội dung</strong>
-          <span className={`admin-save-state${dirty ? " is-dirty" : ""}`}>{dirty ? "Bản nháp tạm" : "Đã đồng bộ"}</span>
+          <span className={`admin-save-state${dirty ? " is-dirty" : ""}`}>{dirty ? "Bản nháp máy chủ" : "Đã đồng bộ"}</span>
         </div>
         <div className="admin-topbar-actions">
           <a className="admin-secondary-button admin-icon-text-button" href={getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, getAdminPublicTarget("overview"))} target="_blank" rel="noreferrer" aria-label="Xem trang chủ">

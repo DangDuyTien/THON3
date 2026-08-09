@@ -1,0 +1,53 @@
+import crypto from "node:crypto";
+import jwt from "jsonwebtoken";
+import { pool } from "./db.mjs";
+
+const SESSION_COOKIE = "thon_session";
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+const SESSION_SECRET = process.env.SESSION_SECRET || "development-only-change-me";
+
+export function issueSession(user) {
+  return jwt.sign({ sub: String(user.id), role: user.role, email: user.email }, SESSION_SECRET, { expiresIn: SESSION_TTL_SECONDS });
+}
+
+export function setSessionCookie(res, token) {
+  res.cookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_TTL_SECONDS * 1000,
+    path: "/",
+  });
+}
+
+export function clearSessionCookie(res) {
+  res.clearCookie(SESSION_COOKIE, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
+}
+
+export async function requireUser(req, res, next) {
+  const token = req.cookies?.[SESSION_COOKIE];
+  if (!token) return res.status(401).json({ error: "Bạn chưa đăng nhập." });
+  try {
+    const payload = jwt.verify(token, SESSION_SECRET);
+    const [rows] = await pool.execute("SELECT id, email, display_name, role, disabled_at FROM users WHERE id = ? LIMIT 1", [payload.sub]);
+    const user = rows[0];
+    if (!user || user.disabled_at) return res.status(401).json({ error: "Phiên đăng nhập không còn hợp lệ." });
+    req.user = user;
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Phiên đăng nhập không còn hợp lệ." });
+  }
+}
+
+export function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) return res.status(403).json({ error: "Tài khoản không có quyền thực hiện thao tác này." });
+    return next();
+  };
+}
+
+export function hashToken(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+export { SESSION_COOKIE };
