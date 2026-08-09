@@ -29,6 +29,7 @@
 }
 
 html {
+  scrollbar-gutter: stable;
   scroll-behavior: auto;
 }
 
@@ -110,7 +111,7 @@ body {
     var(--paper) 0%,
     color-mix(in srgb, var(--paper) 82%, var(--lime) 18%) 40%,
     color-mix(in srgb, var(--paper) 35%, var(--lime) 65%) 75%,
-    var(--lime) 100%
+    var(--paper) 100%
   );
   color: var(--ink);
   display: flex;
@@ -172,7 +173,7 @@ body {
 }
 
 .closing-shell-container {
-  background: var(--lime);
+  background: var(--paper);
   padding: 0 clamp(8px, 1.7vw, 28px) clamp(8px, 1.7vw, 28px);
   position: relative;
   width: 100%;
@@ -190,14 +191,17 @@ body {
 }
 
 .closing-shell-cap {
+  --closing-cap-rise: clamp(22px, 3.2vw, 46px);
   background: #111912;
-  border-radius: 180px 180px 0 0;
-  height: 46px;
+  border: 1px solid rgba(245, 246, 239, 0.12);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  height: var(--closing-cap-rise);
   left: 50%;
   position: absolute;
-  top: -45px;
+  top: calc(-1 * var(--closing-cap-rise) + 1px);
   transform: translateX(-50%);
-  width: min(26vw, 360px);
+  width: clamp(300px, 52vw, 760px);
   z-index: 1;
 }
 
@@ -457,7 +461,7 @@ body {
 }
 
 .closing-partner img {
-  filter: brightness(0) invert(1);
+  filter: none;
   height: 44px;
   max-width: min(100%, 136px);
   object-fit: contain;
@@ -897,8 +901,10 @@ body.page-transition-active {
   }
 
   .village-archive-grid {
-    gap: clamp(14px, 2vw, 22px);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(14px, 2vw, 18px);
+    grid-template-columns: repeat(3, minmax(0, 260px));
+    justify-content: center;
+    max-width: 820px;
   }
 
   .visit-choices-base {
@@ -2416,21 +2422,23 @@ img {
 
 .village-archive-grid {
   display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 260px));
+  justify-content: center;
   margin: 32px auto 0;
-  max-width: calc(1440px * var(--layout-frame-scale));
+  max-width: 1120px;
   position: relative;
   z-index: 13;
 }
 
 .village-archive-card {
+  align-self: start;
   aspect-ratio: 3 / 4;
   background: #09182a;
   border: 1.5px solid rgba(0, 240, 255, 0.28);
   border-radius: 20px;
-  grid-column: span 1 !important;
-  grid-row: span 1 !important;
+  grid-column: span 1;
+  grid-row: span 1;
   height: auto;
   margin: 0;
   min-height: 0;
@@ -2439,12 +2447,13 @@ img {
   position: relative;
   transform: translate3d(0, calc((1 - var(--archive-card-reveal, 0)) * 76px), 0);
   transition: border-color 360ms ease, box-shadow 360ms ease, transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
 }
 
 .village-archive-card:hover {
   border-color: var(--lime);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(0, 240, 255, 0.45);
-  transform: translate3d(0, -8px, 0) scale(1.03);
+  transform: translate3d(0, -8px, 0) scale(1.015);
   z-index: 15;
 }
 
@@ -2517,7 +2526,7 @@ img {
 }
 
 .village-archive-card:hover img {
-  transform: scale(1.1);
+  transform: scale(1.04);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -3404,7 +3413,7 @@ img {
   }
 
   .story-message-section {
-    height: 220svh;
+    height: 250svh;
   }
 
   .story-message-stage {
@@ -3508,7 +3517,7 @@ img {
   }
 
   .season-gallery-section {
-    height: 270svh;
+    height: 310svh;
   }
 
   .season-gallery-stage,
@@ -3643,19 +3652,24 @@ img {
   }
 
   .visit-choices-section {
-    height: 220svh;
+    height: 300svh;
   }
 
   .visit-choices-stage {
-    height: 100svh;
+    contain: none;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    position: relative;
   }
 
   .visit-choices-base {
     align-items: center;
     justify-content: center;
-    height: 100%;
-    min-height: 0;
-    padding: 60px 16px 36px;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    padding: 60px 16px 96px;
   }
 
   .visit-choices-layout {
@@ -3741,13 +3755,17 @@ img {
   }
 
   .village-archive-grid {
+    align-items: start;
     gap: 14px;
-    grid-auto-rows: clamp(180px, 45vw, 240px);
+    grid-auto-rows: auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .village-archive-card {
+    align-self: start;
+    aspect-ratio: 3 / 4;
     border-radius: 14px;
+    height: auto;
   }
 
   .village-archive-card-feature,
@@ -3842,7 +3860,7 @@ img {
   }
 
   .village-updates-section {
-    height: 232svh;
+    height: 270svh;
   }
 
   .village-updates-stage {
@@ -3931,9 +3949,10 @@ img {
   }
 
   .closing-shell-cap {
-    height: 30px;
-    top: -29px;
-    width: 42vw;
+    --closing-cap-rise: 26px;
+    height: var(--closing-cap-rise);
+    top: calc(-1 * var(--closing-cap-rise) + 1px);
+    width: min(78vw, 440px);
   }
 
   .closing-topbar {
@@ -4004,9 +4023,10 @@ img {
   }
 
   .closing-shell-cap {
-    height: 28px;
-    top: -27px;
-    width: 42vw;
+    --closing-cap-rise: 22px;
+    height: var(--closing-cap-rise);
+    top: calc(-1 * var(--closing-cap-rise) + 1px);
+    width: 78vw;
   }
 
   .closing-topbar {
@@ -4344,6 +4364,14 @@ img {
   min-height: 100svh;
   overflow-x: hidden;
   position: relative;
+}
+
+.admin-route-transition-fallback {
+  background: var(--page-background);
+  inset: 0;
+  min-height: 100svh;
+  position: fixed;
+  z-index: 10000;
 }
 
 .admin-loading {
@@ -6312,7 +6340,7 @@ img {
 .admin-image-editor-heading { justify-content: space-between; }
 .admin-image-editor-heading small { color: #718078; display: block; font-size: 9px; margin-top: 4px; }
 .admin-image-fallback-badge { background: rgba(21, 39, 31, 0.08); color: #66746b; font-family: var(--mono); font-size: 8px; padding: 5px 7px; }
-.admin-image-crop { aspect-ratio: 16 / 9; background: #dce3d9; cursor: crosshair; overflow: hidden; position: relative; }
+.admin-image-crop { aspect-ratio: var(--admin-image-aspect-ratio, 16 / 9); background: #dce3d9; cursor: crosshair; overflow: hidden; position: relative; }
 .admin-image-crop img, .admin-image-crop picture { display: block; height: 100%; width: 100%; }
 .admin-image-crop img { object-fit: cover; }
 .admin-image-crop.is-contain { background-image: linear-gradient(45deg, rgba(21, 39, 31, 0.06) 25%, transparent 25%), linear-gradient(-45deg, rgba(21, 39, 31, 0.06) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(21, 39, 31, 0.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(21, 39, 31, 0.06) 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; cursor: default; }
@@ -6698,8 +6726,45 @@ img {
     max-width: 190px;
   }
 
-  .admin-main {
-    padding: 30px 16px 112px;
+  .admin-card-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+  }
+
+  .admin-image-source-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-image-url-control {
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-image-upload-button {
+    min-height: 44px;
+  }
+
+  .admin-image-upload-button span {
+    white-space: nowrap;
+  }
+
+  .admin-image-remove-button {
+    height: 44px;
+    width: 44px;
+  }
+
+  .admin-image-focal-title {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-image-focal-title code {
+    margin-left: auto;
   }
 
   .admin-main-heading,
@@ -7390,6 +7455,8 @@ img {
   .curtain-menu-content {
     padding: 20px 24px 28px;
     height: 100svh;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .curtain-brand-lando {
@@ -7436,13 +7503,18 @@ img {
   }
 
   .curtain-nav-roll {
-    height: clamp(38px, 9vw, 52px);
+    height: auto;
+    max-width: 100%;
+    overflow: visible;
   }
 
   .curtain-nav-text {
     font-size: clamp(24px, 7vw, 36px);
     text-align: center;
     line-height: 1.25;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .curtain-crest-section {
@@ -8600,9 +8672,33 @@ body.youth-modal-open {
     text-align: center;
   }
 
+  .admin-pending-thumbs,
+  .admin-pending-info,
   .admin-pending-actions {
+    min-width: 0;
     width: 100%;
-    justify-content: center;
+  }
+
+  .admin-pending-info {
+    overflow-wrap: anywhere;
+  }
+
+  .admin-pending-info h5,
+  .admin-pending-info p,
+  .admin-pending-date {
+    overflow-wrap: anywhere;
+  }
+
+  .admin-pending-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+
+  .admin-btn-approve,
+  .admin-btn-reject {
+    min-height: 44px;
+    width: 100%;
   }
 }
 

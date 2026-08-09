@@ -54,6 +54,7 @@ export default function AdminImageEditor({
   onPositionChange,
   fallbackSrc = "",
   fit = "cover",
+  aspectRatio = "16 / 9",
   hint,
   target,
   onTarget,
@@ -157,7 +158,11 @@ export default function AdminImageEditor({
         {usingFallback && <span className="admin-image-fallback-badge">FALLBACK</span>}
       </div>
 
-      <div className={`admin-image-crop${fit === "contain" ? " is-contain" : ""}`} onPointerDown={handleFocalPointer}>
+      <div
+        className={`admin-image-crop${fit === "contain" ? " is-contain" : ""}`}
+        style={{ "--admin-image-aspect-ratio": aspectRatio }}
+        onPointerDown={handleFocalPointer}
+      >
         {effectiveSrc ? (
           <AdaptiveImage
             src={effectiveSrc}

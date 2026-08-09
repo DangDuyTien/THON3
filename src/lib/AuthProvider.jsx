@@ -33,8 +33,17 @@ export function AuthProvider({ children }) {
     user: session?.user || null,
     role,
     isAdmin: role === "admin" || role === "editor",
-    login: signIn,
-    logout: signOut,
+    login: async (credentials) => {
+      const nextSession = await signIn(credentials);
+      setSession(nextSession);
+      setRole(nextSession?.user?.role || null);
+      return nextSession;
+    },
+    logout: async () => {
+      await signOut();
+      setSession(null);
+      setRole(null);
+    },
   }), [loading, role, session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

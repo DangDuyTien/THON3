@@ -24,7 +24,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     const compactViewport = viewport.isCompact;
     const photoInsetX = reducedMotion ? 0 : photoShrink * (compactViewport ? 12 : 32);
     const photoInsetY = reducedMotion ? 0 : photoShrink * (compactViewport ? 23 : 20);
-    const titleTravel = (1 - contentReveal) * (compactViewport ? 70 : 44);
+    const titleTravel = (1 - contentReveal) * (compactViewport ? 48 : 44);
 
     stage.style.setProperty("--story-backdrop-reveal", `${backdropReveal}`);
     stage.style.setProperty("--story-content-reveal", `${contentReveal}`);

@@ -24,7 +24,7 @@ function IconRoll() {
   );
 }
 
-export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
+export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
   const { content } = useSiteContent();
   const { login } = useAuth();
   const { siteName, tagline } = content.settings;
@@ -38,6 +38,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
   const [mouseY, setMouseY] = useState(0);
   const rafRef = useRef(null);
   const isClosingRef = useRef(false);
+  const readyRef = useRef(false);
 
   // Liquid Curtain Drop Animation on Mount & Silent Scroll Reset
   useEffect(() => {
@@ -56,16 +57,17 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
 
       setCurveD(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
 
-      // Silently reset scroll position to top behind the curtain
-      if (p > 0.5) {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      }
+      // Keep the page beneath the fixed curtain untouched while it opens.
 
       if (p < 1) {
         rafRef.current = requestAnimationFrame(animateOpen);
       } else {
         setCurveD("M 0 0 L 100 0 L 100 100 Q 50 100 0 100 Z");
         setAnimating(false);
+        if (!readyRef.current) {
+          readyRef.current = true;
+          onReady?.();
+        }
       }
     };
 
@@ -82,8 +84,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
 
-    // Ensure scroll position is at the top silently before starting curtain lift
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    // The fixed curtain covers the page; do not fight Lenis by resetting scroll here.
 
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     setAnimating(true);
@@ -106,7 +107,6 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel }) {
       if (p < 1) {
         rafRef.current = requestAnimationFrame(animateClose);
       } else {
-        window.location.assign("/#home");
         onCancel();
       }
     };

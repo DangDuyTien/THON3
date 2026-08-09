@@ -4,7 +4,6 @@ import { LoaderMark } from "./PageLoader.jsx";
 
 const COVER_DURATION = 1000;
 const RETRACT_DURATION = 1100;
-const READY_TIMEOUT = 7000;
 
 function toClipPath(progress, retracting = false) {
   const edge = Math.max(0, Math.min(100, progress));
@@ -25,16 +24,17 @@ function getLocation(href) {
 }
 
 function scrollToHash(hash) {
-  if (!hash) return;
+  if (!hash) return false;
   let id;
   try {
     id = decodeURIComponent(hash.slice(1));
   } catch {
-    return;
+    return false;
   }
   const target = document.getElementById(id);
-  if (!target) return;
-  requestAnimationFrame(() => target.scrollIntoView({ behavior: "auto", block: "start" }));
+  if (!target) return false;
+  target.scrollIntoView({ behavior: "auto", block: "start" });
+  return true;
 }
 
 export default function PageTransition({ currentRouteKey, reducedMotion = false }) {
@@ -44,6 +44,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
   const [clipPath, setClipPath] = useState(toClipPath(0));
   const targetKeyRef = useRef("");
   const targetLocationRef = useRef("");
+  const pendingHashRef = useRef("");
   const tokenRef = useRef(0);
   const rafRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -62,6 +63,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     setPhase("idle");
     targetKeyRef.current = "";
     targetLocationRef.current = "";
+    pendingHashRef.current = "";
     document.body.classList.remove("page-transition-active");
     document.documentElement.removeAttribute("aria-busy");
     const focusTarget = focusRef.current;
@@ -99,6 +101,17 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     const token = tokenRef.current;
     const frame = requestAnimationFrame(() => {
       if (tokenRef.current !== token) return;
+      if (pendingHashRef.current && !scrollToHash(pendingHashRef.current)) {
+        timeoutRef.current = window.setTimeout(() => {
+          if (tokenRef.current !== token) return;
+          scrollToHash(pendingHashRef.current);
+          pendingHashRef.current = "";
+          setPhase("retracting");
+          animate(100, 0, reducedMotion ? 1 : RETRACT_DURATION, "idle", token);
+        }, 50);
+        return;
+      }
+      pendingHashRef.current = "";
       setPhase("retracting");
       animate(100, 0, reducedMotion ? 1 : RETRACT_DURATION, "idle", token);
     });
@@ -110,7 +123,14 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     const onClick = (event) => {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (!anchor || !isTransitionNavigation(anchor)) return;
+      if (!anchor) return;
+      if (anchor.dataset.scrollTop === "true") {
+        event.preventDefault();
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}#home`);
+        return;
+      }
+      if (!isTransitionNavigation(anchor)) return;
 
       const destination = new URL(anchor.href, window.location.href);
       const destinationKey = getRouteKeyForHref(destination.href);
@@ -132,7 +152,8 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
         if (tokenRef.current !== token) return;
         window.history.pushState({}, "", destinationLocation);
         window.dispatchEvent(new PopStateEvent("popstate"));
-        scrollToHash(destination.hash);
+        pendingHashRef.current = destination.hash;
+        if (!destination.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
         if (destinationKey === currentRouteKey) {
           setPhase("retracting");
           animate(100, 0, reducedMotion ? 1 : RETRACT_DURATION, "idle", token);
@@ -151,14 +172,6 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
   }, [currentRouteKey, phase, reducedMotion]);
-
-  useEffect(() => {
-    if (phase !== "waiting") return undefined;
-    timeoutRef.current = window.setTimeout(finish, READY_TIMEOUT);
-    return () => {
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    };
-  }, [phase]);
 
   useEffect(() => () => {
     tokenRef.current += 1;

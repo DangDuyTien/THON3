@@ -82,8 +82,7 @@ export function isTransitionNavigation(anchor, currentHref = window.location.hre
   if (destination.origin !== current.origin) return false;
   if (destination.pathname === current.pathname && destination.search === current.search && destination.hash === current.hash) return false;
   if (destination.pathname !== current.pathname || destination.search !== current.search) return true;
-  return TRANSITION_HASHES.has(destination.hash.toLowerCase())
-    || destination.hash.toLowerCase().startsWith("#admin-");
+  return anchor.dataset.pageTransition === "true";
 }
 
 export { HASH_TITLES, ROUTE_TITLES };

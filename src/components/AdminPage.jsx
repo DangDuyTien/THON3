@@ -151,7 +151,7 @@ function AdminColorField({ label, value, onChange, hint, fallback = "#15271f" })
   );
 }
 
-function AdminImageField({ label, value, onChange, hint, alt, onAltChange, position, onPositionChange, fallbackSrc, fit, target }) {
+function AdminImageField({ label, value, onChange, hint, alt, onAltChange, position, onPositionChange, fallbackSrc, fit, aspectRatio, target }) {
   const onTarget = useContext(AdminImageTargetContext);
   return (
     <AdminImageEditor
@@ -165,6 +165,7 @@ function AdminImageField({ label, value, onChange, hint, alt, onAltChange, posit
       onPositionChange={onPositionChange}
       fallbackSrc={fallbackSrc}
       fit={fit}
+      aspectRatio={aspectRatio}
       target={target}
       onTarget={onTarget}
     />
@@ -646,6 +647,7 @@ function ArchiveEditor({ draft, update }) {
           value={archive.imageSrc}
           onChange={(value) => update("villageArchive.imageSrc", value)}
           fallbackSrc="/assets/village-hero.jpg"
+          aspectRatio="3 / 4"
           target="archive-default"
           hint="Dùng làm ảnh dự phòng nếu một thẻ chưa có ảnh riêng."
         />
@@ -665,6 +667,7 @@ function ArchiveEditor({ draft, update }) {
                 onAltChange={(value) => update(`villageArchive.cards[${index}].imageAlt`, value)}
                 position={card.imagePosition}
                 onPositionChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)}
+                aspectRatio="3 / 4"
                 target={`archive-${card.id}`}
               />
               <AdminImageField
@@ -673,6 +676,7 @@ function ArchiveEditor({ draft, update }) {
                 onChange={(value) => update(`villageArchive.cards[${index}].altImageSrc`, value)}
                 position={card.imagePosition}
                 onPositionChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)}
+                aspectRatio="3 / 4"
                 target={`archive-${card.id}`}
               />
             </div>

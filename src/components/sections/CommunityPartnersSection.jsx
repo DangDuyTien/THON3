@@ -51,7 +51,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       lastTime = timestamp;
       scrollOffsetRef.current *= 0.92;
       if (Math.abs(scrollOffsetRef.current) < 0.01) scrollOffsetRef.current = 0;
-      const speed = (1.5 + scrollOffsetRef.current * 0.12) * (delta / 16.66);
+      const speed = (1.5 + scrollOffsetRef.current * 0.05) * (delta / 16.66);
       positionRef.current += speed;
       if (positionRef.current >= groupWidthRef.current) positionRef.current -= groupWidthRef.current;
       marqueeRef.current.style.transform = `translate3d(-${positionRef.current.toFixed(2)}px, 0, 0)`;
@@ -64,7 +64,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       const delta = currentScrollY - lastScrollY;
       lastScrollY = currentScrollY;
       if (!visibleRef.current || Math.abs(delta) <= 0.5) return;
-      scrollOffsetRef.current = Math.min(Math.max(scrollOffsetRef.current + delta * 0.45, -100), 100);
+      scrollOffsetRef.current = Math.min(Math.max(scrollOffsetRef.current + delta * 0.18, -60), 60);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
 

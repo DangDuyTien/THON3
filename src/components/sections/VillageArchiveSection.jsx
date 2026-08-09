@@ -220,7 +220,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
 
           return (
             <figure
-              className="village-archive-card"
+              className={`village-archive-card village-archive-card-${String(card.size || "medium").split("-")[0]}`}
               key={card.id}
               data-preview-target={`archive-${card.id}`}
               ref={(node) => { cardRefs.current[index] = node; }}

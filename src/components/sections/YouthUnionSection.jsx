@@ -99,7 +99,7 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
             <a href="/admin" className="youth-footer-link" title="Mở trang quản trị">
               <Settings className="icon-xs" aria-hidden="true" /> QUẢN TRỊ ADMIN
             </a>
-            <a href="#home" className="youth-footer-link" aria-label="Lên đầu trang">
+            <a href="#home" data-scroll-top="true" className="youth-footer-link" aria-label="Lên đầu trang">
               LÊN ĐẦU TRANG <ArrowUp className="icon-xs" aria-hidden="true" />
             </a>
           </div>

@@ -32,7 +32,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     const coverProgress = smoothStep(stageProgress / 0.78);
     const baseRevealProgress = Math.min(entryProgressRef.current, 1 - coverProgress);
     const sideReveal = smoothStep(baseRevealProgress);
-    const sideTravel = viewport.isCompact ? 46 : 24;
+    const sideTravel = viewport.isCompact ? 30 : 24;
     const sideOpacity = 0.06 + sideReveal * 0.94;
     const arrivalImageScale = 1.04 + coverProgress * 0.06;
 

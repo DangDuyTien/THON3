@@ -213,6 +213,7 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
   const { content } = useSiteContent();
   const { configured, loading: authLoading, isAdmin, logout } = useAuth();
   const [route, setRoute] = useState(getRouteSnapshot);
+  const [adminLoginReady, setAdminLoginReady] = useState(false);
 
   useEffect(() => {
     const updateRoute = () => setRoute(getRouteSnapshot());
@@ -225,8 +226,14 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
   }, []);
 
   useEffect(() => {
-    onRouteReady?.(getRouteKeyFromSnapshot(route));
-  }, [onRouteReady, route]);
+    if (route.type !== "admin") setAdminLoginReady(false);
+  }, [route.type]);
+
+  useEffect(() => {
+    const routeKey = getRouteKeyFromSnapshot(route);
+    const adminWaiting = route.type === "admin" && (authLoading || (!configured ? false : !isAdmin && !adminLoginReady));
+    if (!adminWaiting) onRouteReady?.(routeKey);
+  }, [adminLoginReady, authLoading, configured, isAdmin, onRouteReady, route]);
 
   useEffect(() => {
     document.title = route.type === "admin"
@@ -240,13 +247,20 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
     }
   }, [route.type, content.settings.siteName, content.settings.tagline]);
 
+  const navigateHome = useCallback(() => {
+    const destination = getPublicHomeHref(window.location.pathname, "home");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.history.pushState({}, "", destination);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, []);
+
   const handleAdminLogout = async () => {
     await logout();
-    window.location.assign(getPublicHomeHref(window.location.pathname, "home"));
+    navigateHome();
   };
 
   const handleAdminCancel = () => {
-    window.location.assign(getPublicHomeHref(window.location.pathname, "home"));
+    navigateHome();
   };
 
   if (route.type === "preview") {
@@ -287,9 +301,10 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
     return (
       <>
         <PublicHome heroRevealReady={heroRevealReady} />
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="admin-route-transition-fallback" aria-hidden="true" />}>
           <AdminLoginModal
-            onLoginSuccess={() => window.location.reload()}
+            onLoginSuccess={() => undefined}
+            onReady={() => setAdminLoginReady(true)}
             onCancel={handleAdminCancel}
           />
         </Suspense>
@@ -308,6 +323,7 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
 
 function App() {
   const [heroRevealReady, setHeroRevealReady] = useState(false);
+  const reducedMotion = useReducedMotion();
   const [currentRouteKey, setCurrentRouteKey] = useState(() => getRouteKeyFromSnapshot(getRouteSnapshot()));
   const handleLoaderExit = useCallback(() => setHeroRevealReady(true), []);
 
@@ -315,7 +331,7 @@ function App() {
     <AuthProvider>
       <SiteContentProvider>
         <AppRouter heroRevealReady={heroRevealReady} onRouteReady={setCurrentRouteKey} />
-        <PageTransition currentRouteKey={currentRouteKey} />
+        <PageTransition currentRouteKey={currentRouteKey} reducedMotion={reducedMotion} />
       </SiteContentProvider>
       <Suspense fallback={null}>
         <PageLoader onExitComplete={handleLoaderExit} />
