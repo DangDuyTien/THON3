@@ -69,7 +69,9 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     sectionRef.current?.style.setProperty("--reveal-progress", `${progress}`);
     
     // Tạo hiệu ứng lướt tới đâu tách tới đó: 0 ở 2 đầu, 1 ở giữa
-    const staggerFactor = Math.max(0, Math.min(1, Math.sin(progress * Math.PI) * 1.5));
+    // Nhân progress với 1.3 để hiệu ứng kết thúc sớm hơn (khi progress ~ 0.75) thay vì sát mép cuối
+    const mappedProgress = Math.min(progress * 1.3, 1);
+    const staggerFactor = Math.max(0, Math.min(1, Math.sin(mappedProgress * Math.PI) * 1.6));
     sectionRef.current?.style.setProperty("--archive-stagger-factor", `${staggerFactor}`);
 
     villageArchive.cards.forEach((_, index) => {
@@ -264,21 +266,6 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
           );
         })}
 
-        {/* Dynamic Add Card Slot */}
-        <button
-          className="village-archive-card archive-add-card-slot"
-          type="button"
-          onClick={openModal}
-          aria-label="Thêm thẻ đoàn viên của bạn"
-        >
-          <div className="archive-add-card-inner">
-            <div className="archive-add-icon-box">
-              <YouthUnionPartyLogo size={36} />
-            </div>
-            <span className="archive-add-title">BẠN LÀ ĐOÀN VIÊN THÔN?</span>
-            <span className="archive-add-desc">+ Thêm thẻ của bạn tại đây</span>
-          </div>
-        </button>
       </div>
 
       {/* Minimal Right-Aligned Action Bar (No Frame) */}

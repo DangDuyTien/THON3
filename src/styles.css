@@ -2357,7 +2357,6 @@ img {
 .village-archive-section {
   background: #051C38;
   color: var(--paper);
-  min-height: 145svh;
   overflow: hidden;
   padding: calc(116px * var(--layout-density)) clamp(20px, 6vw, 112px) calc(132px * var(--layout-density));
   position: relative;
@@ -10137,7 +10136,8 @@ button:hover .closing-kinetic-green {
   background-color: var(--archive-bg);
   background-image: radial-gradient(circle at 82% 14%, rgba(215, 255, 47, 0.07), transparent 32%), linear-gradient(112deg, rgba(255, 255, 255, 0.025), transparent 42%);
   color: var(--archive-ink);
-  padding: 0 clamp(12px, 1.25vw, 24px) clamp(88px, 9vw, 150px);
+  padding: 0 clamp(12px, 1.25vw, 24px) clamp(24px, 4vw, 48px);
+  min-height: auto;
 }
 
 .village-archive-heading {
@@ -10162,7 +10162,6 @@ button:hover .closing-kinetic-green {
   justify-content: stretch;
   margin: 0 auto;
   max-width: none;
-  padding-bottom: clamp(72px, 8vw, 150px);
 }
 
 .village-archive-grid::before {
@@ -10208,7 +10207,7 @@ button:hover .closing-kinetic-green {
   .village-archive-card:hover .village-archive-media-layer-front { clip-path: polygon(0% 99%, 8% 95%, 16% 100%, 24% 96%, 32% 100%, 40% 94%, 48% 99%, 56% 96%, 64% 100%, 72% 95%, 80% 98%, 88% 94%, 100% 99%, 100% 100%, 0% 100%); }
 }
 
-.archive-add-card-slot { --archive-column-offset: 0px; aspect-ratio: 3 / 4; background: rgba(17, 19, 17, 0.48); border: 1px dashed var(--archive-rule); border-radius: 16px; overflow: hidden; color: var(--archive-ink); min-height: 0; transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, transform 280ms ease; }
+.archive-add-card-slot { --archive-column-offset: 0px; --archive-card-reveal: 1; opacity: 1; aspect-ratio: 3 / 4; background: rgba(17, 19, 17, 0.48); border: 1px dashed var(--archive-rule); border-radius: 16px; overflow: hidden; color: var(--archive-ink); min-height: 0; transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, transform 280ms ease; }
 .archive-add-card-inner { gap: 14px; max-width: 190px; }
 .archive-add-icon-box { background: transparent; border: 1px solid var(--archive-accent); border-radius: 1px; color: var(--archive-accent); height: 52px; width: 52px; }
 .archive-add-title { color: var(--archive-ink); font-size: 12px; letter-spacing: 0.08em; line-height: 1.35; }
@@ -10236,7 +10235,7 @@ button:hover .closing-kinetic-green {
 .app-shell.theme-hover-quiet .village-archive-card:hover .village-archive-media-layer-front, .app-shell.theme-hover-off .village-archive-card:hover .village-archive-media-layer-front { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); }
 
 @media (max-width: 1100px) {
-  .village-archive-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: clamp(56px, 7vw, 90px); }
+  .village-archive-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .village-archive-card:nth-child(n) { --archive-column-offset: 0px; }
   .village-archive-card:nth-child(3n + 2) { --archive-base-offset: clamp(48px, 6vw, 82px); --archive-column-offset: calc(var(--archive-base-offset) * var(--archive-stagger-factor, 1)); }
 }
@@ -10255,7 +10254,7 @@ button:hover .closing-kinetic-green {
     top: auto;
   }
   .village-archive-heading h2 { font-size: clamp(38px, 11vw, 64px); line-height: 1; }
-  .village-archive-grid { gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-bottom: 52px; }
+  .village-archive-grid { gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .village-archive-grid::before { background: linear-gradient(90deg, transparent calc(50% - 1px), var(--archive-rule-soft) 50%, transparent calc(50% + 1px)); }
   .village-archive-card:nth-child(n) { --archive-column-offset: 0px; }
   .village-archive-card:nth-child(even) { --archive-base-offset: 36px; --archive-column-offset: calc(var(--archive-base-offset) * var(--archive-stagger-factor, 1)); }
