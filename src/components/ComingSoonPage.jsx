@@ -91,15 +91,18 @@ export default function ComingSoonPage({ description = "Không gian này đang �
             <p className="coming-soon-description" style={{ "--coming-delay": "620ms" }}>{description}</p>
             <span className="coming-soon-divider" aria-hidden="true" style={{ "--coming-delay": "820ms" }} />
             <p className="coming-soon-follow" style={{ "--coming-delay": "960ms" }}>THEO DÕI NHỮNG CÂU CHUYỆN MỚI TỪ MÊ LINH</p>
-            <div className="coming-soon-youth-icons" aria-hidden="true" style={{ "--coming-delay": "1040ms" }}>
-              <span className="cs-youth-flag" title="Cờ Đoàn TNCS Hồ Chí Minh">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/d/dd/Flag_of_HCM_Communist_Youth_Union.svg" alt="Cờ Đoàn TNCS Hồ Chí Minh" width="72" height="48" loading="lazy" />
+            <div className="coming-soon-youth-icons" aria-label="Các trường và tổ chức đồng hành" style={{ "--coming-delay": "1040ms" }}>
+              <span className="cs-youth-flag cs-youth-logo-card" title="Trường THPT Tiền Phong">
+                <span className="cs-youth-logo-monogram" aria-hidden="true">TP</span>
+                <span className="cs-youth-logo-label">THPT TIỀN PHONG</span>
               </span>
-              <span className="cs-youth-flag" title="Biểu trưng Hội LHTN Việt Nam" style={{ background: '#fff', padding: '4px' }}>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/6/66/Bi%E1%BB%83u_tr%C6%B0ng_H%E1%BB%99i_Li%C3%AAn_hi%E1%BB%87p_Thanh_ni%C3%AAn_Vi%E1%BB%87t_Nam.svg" alt="Biểu trưng Hội LHTN Việt Nam" width="72" height="48" loading="lazy" style={{ objectFit: 'contain' }} />
+              <span className="cs-youth-flag cs-youth-logo-card" title="Đoàn TNCS Hồ Chí Minh">
+                <img src="/assets/doan-tncs-logo-160.webp" alt="Biểu trưng Đoàn TNCS Hồ Chí Minh" width="72" height="48" loading="lazy" />
+                <span className="cs-youth-logo-label">ĐOÀN TNCS</span>
               </span>
-              <span className="cs-youth-flag" title="Biểu trưng Đội TNTP Hồ Chí Minh" style={{ background: '#fff', padding: '4px' }}>
-                <img src="https://upload.wikimedia.org/wikipedia/vi/a/a2/Logo_Doi_TNTP.png" alt="Biểu trưng Đội TNTP Hồ Chí Minh" width="72" height="48" loading="lazy" style={{ objectFit: 'contain' }} />
+              <span className="cs-youth-flag cs-youth-logo-card" title="Trường THPT Mê Linh">
+                <span className="cs-youth-logo-monogram cs-youth-logo-monogram-lime" aria-hidden="true">ML</span>
+                <span className="cs-youth-logo-label">THPT MÊ LINH</span>
               </span>
             </div>
           </div>

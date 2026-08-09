@@ -5,6 +5,8 @@ import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useAuth } from "../lib/AuthProvider.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
+const FOCUSABLE_SELECTOR = "button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])";
+
 function KineticRollText({ children }) {
   const text = String(children);
   return (
@@ -78,7 +80,41 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
     };
   }, []);
 
-  // Liquid Curtain Retract Animation on Exit to Home
+  useEffect(() => {
+    const previousActive = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusDialog = () => document.querySelector("#admin-login-dialog")?.querySelector(FOCUSABLE_SELECTOR)?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = document.querySelector("#admin-login-dialog");
+      if (!dialog) return;
+      const elements = [...dialog.querySelectorAll(FOCUSABLE_SELECTOR)];
+      if (!elements.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const frame = window.requestAnimationFrame(focusDialog);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousActive?.focus?.();
+    };
+  }, [onCancel]);
   const handleExitToHome = (e) => {
     if (e) e.preventDefault();
     if (isClosingRef.current) return;
@@ -159,7 +195,14 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
         </defs>
       </svg>
 
-      <div className="curtain-menu-content" style={{ clipPath: "url(#admin-curtain-clip-path)" }}>
+      <div
+        className="curtain-menu-content"
+        id="admin-login-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-login-title"
+        style={{ clipPath: "url(#admin-curtain-clip-path)" }}
+      >
         {/* Organic Background Contour Waves inside Menu - Electric Blue Waves */}
         <svg className="curtain-contour-bg" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <path d="M-100 140 Q 300 380, 700 180 T 1540 320" stroke="rgba(0, 102, 255, 0.28)" strokeWidth="2.2" />
@@ -220,7 +263,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
                 <YouthUnionEmblem size={56} />
                 <div className="admin-login-title-group">
                   <span className="admin-login-eyebrow">ĐOÀN THANH NIÊN CS HỒ CHÍ MINH • THÔN MÊ LINH</span>
-                  <h2>QUẢN TRỊ NỘI DUNG</h2>
+                  <h2 id="admin-login-title">QUẢN TRỊ NỘI DUNG</h2>
                   <p>Đăng nhập tài khoản ban quản trị để chỉnh sửa dữ liệu website</p>
                 </div>
               </div>

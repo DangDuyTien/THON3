@@ -4,7 +4,7 @@ import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
 import YouthUnionPartyLogo from "../icons/YouthUnionPartyLogo.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
-import { useViewportEntryProgress } from "../../hooks/useMotion.js";
+import { useSectionProgress, useViewportEntryProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
 import { createSubmission } from "../../lib/submission-api.js";
 import { createSignedMediaUrl, uploadMedia, SUBMISSION_MEDIA_BUCKET } from "../../lib/media-api.js";
@@ -65,10 +65,16 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     });
   }, [villageArchive.cards, villageArchive.imageSrc]);
 
-  useViewportEntryProgress(sectionRef, reducedMotion, (progress) => {
+  useSectionProgress(sectionRef, reducedMotion, (progress) => {
     sectionRef.current?.style.setProperty("--reveal-progress", `${progress}`);
+    
+    // Tạo hiệu ứng lướt tới đâu tách tới đó: 0 ở 2 đầu, 1 ở giữa
+    const staggerFactor = Math.max(0, Math.min(1, Math.sin(progress * Math.PI) * 1.5));
+    sectionRef.current?.style.setProperty("--archive-stagger-factor", `${staggerFactor}`);
+
     villageArchive.cards.forEach((_, index) => {
-      const reveal = Math.min(Math.max((progress - index * 0.065) / 0.5, 0), 1);
+      const entryProgress = Math.min(progress * 2.5, 1);
+      const reveal = Math.min(Math.max((entryProgress - index * 0.065) / 0.5, 0), 1);
       cardRefs.current[index]?.style.setProperty("--archive-card-reveal", `${reveal}`);
     });
   }, undefined, {
@@ -201,7 +207,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     <section className="village-archive-section" id="tu-lieu" ref={sectionRef} aria-labelledby="archive-title">
       <div className="village-archive-heading">
         <p className="village-archive-eyebrow">
-          <YouthUnionPartyLogo size={24} style={{ marginRight: 8 }} />
+          <YouthUnionPartyLogo size={24} />
           <RevealLine>{villageArchive.eyebrow}</RevealLine>
         </p>
         <h2 id="archive-title">
@@ -220,7 +226,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
 
           return (
             <figure
-              className={`village-archive-card village-archive-card-${String(card.size || "medium").split("-")[0]}`}
+              className={`village-archive-card village-archive-card-${String(card.size || "medium").split("-")[0]} village-archive-card-shape-${index % 4}`}
               key={card.id}
               data-preview-target={`archive-${card.id}`}
               ref={(node) => { cardRefs.current[index] = node; }}
@@ -251,8 +257,8 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
               </div>
 
               <figcaption>
-                <RevealLine direction={index % 2 === 0 ? "left" : "right"}>{card.label}</RevealLine>
-                <strong><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{card.year}</RevealLine></strong>
+                <span className="archive-card-label"><RevealLine direction={index % 2 === 0 ? "left" : "right"}>{card.label}</RevealLine></span>
+                <strong className="archive-card-meta"><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{card.year}</RevealLine></strong>
               </figcaption>
             </figure>
           );

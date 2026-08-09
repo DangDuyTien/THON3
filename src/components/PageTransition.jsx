@@ -45,6 +45,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
   const targetKeyRef = useRef("");
   const targetLocationRef = useRef("");
   const pendingHashRef = useRef("");
+  const scrollTopRef = useRef(false);
   const tokenRef = useRef(0);
   const rafRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -64,6 +65,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     targetKeyRef.current = "";
     targetLocationRef.current = "";
     pendingHashRef.current = "";
+    scrollTopRef.current = false;
     document.body.classList.remove("page-transition-active");
     document.documentElement.removeAttribute("aria-busy");
     const focusTarget = focusRef.current;
@@ -71,7 +73,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     if (focusTarget?.isConnected) focusTarget.focus({ preventScroll: true });
   };
 
-  const animate = (from, to, duration, nextPhase, token) => {
+  const animate = (from, to, duration, nextPhase, token, onComplete) => {
     stopTimers();
     const startedAt = performance.now();
     const frame = (now) => {
@@ -85,7 +87,8 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
         finish();
       } else {
         rafRef.current = null;
-        setPhase(nextPhase);
+        if (onComplete) onComplete();
+        else setPhase(nextPhase);
       }
     };
     rafRef.current = requestAnimationFrame(frame);
@@ -93,25 +96,21 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
 
   useEffect(() => {
     if (phase !== "waiting" || !targetKeyRef.current) return undefined;
-    const isSamePageHash = targetKeyRef.current === currentRouteKey
-      && targetLocationRef.current.includes("#")
-      && getLocation(window.location.href) === targetLocationRef.current;
-    if (isSamePageHash || currentRouteKey !== targetKeyRef.current) return undefined;
+    const isDestinationReady = currentRouteKey === targetKeyRef.current;
+    if (!isDestinationReady) return undefined;
 
     const token = tokenRef.current;
     const frame = requestAnimationFrame(() => {
       if (tokenRef.current !== token) return;
-      if (pendingHashRef.current && !scrollToHash(pendingHashRef.current)) {
-        timeoutRef.current = window.setTimeout(() => {
-          if (tokenRef.current !== token) return;
+      if (pendingHashRef.current) {
+        if (scrollTopRef.current) {
+          window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        } else {
           scrollToHash(pendingHashRef.current);
-          pendingHashRef.current = "";
-          setPhase("retracting");
-          animate(100, 0, reducedMotion ? 1 : RETRACT_DURATION, "idle", token);
-        }, 50);
-        return;
+        }
+        pendingHashRef.current = "";
+        scrollTopRef.current = false;
       }
-      pendingHashRef.current = "";
       setPhase("retracting");
       animate(100, 0, reducedMotion ? 1 : RETRACT_DURATION, "idle", token);
     });
@@ -124,18 +123,13 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!anchor) return;
-      if (anchor.dataset.scrollTop === "true") {
-        event.preventDefault();
-        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-        window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}#home`);
-        return;
-      }
-      if (!isTransitionNavigation(anchor)) return;
+      const isScrollTop = anchor.dataset.scrollTop === "true";
+      if (!isScrollTop && !isTransitionNavigation(anchor)) return;
 
       const destination = new URL(anchor.href, window.location.href);
       const destinationKey = getRouteKeyForHref(destination.href);
       const destinationLocation = getLocation(destination.href);
-      if (!destinationKey || destinationLocation === getLocation(window.location.href)) return;
+      if (!destinationKey || (!isScrollTop && destinationLocation === getLocation(window.location.href))) return;
 
       event.preventDefault();
       focusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -152,11 +146,14 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
         if (tokenRef.current !== token) return;
         window.history.pushState({}, "", destinationLocation);
         window.dispatchEvent(new PopStateEvent("popstate"));
-        pendingHashRef.current = destination.hash;
-        if (!destination.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-        if (destinationKey === currentRouteKey) {
+        pendingHashRef.current = isScrollTop ? "#home" : destination.hash;
+        scrollTopRef.current = isScrollTop;
+        if (!isScrollTop && !destination.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        if (destinationKey === currentRouteKey && !isScrollTop) {
           setPhase("retracting");
           animate(100, 0, reducedMotion ? 1 : RETRACT_DURATION, "idle", token);
+        } else {
+          setPhase("waiting");
         }
       };
 
@@ -165,8 +162,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
         revealDestination();
         if (destinationKey !== currentRouteKey) setPhase("waiting");
       } else {
-        animate(0, 100, COVER_DURATION, "waiting", token);
-        timeoutRef.current = window.setTimeout(revealDestination, COVER_DURATION + 20);
+        animate(0, 100, COVER_DURATION, "waiting", token, revealDestination);
       }
     };
     document.addEventListener("click", onClick);

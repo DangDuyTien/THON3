@@ -127,7 +127,9 @@ export default function ClosingSection() {
       {/* Main Closing Editorial Card */}
       <div className="closing-shell-container">
         <div className="closing-shell">
-          <span className="closing-shell-cap" aria-hidden="true" />
+          <svg className="closing-shell-cap" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path d="M0 100 H245 C295 100 335 88 370 48 C392 20 407 0 438 0 H562 C593 0 608 20 630 48 C665 88 705 100 755 100 H1000 V100 H0 Z" />
+          </svg>
           <div className="closing-topbar">
             <a className="closing-wordmark" href="#home" aria-label={`${settings.siteName} - về trang đầu`}>
               <span>{nameLines[0]}</span>
