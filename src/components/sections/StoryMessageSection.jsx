@@ -22,17 +22,17 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     const contentReveal = smoothStep((progress - 0.28) / 0.42);
     const signatureDraw = smoothStep((progress - 0.66) / 0.24);
     const compactViewport = viewport.isCompact;
-    const photoScaleX = 1 - photoShrink * (compactViewport ? 0.24 : 0.64);
-    const photoScaleY = 1 - photoShrink * (compactViewport ? 0.46 : 0.4);
+    const photoInsetX = reducedMotion ? 0 : photoShrink * (compactViewport ? 12 : 32);
+    const photoInsetY = reducedMotion ? 0 : photoShrink * (compactViewport ? 23 : 20);
     const titleTravel = (1 - contentReveal) * (compactViewport ? 70 : 44);
 
     stage.style.setProperty("--story-backdrop-reveal", `${backdropReveal}`);
     stage.style.setProperty("--story-content-reveal", `${contentReveal}`);
     stage.style.setProperty("--reveal-progress", `${reducedMotion ? 1 : contentReveal}`);
     stage.style.setProperty("--story-content-y", `${(1 - contentReveal) * 34}px`);
-    stage.style.setProperty("--story-photo-shrink", `${photoShrink}`);
-    stage.style.setProperty("--story-photo-scale-x", `${photoScaleX}`);
-    stage.style.setProperty("--story-photo-scale-y", `${photoScaleY}`);
+    stage.style.setProperty("--story-photo-shrink", `${reducedMotion ? 0 : photoShrink}`);
+    stage.style.setProperty("--story-photo-inset-x", `${photoInsetX}%`);
+    stage.style.setProperty("--story-photo-inset-y", `${photoInsetY}%`);
     stage.style.setProperty("--story-signature-clip", `${(1 - signatureDraw) * 100}%`);
     stage.style.setProperty("--story-signature-dash", `${1 - signatureDraw}`);
     stage.style.setProperty("--story-signature-reveal", `${signatureDraw}`);

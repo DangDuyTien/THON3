@@ -1509,8 +1509,8 @@ img {
   --story-backdrop-reveal: 0;
   --story-content-reveal: 0;
   --story-content-y: 34px;
-  --story-photo-scale-x: 1;
-  --story-photo-scale-y: 1;
+  --story-photo-inset-x: 0%;
+  --story-photo-inset-y: 0%;
   --story-photo-shrink: 0;
   --story-signature-clip: 100%;
   --story-signature-dash: 1;
@@ -1545,9 +1545,10 @@ img {
   overflow: hidden;
   position: absolute;
   top: 50%;
-  transform: translate3d(-50%, -50%, 0) scaleX(var(--story-photo-scale-x)) scaleY(var(--story-photo-scale-y));
+  transform: translate3d(-50%, -50%, 0);
   transform-origin: center;
   width: 100vw;
+  clip-path: inset(var(--story-photo-inset-y) var(--story-photo-inset-x));
   /* P2: will-change managed by MotionRuntime */
   z-index: 3;
 }
@@ -1748,6 +1749,10 @@ img {
 
 .story-message-reduced-motion .story-message-stage {
   position: relative;
+}
+
+.story-message-reduced-motion .story-message-photo {
+  clip-path: inset(0);
 }
 
 .story-message-reduced-motion .story-message-title-track {
