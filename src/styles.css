@@ -10125,16 +10125,19 @@ button:hover .closing-kinetic-green {
 
 /* Editorial archive treatment: let the member photography lead. */
 .village-archive-section {
-  --archive-bg: #090a09;
-  --archive-surface: #111311;
-  --archive-rule: rgba(224, 230, 220, 0.32);
-  --archive-rule-soft: rgba(224, 230, 220, 0.16);
+  --archive-bg: #041a45;
+  --archive-surface: #082f73;
+  --archive-rule: rgba(194, 235, 255, 0.3);
+  --archive-rule-soft: rgba(194, 235, 255, 0.15);
   --archive-ink: #f5f6ef;
-  --archive-muted: rgba(245, 246, 239, 0.68);
-  --archive-accent: #d7ff2f;
-  --archive-accent-ink: #10130d;
+  --archive-muted: rgba(245, 246, 239, 0.72);
+  --archive-accent: #53d9ff;
+  --archive-accent-ink: #03224c;
   background-color: var(--archive-bg);
-  background-image: radial-gradient(circle at 82% 14%, rgba(215, 255, 47, 0.07), transparent 32%), linear-gradient(112deg, rgba(255, 255, 255, 0.025), transparent 42%);
+  background-image:
+    radial-gradient(circle at 82% 12%, rgba(83, 217, 255, 0.2), transparent 34%),
+    radial-gradient(circle at 12% 88%, rgba(0, 102, 255, 0.26), transparent 42%),
+    linear-gradient(160deg, #0066ff 0%, #0755bd 42%, #041a45 100%);
   color: var(--archive-ink);
   padding: 0 clamp(12px, 1.25vw, 24px) clamp(24px, 4vw, 48px);
   min-height: auto;
