@@ -1,0 +1,44 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MYSQL_HOST: ${{ secrets.TIDB_HOST }}
+      MYSQL_PORT: ${{ secrets.TIDB_PORT }}
+      MYSQL_DATABASE: ${{ secrets.TIDB_DATABASE }}
+      MYSQL_USER: ${{ secrets.TIDB_USER }}
+      MYSQL_PASSWORD: ${{ secrets.TIDB_PASSWORD }}
+      MYSQL_SSL: "true"
+      MYSQL_CONNECTION_LIMIT: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:check
+      - name: Apply TiDB migrations
+        run: npm run db:migrate
+      - name: Deploy backend on Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"
+      - name: Deploy frontend on Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+        run: curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"

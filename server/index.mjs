@@ -8,7 +8,7 @@ import { clearSessionCookie, issueSession, requireRole, requireUser, setSessionC
 import mediaRouter from "./routes-media.mjs";
 
 const app = express();
-const port = Number(process.env.API_PORT || 8787);
+const port = Number(process.env.PORT || process.env.API_PORT || 8787);
 const siteKey = "default";
 
 await pool.query("SELECT 1").catch((error) => {

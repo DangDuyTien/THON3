@@ -4,7 +4,7 @@ const SITE_MEDIA_BUCKET = "site-media";
 const SUBMISSION_MEDIA_BUCKET = "submission-media";
 
 export async function uploadMedia(file) {
-  if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
+  if (!isBackendConfigured) throw new Error("Backend chưa được cấu hình.");
   if (!(file instanceof File)) throw new Error("Tệp ảnh không hợp lệ.");
   if (!file.type.startsWith("image/")) throw new Error("Chỉ nhận tệp hình ảnh.");
   const form = new FormData();

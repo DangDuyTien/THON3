@@ -5,6 +5,13 @@ import { pool } from "./db.mjs";
 const SESSION_COOKIE = "thon_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const SESSION_SECRET = process.env.SESSION_SECRET || "development-only-change-me";
+const crossSiteCookies = process.env.CROSS_SITE_COOKIES === "true";
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: crossSiteCookies ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+};
 
 export function issueSession(user) {
   return jwt.sign({ sub: String(user.id), role: user.role, email: user.email }, SESSION_SECRET, { expiresIn: SESSION_TTL_SECONDS });
@@ -12,16 +19,13 @@ export function issueSession(user) {
 
 export function setSessionCookie(res, token) {
   res.cookie(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    ...cookieOptions,
     maxAge: SESSION_TTL_SECONDS * 1000,
-    path: "/",
   });
 }
 
 export function clearSessionCookie(res) {
-  res.clearCookie(SESSION_COOKIE, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
+  res.clearCookie(SESSION_COOKIE, cookieOptions);
 }
 
 export async function requireUser(req, res, next) {

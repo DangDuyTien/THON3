@@ -1,5 +1,12 @@
+import fs from "node:fs";
 import mysql from "mysql2/promise";
 import "dotenv/config";
+
+const ssl = process.env.MYSQL_SSL_CA
+  ? { ca: fs.readFileSync(process.env.MYSQL_SSL_CA, "utf8") }
+  : process.env.MYSQL_SSL === "true"
+    ? {}
+    : undefined;
 
 export const pool = mysql.createPool({
   host: process.env.MYSQL_HOST || "127.0.0.1",
@@ -7,8 +14,9 @@ export const pool = mysql.createPool({
   database: process.env.MYSQL_DATABASE || "xa_me_linh",
   user: process.env.MYSQL_USER || "root",
   password: process.env.MYSQL_PASSWORD || "",
+  ssl,
   waitForConnections: true,
-  connectionLimit: Number(process.env.MYSQL_CONNECTION_LIMIT || 10),
+  connectionLimit: Number(process.env.MYSQL_CONNECTION_LIMIT || 5),
   namedPlaceholders: true,
 });
 
