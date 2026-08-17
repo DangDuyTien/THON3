@@ -520,6 +520,16 @@ function VisitEditor({ draft, update }) {
       <div className="admin-form-grid">
         <AdminField label="Chú thích chung" value={draft.visitChoices.caption} onChange={(value) => update("visitChoices.caption", value)} />
       </div>
+      <div className="admin-form-grid">
+        <AdminImageField
+          label="Ảnh cổng trại (3 mặt)"
+          value={draft.visitChoices.gate?.imageSrc || ""}
+          onChange={(value) => update("visitChoices.gate.imageSrc", value)}
+          alt={draft.visitChoices.gate?.imageAlt || ""}
+          onAltChange={(value) => update("visitChoices.gate.imageAlt", value)}
+          target="visit-gate"
+        />
+      </div>
       <div className="admin-card-stack">
         <ChoiceEditor choice={draft.visitChoices.left} path="visitChoices.left" update={update} index={0} />
         <ChoiceEditor choice={draft.visitChoices.right} path="visitChoices.right" update={update} index={1} />

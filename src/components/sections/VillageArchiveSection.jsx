@@ -83,7 +83,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     name: "village-archive",
     prewarm: prewarmArchiveMedia,
     willChange: "opacity, transform",
-    willChangeTargets: () => cardRefs.current.slice(0, 6),
+    willChangeTargets: () => cardRefs.current.slice(0, window.innerWidth <= 680 ? 4 : 6),
   });
 
   const closeModal = useCallback(() => {

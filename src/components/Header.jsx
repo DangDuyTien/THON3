@@ -35,7 +35,7 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
         </a>
 
         <div className="header-actions">
-          <a className="visit-link" href="/lien-he">
+          <a className="visit-link" href="#lien-he" aria-label="Ghé thăm">
             <MapPin aria-hidden="true" />
             <KineticRollText>Ghé thăm</KineticRollText>
           </a>

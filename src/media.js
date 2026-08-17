@@ -98,15 +98,16 @@ export function prewarmCmsImage(mediaOrSource, sizeVariant = "full", sizes = "10
   if (typeof Image === "undefined") return;
 
   const attributes = getCmsImageAttributes(mediaOrSource, sizeVariant, colorVariant);
-  if (!attributes?.src) return;
+  const src = attributes?.src || (typeof mediaOrSource === "string" ? mediaOrSource : "");
+  if (!src) return;
 
-  const key = `${attributes.src}|${attributes.srcSet}|${sizes}`;
+  const key = `${src}|${attributes?.srcSet || ""}|${sizes}`;
   if (prewarmedSources.has(key)) return;
   prewarmedSources.add(key);
 
   const image = new Image();
   image.decoding = "async";
   image.sizes = sizes;
-  if (attributes.srcSet) image.srcset = attributes.srcSet;
-  image.src = attributes.src;
+  if (attributes?.srcSet) image.srcset = attributes.srcSet;
+  image.src = src;
 }

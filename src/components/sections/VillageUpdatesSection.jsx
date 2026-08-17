@@ -75,7 +75,7 @@ export default memo(function VillageUpdatesSection({ reducedMotion }) {
   }, 1, {
     name: "village-updates",
     willChange: "opacity, transform",
-    willChangeTargets: () => cardRefs.current.slice(0, 6),
+    willChangeTargets: () => cardRefs.current.slice(0, window.innerWidth <= 680 ? 4 : 6),
   });
 
   return (

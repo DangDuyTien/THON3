@@ -8,13 +8,22 @@ import { useSectionProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
 import { smoothStep } from "../../utils/math.js";
 
+const gatePanels = [
+  { id: "left", imagePosition: "18% 50%" },
+  { id: "center", imagePosition: "50% 50%" },
+  { id: "right", imagePosition: "82% 50%" },
+];
+
 export default memo(function VisitChoicesSection({ reducedMotion }) {
   const { content } = useSiteContent();
   const { fullBleedArrival, visitChoices } = content;
+  const gate = visitChoices.gate || {
+    imageAlt: "Cổng trại Chi đội Thôn 3 Hạ Lôi với bố cục ba khung.",
+    imageSrc: "/assets/camp-gate-thon3.png",
+  };
   const sectionRef = useRef(null);
   const baseRef = useRef(null);
-  const leftMediaMotionRef = useRef(null);
-  const rightMediaMotionRef = useRef(null);
+  const gateMediaMotionRef = useRef(null);
   const choiceMotionRefs = useRef([]);
   const pushUpMediaRef = useRef(null);
   const pushUpImageRef = useRef(null);
@@ -22,10 +31,11 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
   const stageProgressRef = useRef(0);
 
   const prewarmVisitMedia = useCallback(() => {
+    prewarmCmsImage(gate.imageSrc, "medium", "(max-width: 680px) 92vw, min(72vw, 980px)");
     prewarmCmsImage(visitChoices.left.imageSrc, "small", "(max-width: 680px) 56vw, 20vw");
     prewarmCmsImage(visitChoices.right.imageSrc, "small", "(max-width: 680px) 56vw, 20vw");
     prewarmCmsImage(fullBleedArrival.imageSrc, "full", "100vw");
-  }, [fullBleedArrival.imageSrc, visitChoices.left.imageSrc, visitChoices.right.imageSrc]);
+  }, [fullBleedArrival.imageSrc, gate.imageSrc, visitChoices.left.imageSrc, visitChoices.right.imageSrc]);
 
   const applyProgress = (viewport) => {
     const stageProgress = stageProgressRef.current;
@@ -38,14 +48,9 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
 
     baseRef.current?.style.setProperty("--reveal-progress", `${sideReveal}`);
 
-    if (leftMediaMotionRef.current) {
-      leftMediaMotionRef.current.style.opacity = `${sideOpacity}`;
-      leftMediaMotionRef.current.style.transform = `translate3d(-${(1 - sideReveal) * sideTravel}vw, 0, 0)`;
-    }
-
-    if (rightMediaMotionRef.current) {
-      rightMediaMotionRef.current.style.opacity = `${sideOpacity}`;
-      rightMediaMotionRef.current.style.transform = `translate3d(${(1 - sideReveal) * sideTravel}vw, 0, 0)`;
+    if (gateMediaMotionRef.current) {
+      gateMediaMotionRef.current.style.opacity = `${sideOpacity}`;
+      gateMediaMotionRef.current.style.transform = `translate3d(0, ${(1 - sideReveal) * 4}vh, 0)`;
     }
 
     const leftChoice = choiceMotionRefs.current[0];
@@ -76,8 +81,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     updateWhilePrewarmed: true,
     willChange: "opacity, transform",
     willChangeTargets: () => [
-      leftMediaMotionRef.current,
-      rightMediaMotionRef.current,
+      gateMediaMotionRef.current,
       ...choiceMotionRefs.current,
       pushUpMediaRef.current,
       ...(typeof window !== "undefined" && window.innerWidth > 680 ? [pushUpImageRef.current] : []),
@@ -93,26 +97,21 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     >
       <div className="visit-choices-stage">
         <div className="visit-choices-base" ref={baseRef}>
-          <figure className="visit-side-media visit-side-media-left">
-            <div className="visit-side-media-motion" ref={leftMediaMotionRef}>
-              <AdaptiveImage
-                src={visitChoices.left.imageSrc}
-                alt={visitChoices.left.imageAlt}
-                imagePosition={visitChoices.left.imagePosition}
-                imageVariant="small"
-                sizes="(max-width: 680px) 56vw, 20vw"
-              />
-            </div>
-          </figure>
-          <figure className="visit-side-media visit-side-media-right">
-            <div className="visit-side-media-motion" ref={rightMediaMotionRef}>
-              <AdaptiveImage
-                src={visitChoices.right.imageSrc}
-                alt={visitChoices.right.imageAlt}
-                imagePosition={visitChoices.right.imagePosition}
-                imageVariant="small"
-                sizes="(max-width: 680px) 56vw, 20vw"
-              />
+          <figure className="visit-gate-media" role="img" aria-label={gate.imageAlt} data-preview-target="visit-gate">
+            <div className="visit-gate-media-motion" ref={gateMediaMotionRef}>
+              <div className="visit-gate-panels" aria-hidden="true">
+                {gatePanels.map((panel) => (
+                  <div className={`visit-gate-panel visit-gate-panel-${panel.id}`} key={panel.id}>
+                    <AdaptiveImage
+                      src={gate.imageSrc}
+                      alt=""
+                      imagePosition={panel.imagePosition}
+                      imageVariant="medium"
+                      sizes="(max-width: 680px) 30vw, min(24vw, 320px)"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </figure>
 

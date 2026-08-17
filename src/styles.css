@@ -153,11 +153,15 @@ body {
 }
 
 .closing-social-links a {
+  align-items: center;
   color: var(--ink);
+  display: inline-flex;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
+  min-height: 44px;
+  padding-inline: 4px;
   text-decoration: none;
   text-transform: uppercase;
   transition: color 180ms ease, transform 180ms ease;
@@ -916,6 +920,10 @@ body.page-transition-active {
     padding-inline: clamp(24px, 4vw, 40px);
   }
 
+  .visit-gate-media {
+    width: min(82vw, 760px);
+  }
+
   .visit-choices-layout {
     gap: clamp(24px, 4vw, 48px);
     max-width: min(700px, calc(100vw - 48px));
@@ -986,6 +994,11 @@ body.page-transition-active {
 
   .story-title {
     font-size: clamp(38px, 12vw, 48px);
+  }
+
+  .visit-gate-media {
+    margin-bottom: 22px;
+    width: min(100%, 302px);
   }
 
   .visit-choices-layout {
@@ -2269,41 +2282,71 @@ img {
   display: none;
 }
 
-.visit-side-media {
-  bottom: 0;
-  height: 72svh;
+.visit-gate-media {
+  height: clamp(220px, 37svh, 340px);
+  left: 50%;
   margin: 0;
-  overflow: hidden;
+  pointer-events: none;
   position: absolute;
-  width: clamp(175px, calc(15vw + 50px), 260px);
-  z-index: 13;
+  top: clamp(24px, 5svh, 48px);
+  transform: translateX(-50%);
+  width: min(72vw, 900px);
+  z-index: 10;
 }
 
-.visit-side-media-motion {
+.visit-gate-media-motion,
+.visit-gate-panels {
   height: 100%;
-  inset: 0;
-  opacity: 0.28;
-  position: absolute;
-  transform: translate3d(0, 0, 0);
-  /* P2: will-change managed by MotionRuntime */
   width: 100%;
 }
 
-.visit-side-media-motion img {
+.visit-gate-media-motion {
+  opacity: 0.28;
+  transform: translate3d(0, 0, 0);
+}
+
+.visit-gate-panels {
+  display: grid;
+  gap: clamp(6px, 0.8vw, 12px);
+  grid-template-columns: 0.92fr 1.16fr 0.92fr;
+  padding: 10px clamp(10px, 1.6vw, 22px) 18px;
+  perspective: 1100px;
+  transform-style: preserve-3d;
+}
+
+.visit-gate-panel {
+  background: var(--paper-deep);
+  border: 1px solid rgba(11, 26, 48, 0.18);
+  box-shadow: 0 18px 34px rgba(11, 26, 48, 0.15), 0 4px 10px rgba(11, 26, 48, 0.1);
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.visit-gate-panel-left {
+  transform: rotateY(7deg) rotateZ(0.45deg);
+  transform-origin: right center;
+}
+
+.visit-gate-panel-center {
+  box-shadow: 0 22px 40px rgba(11, 26, 48, 0.18), 0 5px 13px rgba(11, 26, 48, 0.11);
+  transform: translateZ(12px);
+}
+
+.visit-gate-panel-right {
+  transform: rotateY(-7deg) rotateZ(-0.45deg);
+  transform-origin: left center;
+}
+
+.visit-gate-panel img {
+  display: block;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.12);
+  transform: scale(1.035);
   width: 100%;
 }
 
-.visit-side-media-left {
-  clip-path: polygon(0 0, 86% 6%, 100% 100%, 0 100%);
-  left: 0;
-}
-
-.visit-side-media-right {
-  clip-path: polygon(14% 6%, 100% 0, 100% 100%, 0 100%);
-  right: 0;
+.visit-choices-layout {
+  transform: translateY(clamp(132px, 17svh, 172px));
 }
 
 .visit-choice-caption {
@@ -2346,6 +2389,11 @@ img {
 
 .visit-choices-reduced-motion .visit-choices-base {
   min-height: 100svh;
+}
+
+.visit-choices-reduced-motion .visit-gate-media-motion {
+  opacity: 1;
+  transform: none;
 }
 
 .visit-choices-reduced-motion .visit-push-up-media {
@@ -3276,9 +3324,9 @@ img {
     font-size: 54px;
   }
 
-  .visit-side-media {
-    height: 62svh;
-    width: 17vw;
+  .visit-gate-media {
+    height: min(34svh, 310px);
+    width: min(74vw, 840px);
   }
 
   .story-board {
@@ -3676,11 +3724,55 @@ img {
     padding: 60px 16px 96px;
   }
 
+  .visit-gate-media {
+    height: auto;
+    left: auto;
+    margin: 0 auto 28px;
+    position: relative;
+    top: auto;
+    transform: none;
+    width: min(100%, 340px);
+  }
+
+  .visit-gate-media-motion {
+    opacity: 1;
+  }
+
+  .visit-gate-panels {
+    aspect-ratio: 1.42;
+    gap: 5px;
+    padding: 7px 8px 12px;
+    perspective: 720px;
+  }
+
+  .visit-gate-panel {
+    box-shadow: 0 11px 22px rgba(11, 26, 48, 0.14), 0 3px 7px rgba(11, 26, 48, 0.08);
+  }
+
+  .visit-gate-panel-left {
+    transform: rotateY(3deg) rotateZ(0.3deg);
+  }
+
+  .visit-gate-panel-center {
+    box-shadow: 0 13px 25px rgba(11, 26, 48, 0.16), 0 3px 8px rgba(11, 26, 48, 0.09);
+    transform: translateZ(5px);
+  }
+
+  .visit-gate-panel-right {
+    transform: rotateY(-3deg) rotateZ(-0.3deg);
+  }
+
+  .visit-choices-base {
+    align-items: stretch;
+    display: block;
+  }
+
   .visit-choices-layout {
     gap: 28px;
     grid-template-columns: 1fr;
     margin: 0 auto;
     max-width: 320px;
+    transform: none;
   }
 
   .visit-choice {
@@ -3710,10 +3802,6 @@ img {
     width: 52px;
   }
 
-  .visit-side-media {
-    display: none;
-  }
-
   .visit-choice-mobile-media {
     display: block;
     width: min(100%, 280px);
@@ -3730,6 +3818,11 @@ img {
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .visit-choices-reduced-motion .visit-gate-media-motion {
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .visit-choice-caption {
@@ -3916,6 +4009,15 @@ img {
     font-size: 8px;
     line-height: 1.5;
     max-width: 240px;
+  }
+
+  .site-footer a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .site-footer a.footer-back-to-top {
+    width: 44px;
   }
 }
 
@@ -7507,9 +7609,9 @@ img {
   }
 
   .curtain-nav-roll {
-    height: auto;
+    height: clamp(34px, 8.75vw, 45px);
     max-width: 100%;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .curtain-nav-text {
@@ -8804,7 +8906,7 @@ button:hover .closing-kinetic-green {
   position: absolute;
   top: 0;
   left: 0;
-  color: var(--lime);
+  color: #ffffff;
   transform: translate3d(0, -125%, 0);
 }
 

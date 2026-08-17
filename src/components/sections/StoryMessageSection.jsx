@@ -46,14 +46,25 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
   }, 1, {
     name: "story-message",
     willChange: "transform, opacity",
-    willChangeTargets: () => [
-      stageRef.current,
-      stageRef.current?.querySelector(".story-message-photo"),
-      stageRef.current?.querySelector(".story-message-kicker"),
-      stageRef.current?.querySelector(".story-message-title"),
-      stageRef.current?.querySelector(".story-message-signature"),
-      stageRef.current?.querySelector(".story-message-summary"),
-    ],
+    willChangeTargets: () => {
+      const photo = stageRef.current?.querySelector(".story-message-photo");
+      const title = stageRef.current?.querySelector(".story-message-title");
+      const signature = stageRef.current?.querySelector(".story-message-signature");
+      const summary = stageRef.current?.querySelector(".story-message-summary");
+
+      if (typeof window !== "undefined" && window.innerWidth <= 680) {
+        return [photo, title, signature, summary];
+      }
+
+      return [
+        stageRef.current,
+        photo,
+        stageRef.current?.querySelector(".story-message-kicker"),
+        title,
+        signature,
+        summary,
+      ];
+    },
   });
 
   useEffect(() => () => {
