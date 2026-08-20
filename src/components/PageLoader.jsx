@@ -2,21 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import SiteLoaderMark from "./SiteLoaderMark.jsx";
 
 export { SiteLoaderMark as LoaderMark };
-function waitForCriticalResources() {
-  const heroImage = document.querySelector(".hero img");
-  const imageReady = heroImage?.decode
-    ? heroImage.decode().catch(() => undefined)
-    : Promise.resolve();
-  const fontsReady = document.fonts?.ready || Promise.resolve();
-  const documentReady = document.readyState === "complete"
-    ? Promise.resolve()
-    : new Promise((resolve) => {
-      window.addEventListener("load", resolve, { once: true });
-    });
-
-  return Promise.all([imageReady, fontsReady, documentReady]);
-}
-
 export default function PageLoader({ onExitComplete }) {
   const [ready, setReady] = useState(false);
   const [mounted, setMounted] = useState(true);
@@ -36,15 +21,13 @@ export default function PageLoader({ onExitComplete }) {
       setRunning(true);
       safetyTimer = window.setTimeout(() => {
         if (!cancelled) setReady(true);
-      }, prefersReducedMotion ? 180 : 2500);
+      }, prefersReducedMotion ? 180 : 1200);
     };
 
-    waitForCriticalResources().then(startMotion);
-    const fallbackTimer = window.setTimeout(startMotion, 2900);
+    startMotion();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(fallbackTimer);
       if (safetyTimer !== null) window.clearTimeout(safetyTimer);
     };
   }, [prefersReducedMotion]);
@@ -57,7 +40,7 @@ export default function PageLoader({ onExitComplete }) {
         onExitComplete?.();
       }
       setMounted(false);
-    }, prefersReducedMotion ? 80 : 700);
+    }, prefersReducedMotion ? 80 : 320);
     return () => window.clearTimeout(removeTimer);
   }, [onExitComplete, prefersReducedMotion, ready]);
 

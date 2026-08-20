@@ -1,11 +1,9 @@
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header.jsx";
-import PageContour from "./components/PageContour.jsx";
 import SiteFooter from "./components/SiteFooter.jsx";
 import Hero from "./components/sections/Hero.jsx";
 import StoryMessageSection from "./components/sections/StoryMessageSection.jsx";
 import ExploreStatementSection from "./components/sections/ExploreStatementSection.jsx";
-import SeasonsSection from "./components/sections/SeasonsSection.jsx";
 import { SiteContentProvider, useSiteContent } from "./content/SiteContentProvider.jsx";
 import { getSiteAppearanceClassName, getSiteAppearanceStyle } from "./content/site-theme.js";
 import { useMomentumScroll, useReducedMotion } from "./hooks/useMotion.js";
@@ -13,13 +11,15 @@ import { AuthProvider, useAuth } from "./lib/AuthProvider.jsx";
 import { isBackendConfigured } from "./lib/backend-api.js";
 import { getPublicHomeHref } from "./components/admin/admin-registry.js";
 import { getRouteKeyFromSnapshot } from "./route-transition.js";
-import PageTransition from "./components/PageTransition.jsx";
 
 const AdminPage = lazy(() => import("./components/AdminPage.jsx"));
 const AdminLoginModal = lazy(() => import("./components/AdminLoginModal.jsx"));
 const CommunityPartnersSection = lazy(() => import("./components/sections/CommunityPartnersSection.jsx"));
 const ClosingSection = lazy(() => import("./components/ClosingSection.jsx"));
+const PageContour = lazy(() => import("./components/PageContour.jsx"));
+const PageTransition = lazy(() => import("./components/PageTransition.jsx"));
 const PageLoader = lazy(() => import("./components/PageLoader.jsx"));
+const SeasonsSection = lazy(() => import("./components/sections/SeasonsSection.jsx"));
 const VisitChoicesSection = lazy(() => import("./components/sections/VisitChoicesSection.jsx"));
 const VillageArchiveSection = lazy(() => import("./components/sections/VillageArchiveSection.jsx"));
 const VillageUpdatesSection = lazy(() => import("./components/sections/VillageUpdatesSection.jsx"));
@@ -115,7 +115,11 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
 
   return (
     <div className={`app-shell ${getSiteAppearanceClassName(appearance)}`} style={getSiteAppearanceStyle(appearance)}>
-      <PageContour canvasRef={contourCanvasRef} reducedMotion={reducedMotion} />
+      {!reducedMotion && (
+        <Suspense fallback={null}>
+          <PageContour canvasRef={contourCanvasRef} reducedMotion={reducedMotion} />
+        </Suspense>
+      )}
       <a className="skip-link" href="#noi-dung">Đi tới nội dung chính</a>
       <Header menuOpen={menuOpen} onToggleMenu={toggleMenu} onCloseMenu={closeMenu} />
 
@@ -123,7 +127,9 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
         <Hero reducedMotion={reducedMotion} heroRevealReady={heroRevealReady} />
         <StoryMessageSection contourCanvasRef={contourCanvasRef} reducedMotion={reducedMotion} />
         <ExploreStatementSection reducedMotion={reducedMotion} />
-        <SeasonsSection reducedMotion={reducedMotion} />
+        <Suspense fallback={<div className="season-gallery-section section-lazy-placeholder" aria-hidden="true" />}>
+          <SeasonsSection reducedMotion={reducedMotion} />
+        </Suspense>
         <Suspense fallback={<div className="visit-choices-section section-lazy-placeholder" aria-hidden="true" />}>
           <VisitChoicesSection reducedMotion={reducedMotion} />
         </Suspense>
@@ -331,7 +337,9 @@ function App() {
     <AuthProvider>
       <SiteContentProvider>
         <AppRouter heroRevealReady={heroRevealReady} onRouteReady={setCurrentRouteKey} />
-        <PageTransition currentRouteKey={currentRouteKey} reducedMotion={reducedMotion} />
+        <Suspense fallback={null}>
+          <PageTransition currentRouteKey={currentRouteKey} reducedMotion={reducedMotion} />
+        </Suspense>
       </SiteContentProvider>
       <Suspense fallback={null}>
         <PageLoader onExitComplete={handleLoaderExit} />

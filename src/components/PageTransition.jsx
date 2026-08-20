@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getRouteKeyForHref, getTransitionTitle, isTransitionNavigation } from "../route-transition.js";
-import { LoaderMark } from "./PageLoader.jsx";
+import SiteLoaderMark from "./SiteLoaderMark.jsx";
 
 const COVER_DURATION = 1000;
 const RETRACT_DURATION = 1100;
@@ -194,7 +194,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       </svg>
       <div className="page-transition-curtain" style={{ clipPath: "url(#page-transition-clip-path)" }}>
         <div className="page-transition-center">
-          <LoaderMark label={title} key={`${title}-${drawCycle}`} />
+          <SiteLoaderMark label={title} key={`${title}-${drawCycle}`} />
           <p className="page-transition-title">{title}</p>
           <span className="page-transition-caption">XÃ MÊ LINH</span>
         </div>

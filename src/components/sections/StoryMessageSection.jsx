@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
 import RevealLines from "../RevealLines.jsx";
@@ -11,7 +11,25 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
   const { villageMessage } = content;
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
+  const photoRef = useRef(null);
   const marqueeCopies = Array.from({ length: 4 });
+  const [photoReady, setPhotoReady] = useState(false);
+
+  useEffect(() => {
+    const photo = photoRef.current;
+    if (!photo || !("IntersectionObserver" in window)) {
+      setPhotoReady(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setPhotoReady(true);
+      observer.disconnect();
+    }, { rootMargin: "0px 0px -40px 0px" });
+    observer.observe(photo);
+    return () => observer.disconnect();
+  }, []);
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport) => {
     const stage = stageRef.current;
@@ -103,15 +121,18 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
           </RevealLine>
         </h2>
 
-        <figure className="story-message-photo" data-preview-target="story-main">
-          <AdaptiveImage
-            src={villageMessage.imageSrc}
-            alt={villageMessage.imageAlt}
-            colorVariant={villageMessage.colorVariant}
-            imagePosition={villageMessage.imagePosition}
-            imageVariant="ultra"
-            sizes="100vw"
-          />
+        <figure className="story-message-photo" ref={photoRef} data-preview-target="story-main">
+          {photoReady && (
+            <AdaptiveImage
+              src={villageMessage.imageSrc}
+              alt={villageMessage.imageAlt}
+              colorVariant={villageMessage.colorVariant}
+              imagePosition={villageMessage.imagePosition}
+              imageVariant="ultra"
+              priority
+              sizes="100vw"
+            />
+          )}
         </figure>
 
         <div className="story-message-signature" aria-label={villageMessage.signatureAlt} data-preview-target="story-signature">

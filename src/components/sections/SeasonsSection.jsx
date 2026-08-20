@@ -36,7 +36,6 @@ function SeasonalGalleryPhotos({ photos, preview = false }) {
           colorVariant={photo.colorVariant}
           imagePosition={photo.imagePosition}
           imageVariant="large"
-          loading="eager"
           sizes="(max-width: 680px) 72vw, 32vw"
         />
       </div>
