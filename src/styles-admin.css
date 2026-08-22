@@ -2217,6 +2217,76 @@
   font-size: 9px;
 }
 
+.admin-overview-bulk-entry {
+  align-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 104px;
+  padding: 18px;
+  text-align: left;
+  transition: background-color 180ms ease, transform 180ms ease;
+  width: 100%;
+}
+
+.admin-overview-bulk-entry:hover {
+  background: #20382d;
+  transform: translateY(-2px);
+}
+
+.admin-overview-bulk-icon {
+  align-items: center;
+  background: var(--lime);
+  color: var(--ink);
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.admin-overview-bulk-icon svg {
+  height: 22px;
+  width: 22px;
+}
+
+.admin-overview-bulk-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-overview-bulk-copy small {
+  color: var(--lime);
+  font-family: var(--mono);
+  font-size: 8px;
+}
+
+.admin-overview-bulk-copy strong {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.admin-overview-bulk-command {
+  align-items: center;
+  color: var(--paper);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 800;
+  gap: 7px;
+}
+
+.admin-overview-bulk-command svg {
+  height: 15px;
+  transition: transform 160ms ease;
+  width: 15px;
+}
+
+.admin-overview-bulk-entry:hover .admin-overview-bulk-command svg {
+  transform: translate(3px, -3px);
+}
+
 .admin-overview-grid {
   border-top: 1px solid rgba(21, 39, 31, 0.16);
   display: grid;
@@ -2835,6 +2905,15 @@
 
   .admin-overview-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-overview-bulk-entry {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-overview-bulk-command {
+    grid-column: 2;
   }
 
   .admin-overview-item,
@@ -4254,6 +4333,187 @@ body.youth-modal-open {
   }
 }
 
+.admin-archive-bulk,
+.admin-section-auto-images {
+  align-items: center;
+  background: #edf1e8;
+  border: 1px dashed rgba(21, 39, 31, 0.38);
+  display: grid;
+  gap: 12px 18px;
+  grid-template-columns: minmax(0, 1fr);
+  margin-bottom: 24px;
+  padding: 16px;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.admin-section-auto-settings {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.62);
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 10px 12px;
+}
+
+.admin-section-auto-count,
+.admin-section-auto-toggle {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  font-family: var(--mono);
+  font-size: 9px;
+  gap: 9px;
+  justify-content: space-between;
+  line-height: 1.35;
+}
+
+.admin-section-auto-number {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.admin-section-auto-number input {
+  background: #ffffff;
+  border: 1px solid rgba(21, 39, 31, 0.28);
+  color: var(--ink);
+  font: 600 11px/1 var(--mono);
+  height: 32px;
+  padding: 0 6px;
+  width: 58px;
+}
+
+.admin-section-auto-number small {
+  color: #66746b;
+  white-space: nowrap;
+}
+
+.admin-section-auto-toggle {
+  cursor: pointer;
+  justify-content: flex-start;
+}
+
+.admin-section-auto-toggle input {
+  accent-color: var(--ink);
+  flex: 0 0 auto;
+  height: 16px;
+  width: 16px;
+}
+
+.admin-archive-bulk-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.admin-archive-bulk-actions button {
+  justify-content: center;
+  min-width: 0;
+}
+
+.admin-archive-bulk.is-dragging {
+  background: #e5efd0;
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--lime);
+}
+
+.admin-archive-bulk-copy {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-archive-bulk-copy > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-archive-bulk-copy strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.admin-archive-bulk-copy span:not(.admin-archive-bulk-icon) {
+  color: #66746b;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.admin-archive-bulk-icon {
+  align-items: center;
+  background: var(--ink);
+  color: var(--lime);
+  display: flex;
+  flex: 0 0 42px;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.admin-archive-bulk-icon svg {
+  height: 19px;
+  width: 19px;
+}
+
+.admin-archive-bulk-progress {
+  accent-color: var(--ink);
+  grid-column: 1 / -1;
+  height: 5px;
+  width: 100%;
+}
+
+.admin-archive-bulk-result {
+  display: grid;
+  font-size: 10px;
+  gap: 3px;
+  grid-column: 1 / -1;
+  line-height: 1.45;
+  padding: 8px 10px;
+}
+
+.admin-archive-bulk-result small {
+  overflow-wrap: anywhere;
+}
+
+.admin-archive-bulk-result.is-success {
+  background: #dfead7;
+  color: #28552f;
+}
+
+.admin-archive-bulk-result.is-warning {
+  background: #fff1c8;
+  color: #795f12;
+}
+
+.admin-archive-bulk-result.is-error {
+  background: #f4d9d3;
+  color: #8d2e22;
+}
+
+.admin-danger-text-button {
+  align-items: center;
+  background: transparent;
+  color: #9c3025;
+  display: inline-flex;
+  font-size: 10px;
+  gap: 7px;
+  justify-self: end;
+  padding: 4px 0;
+}
+
+.admin-danger-text-button svg {
+  height: 13px;
+  width: 13px;
+}
+
+.admin-danger-text-button:hover {
+  color: #d13425;
+}
+
 /* Admin Pending Approval Box */
 .admin-pending-approval-box {
   background: rgba(0, 240, 255, 0.05);
@@ -4426,6 +4686,38 @@ body.youth-modal-open {
 
   .youth-form-full {
     grid-column: span 1;
+  }
+
+  .admin-archive-bulk,
+  .admin-section-auto-images {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-archive-bulk .admin-primary-button,
+  .admin-section-auto-images .admin-primary-button {
+    justify-content: center;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .admin-section-auto-settings {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-archive-bulk-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-archive-bulk-actions .admin-secondary-button {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .admin-archive-bulk-progress,
+  .admin-archive-bulk-result {
+    grid-column: 1;
   }
 
   .admin-pending-item {

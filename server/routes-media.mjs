@@ -7,7 +7,7 @@ import { requireUser, requireRole } from "./auth.mjs";
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg+xml"]);
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: Number(process.env.MAX_MEDIA_BYTES || 15 * 1024 * 1024) },
+  limits: { fileSize: Number(process.env.MAX_MEDIA_BYTES || 50 * 1024 * 1024) },
   fileFilter: (_req, file, callback) => callback(null, allowedTypes.has(file.mimetype)),
 });
 

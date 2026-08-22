@@ -1,7 +1,9 @@
 import { MapPin, Menu, X } from "lucide-react";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
-import CurtainMenu from "./CurtainMenu.jsx";
+
+const loadCurtainMenu = () => import("./CurtainMenu.jsx");
+const CurtainMenu = lazy(loadCurtainMenu);
 
 function KineticRollText({ children }) {
   const text = String(children);
@@ -25,6 +27,8 @@ function IconRoll({ isOpen }) {
 export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
   const { content } = useSiteContent();
   const { siteName, tagline } = content.settings;
+  const menuMountedRef = useRef(menuOpen);
+  if (menuOpen) menuMountedRef.current = true;
 
   useEffect(() => {
     const wordmark = document.querySelector("[data-critical-wordmark]");
@@ -45,7 +49,7 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
     <>
       <header className={`site-header${menuOpen ? " is-menu-open" : ""}`} data-header>
         <div className="header-actions">
-          <a className="visit-link" href="#lien-he" aria-label="Ghé thăm">
+          <a className="visit-link" href="/lien-he" aria-label="Ghé thăm">
             <MapPin aria-hidden="true" />
             <KineticRollText>Ghé thăm</KineticRollText>
           </a>
@@ -56,6 +60,9 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
             title={menuOpen ? "Đóng menu" : "Mở menu"}
+            onFocus={loadCurtainMenu}
+            onPointerDown={loadCurtainMenu}
+            onPointerEnter={loadCurtainMenu}
           >
             <IconRoll isOpen={menuOpen} />
             <span className="sr-only">{menuOpen ? "Đóng menu" : "Mở menu"}</span>
@@ -63,7 +70,11 @@ export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
         </div>
       </header>
 
-      <CurtainMenu isOpen={menuOpen} onClose={onCloseMenu} />
+      {menuMountedRef.current && (
+        <Suspense fallback={null}>
+          <CurtainMenu isOpen={menuOpen} onClose={onCloseMenu} />
+        </Suspense>
+      )}
     </>
   );
 }

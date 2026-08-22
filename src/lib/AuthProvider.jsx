@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getCurrentUserRole, getSession, signIn, signOut, subscribeToAuth } from "./auth-api.js";
+import { getSession, signIn, signOut, subscribeToAuth } from "./auth-api.js";
 import { isBackendConfigured } from "./backend-api.js";
 
 const AuthContext = createContext(null);
@@ -16,10 +16,10 @@ export function AuthProvider({ children }) {
       return undefined;
     }
     getSession()
-      .then(async (nextSession) => {
+      .then((nextSession) => {
         if (!active) return;
         setSession(nextSession);
-        setRole(nextSession?.user ? await getCurrentUserRole(nextSession.user.id) : null);
+        setRole(nextSession?.user?.role || null);
       })
       .catch(() => active && setSession(null))
       .finally(() => active && setLoading(false));

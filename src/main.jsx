@@ -27,8 +27,12 @@ if (typeof window !== "undefined") {
     window.removeEventListener("pointerdown", loadOnce);
     window.removeEventListener("keydown", loadOnce);
   };
-  window.addEventListener("scroll", loadOnce, { passive: true, once: true });
-  window.addEventListener("pointerdown", loadOnce, { once: true });
-  window.addEventListener("keydown", loadOnce, { once: true });
-  window.setTimeout(loadOnce, 3500);
+  if (document.documentElement.classList.contains("non-public-route")) {
+    loadOnce();
+  } else {
+    window.addEventListener("scroll", loadOnce, { passive: true, once: true });
+    window.addEventListener("pointerdown", loadOnce, { once: true });
+    window.addEventListener("keydown", loadOnce, { once: true });
+    window.setTimeout(loadOnce, 3500);
+  }
 }

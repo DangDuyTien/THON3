@@ -5,24 +5,24 @@ import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import { subscribeContinuousFrame } from "../motion-frame-scheduler.js";
 
 const DEFAULT_SOCIAL_ITEMS = [
-  { label: "Facebook", href: "#dong-hanh" },
-  { label: "Instagram", href: "#dong-hanh" },
-  { label: "YouTube", href: "#dong-hanh" },
-  { label: "TikTok", href: "#dong-hanh" },
+  { label: "Facebook", href: "/dong-hanh" },
+  { label: "Instagram", href: "/dong-hanh" },
+  { label: "YouTube", href: "/dong-hanh" },
+  { label: "TikTok", href: "/dong-hanh" },
 ];
 
 const DEFAULT_NAV_ITEMS = [
-  { label: "Trang chủ", href: "#home" },
-  { label: "Câu chuyện", href: "#cau-chuyen" },
-  { label: "Nhịp sống", href: "#nhung-mua" },
-  { label: "Tư liệu", href: "#tu-lieu" },
-  { label: "Cộng đồng", href: "#dong-hanh" },
+  { label: "Trang chủ", href: "/" },
+  { label: "Câu chuyện", href: "/cau-chuyen" },
+  { label: "Nhịp sống", href: "/nhung-mua" },
+  { label: "Tư liệu", href: "/tu-lieu" },
+  { label: "Cộng đồng", href: "/dong-hanh" },
 ];
 
 const DEFAULT_NETWORK_ITEMS = [
-  { label: "Mê Linh", href: "#home" },
-  { label: "Hà Nội", href: "#lien-he" },
-  { label: "Kết nối", href: "#dong-hanh" },
+  { label: "Mê Linh", href: "/" },
+  { label: "Hà Nội", href: "/lien-he" },
+  { label: "Kết nối", href: "/dong-hanh" },
 ];
 
 function isExternalLink(href) {
@@ -144,7 +144,7 @@ export default function ClosingSection({ reducedMotion }) {
         <nav className="closing-social-links" aria-label="Mạng xã hội của Mê Linh">
           {socialItems.map((item, index) => {
             const label = item?.label || `Kênh ${index + 1}`;
-            const href = item?.href || "#dong-hanh";
+            const href = item?.href || "/dong-hanh";
             return (
               <a href={href} key={`${label}-${index}`} {...LinkProps({ href })}>
                 <KineticRollText>{label}</KineticRollText>
@@ -161,11 +161,11 @@ export default function ClosingSection({ reducedMotion }) {
             <path d="M0 100 H245 C295 100 335 88 370 48 C392 20 407 0 438 0 H562 C593 0 608 20 630 48 C665 88 705 100 755 100 H1000 V100 H0 Z" />
           </svg>
           <div className="closing-topbar">
-            <a className="closing-wordmark" href="#home" aria-label={`${settings.siteName} - về trang đầu`}>
+            <a className="closing-wordmark" href="/" aria-label={`${settings.siteName} - về trang đầu`}>
               <span>{nameLines[0]}</span>
               <span>{nameLines.slice(1).join(" ")}</span>
             </a>
-            <a className="closing-visit-link" href="#lien-he">
+            <a className="closing-visit-link" href="/lien-he">
               <MapPin aria-hidden="true" />
               <KineticRollText>{closing.visitLabel || "GHÉ MÊ LINH"}</KineticRollText>
             </a>
@@ -196,7 +196,7 @@ export default function ClosingSection({ reducedMotion }) {
               <span className="closing-nav-label">{closing.navLabel || "TRANG"}</span>
               {navItems.map((item, index) => {
                 const label = item?.label || `Trang ${index + 1}`;
-                const href = item?.href || "#home";
+                const href = item?.href || "/";
                 return <a href={href} key={`${label}-${index}`} {...LinkProps({ href })}><KineticRollText>{label}</KineticRollText></a>;
               })}
             </nav>
@@ -206,12 +206,12 @@ export default function ClosingSection({ reducedMotion }) {
               <span className="closing-nav-label">{closing.networkLabel || "THEO DÕI"}</span>
               {networkItems.map((item, index) => {
                 const label = item?.label || `Kênh ${index + 1}`;
-                const href = item?.href || "#dong-hanh";
+                const href = item?.href || "/dong-hanh";
                 return <a href={href} key={`${label}-${index}`} {...LinkProps({ href })}><KineticRollText>{label}</KineticRollText></a>;
               })}
             </nav>
 
-            <a className="closing-contact" href={closing.contactHref || "#dong-hanh"} {...LinkProps({ href: closing.contactHref || "#dong-hanh" })}>
+            <a className="closing-contact" href={closing.contactHref || "/dong-hanh"} {...LinkProps({ href: closing.contactHref || "/dong-hanh" })}>
               <KineticRollText>{closing.contactLabel || "KẾT NỐI CÙNG MÊ LINH"}</KineticRollText>
               <ArrowUpRight aria-hidden="true" />
             </a>

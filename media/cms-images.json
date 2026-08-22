@@ -58,6 +58,29 @@
     "version": "20260821"
   },
   {
+    "id": "camp-gate-user-cutout",
+    "alt": "Cổng trại Chi đội Thôn 3 Hạ Lôi.",
+    "width": 1340,
+    "height": 1174,
+    "focalPoint": { "x": 0.5, "y": 0.5 },
+    "sources": {
+      "avif": {
+        "640": "/assets/camp-gate-thon3-user-cutout-640.avif",
+        "960": "/assets/camp-gate-thon3-user-cutout-960.avif",
+        "1440": "/assets/camp-gate-thon3-user-cutout-1440.avif",
+        "1920": "/assets/camp-gate-thon3-user-cutout-1920.avif"
+      },
+      "webp": {
+        "640": "/assets/camp-gate-thon3-user-cutout-640.webp",
+        "960": "/assets/camp-gate-thon3-user-cutout-960.webp",
+        "1440": "/assets/camp-gate-thon3-user-cutout-1440.webp",
+        "1920": "/assets/camp-gate-thon3-user-cutout-1920.webp"
+      }
+    },
+    "placeholder": "#eef3ef",
+    "version": "20260822"
+  },
+  {
     "id": "camp-gate-left",
     "alt": "Cánh trái cổng trại Chi đội Thôn 3 Hạ Lôi.",
     "width": 1536,

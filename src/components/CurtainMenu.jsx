@@ -1,8 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MapPin, Menu, X } from "lucide-react";
+import "../styles-curtain-menu.css";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
+
+const INITIAL_CURVE = "M 0 0 L 1 0 L 1 0 Q 0.5 0 0 0 Z";
+
+function toObjectBoundingBoxPath(path) {
+  return path.replace(/(\d+(\.\d+)?)/g, (value) => (parseFloat(value) / 100).toFixed(4));
+}
 
 function KineticRollText({ children }) {
   const text = String(children);
@@ -28,17 +35,21 @@ export default function CurtainMenu({ isOpen, onClose }) {
   const { siteName, tagline } = content.settings;
   const [animating, setAnimating] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [curveD, setCurveD] = useState("M 0 0 L 100 0 L 100 0 Q 50 0 0 0 Z");
   const [mouseY, setMouseY] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
+  const curvePathRef = useRef(null);
   const rafRef = useRef(null);
+
+  const updateCurve = (path) => {
+    curvePathRef.current?.setAttribute("d", toObjectBoundingBoxPath(path));
+  };
 
   useEffect(() => {
     if (isOpen) {
       setVisible(true);
       setAnimating(true);
       let start = null;
-      const duration = 1250;
+      const duration = 800;
 
       const animateOpen = (timestamp) => {
         if (!start) start = timestamp;
@@ -50,12 +61,12 @@ export default function CurtainMenu({ isOpen, onClose }) {
         const currentY = easeP * 100;
         const curveY = Math.min(currentY + bulge, 100);
 
-        setCurveD(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
+        updateCurve(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
 
         if (p < 1) {
           rafRef.current = requestAnimationFrame(animateOpen);
         } else {
-          setCurveD("M 0 0 L 100 0 L 100 100 Q 50 100 0 100 Z");
+          updateCurve("M 0 0 L 100 0 L 100 100 Q 50 100 0 100 Z");
           setAnimating(false);
         }
       };
@@ -64,7 +75,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
     } else if (visible) {
       setAnimating(true);
       let start = null;
-      const duration = 1000;
+      const duration = 650;
 
       const animateClose = (timestamp) => {
         if (!start) start = timestamp;
@@ -76,7 +87,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
         const bulge = Math.sin(p * Math.PI) * 22;
         const curveY = Math.max(currentY - bulge, 0);
 
-        setCurveD(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
+        updateCurve(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
 
         if (p < 1) {
           rafRef.current = requestAnimationFrame(animateClose);
@@ -107,13 +118,13 @@ export default function CurtainMenu({ isOpen, onClose }) {
   if (!visible && !isOpen) return null;
 
   const menuLinks = [
-    { id: 0, title: "TRANG CHỦ", href: "#home" },
-    { id: 1, title: "CÂU CHUYỆN", href: "#cau-chuyen" },
-    { id: 2, title: "NHỊP SỐNG", href: "#nhung-mua" },
-    { id: 3, title: "BẢN ĐỒ", href: "#ban-do" },
-    { id: 4, title: "CỘNG ĐỒNG", href: "#dong-hanh" },
-    { id: 5, title: "KHO LƯU TRỮ", href: "#tu-lieu" },
-    { id: 6, title: "THEO DÕI MÊ LINH", href: "#ket-lai" },
+    { id: 0, title: "TRANG CHỦ", href: "/" },
+    { id: 1, title: "CÂU CHUYỆN", href: "/cau-chuyen" },
+    { id: 2, title: "NHỊP SỐNG", href: "/nhung-mua" },
+    { id: 3, title: "BẢN ĐỒ", href: "/ban-do" },
+    { id: 4, title: "CỘNG ĐỒNG", href: "/dong-hanh" },
+    { id: 5, title: "KHO LƯU TRỮ", href: "/tu-lieu" },
+    { id: 6, title: "THEO DÕI MÊ LINH", href: "/ket-lai" },
   ];
 
   const leftColumnPhotos = [
@@ -131,7 +142,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
       <svg className="curtain-svg-clip" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <clipPath id="curtain-clip-path" clipPathUnits="objectBoundingBox">
-            <path d={curveD.replace(/(\d+(\.\d+)?)/g, (m) => (parseFloat(m) / 100).toFixed(4))} />
+            <path ref={curvePathRef} d={INITIAL_CURVE} />
           </clipPath>
         </defs>
       </svg>
@@ -147,7 +158,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
 
         {/* Header Bar inside Curtain Menu */}
         <header className="curtain-menu-header">
-          <a className="curtain-brand-lando" href="#home" onClick={onClose}>
+          <a className="curtain-brand-lando" href="/" onClick={onClose}>
             <span>{siteName}</span>
             <span>{tagline}</span>
           </a>

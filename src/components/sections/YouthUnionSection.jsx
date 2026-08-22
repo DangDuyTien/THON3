@@ -36,13 +36,13 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
             <div className="youth-union-col youth-union-col-left">
               <p className="youth-union-label">DANH MỤC</p>
               <nav className="youth-union-nav-list" aria-label="Điều hướng Đoàn Thanh Niên">
-                <a href="#home">TRANG CHỦ</a>
-                <a href="#cau-chuyen">CÂU CHUYỆN LÀNG</a>
-                <a href="#nhung-mua">NHỊP SỐNG MÙA</a>
-                <a href="#tu-lieu">KHO LƯU TRỮ</a>
-                <a href="#nhip-song-hom-nay">HOẠT ĐỘNG ĐOÀN</a>
+                <a href="/">TRANG CHỦ</a>
+                <a href="/cau-chuyen">CÂU CHUYỆN LÀNG</a>
+                <a href="/nhung-mua">NHỊP SỐNG MÙA</a>
+                <a href="/tu-lieu">KHO LƯU TRỮ</a>
+                <a href="/dong-hanh">HOẠT ĐỘNG ĐOÀN</a>
               </nav>
-              <a className="youth-union-tag-btn" href="#nhip-song-hom-nay">
+              <a className="youth-union-tag-btn" href="/dong-hanh">
                 THÔNG TIN TỔ CHỨC <ArrowUpRight className="icon-sm" aria-hidden="true" />
               </a>
             </div>
@@ -74,7 +74,7 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
 
           {/* Bottom Action Pill Button */}
           <div className="youth-union-cta-wrap">
-            <a className="youth-union-cta-btn" href="#nhip-song-hom-nay">
+            <a className="youth-union-cta-btn" href="/dong-hanh">
               LIÊN HỆ THƯỜNG TRỰC ĐOÀN <ArrowUpRight aria-hidden="true" />
             </a>
           </div>

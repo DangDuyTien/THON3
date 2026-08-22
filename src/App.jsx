@@ -286,6 +286,14 @@ function getRouteSnapshot() {
   return { type: "home", route: "/" };
 }
 
+function RouteReady({ routeKey, onReady }) {
+  useEffect(() => {
+    onReady?.(routeKey);
+  }, [onReady, routeKey]);
+
+  return null;
+}
+
 function AppRouter({ heroRevealReady = false, onRouteReady }) {
   const { content } = useSiteContent();
   const [route, setRoute] = useState(getRouteSnapshot);
@@ -299,10 +307,6 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
       window.removeEventListener("popstate", updateRoute);
     };
   }, []);
-
-  useEffect(() => {
-    if (route.type !== "admin") onRouteReady?.(getRouteKeyFromSnapshot(route));
-  }, [onRouteReady, route]);
 
   useEffect(() => {
     document.title = route.type === "admin"
@@ -321,18 +325,25 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
   }
 
   if (route.type === "coming-soon") {
+    const routeKey = getRouteKeyFromSnapshot(route);
     return (
       <Suspense fallback={<div className="route-state-loading" aria-label="Đang mở..." />}>
         <ComingSoonPage
           {...(COMING_SOON_ROUTES[route.route] || COMING_SOON_ROUTES["/coming-soon"])}
           heroRevealReady={heroRevealReady}
         />
+        <RouteReady routeKey={routeKey} onReady={onRouteReady} />
       </Suspense>
     );
   }
 
   if (route.type !== "admin") {
-    return <PublicHome heroRevealReady={heroRevealReady} />;
+    return (
+      <>
+        <PublicHome heroRevealReady={heroRevealReady} />
+        <RouteReady routeKey={getRouteKeyFromSnapshot(route)} onReady={onRouteReady} />
+      </>
+    );
   }
 
   return (
@@ -343,9 +354,8 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
 }
 
 function App() {
-  // Start the hero reveal behind the intro loader so its existing animation
-  // can finish without extending the first meaningful paint on slow CPUs.
-  const [heroRevealReady, setHeroRevealReady] = useState(true);
+  // Keep route entrance motion behind the loader from competing for the same frames.
+  const [heroRevealReady, setHeroRevealReady] = useState(false);
   const reducedMotion = useReducedMotion();
   const [currentRouteKey, setCurrentRouteKey] = useState(() => getRouteKeyFromSnapshot(getRouteSnapshot()));
   const handleLoaderExit = useCallback(() => setHeroRevealReady(true), []);

@@ -21,7 +21,7 @@ export default function PageLoader({ onExitComplete }) {
       setRunning(true);
       safetyTimer = window.setTimeout(() => {
         if (!cancelled) setReady(true);
-      }, prefersReducedMotion ? 180 : 1000);
+      }, prefersReducedMotion ? 180 : 2400);
     };
 
     startMotion();

@@ -69,7 +69,7 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
               <RevealLine direction="left" enabled={revealEnabled}><em>{frame.accent}</em></RevealLine>
             </h1>
             <p className="hero-intro"><RevealLines direction="left" enabled={revealEnabled}>{frame.description}</RevealLines></p>
-            <a className="command-link" href="#cau-chuyen">
+            <a className="command-link" href="/cau-chuyen">
               <RevealLine direction="right" enabled={revealEnabled}>Đi vào câu chuyện</RevealLine>
               <ArrowDownRight aria-hidden="true" />
             </a>

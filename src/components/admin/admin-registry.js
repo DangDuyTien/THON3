@@ -13,7 +13,7 @@ export const ADMIN_SECTIONS = [
   { id: "statement", label: "Tuyên ngôn", description: "Thông điệp lớn giữa trang", publicTarget: "ban-do" },
   { id: "seasons", label: "Nhịp sống", description: "Bộ ảnh theo mùa", publicTarget: "nhung-mua" },
   { id: "visit", label: "Hai lối trở về", description: "Hai lựa chọn khám phá", publicTarget: "lien-he" },
-  { id: "archive", label: "Tư liệu", description: "Lưới ảnh lưu trữ", publicTarget: "tu-lieu" },
+  { id: "archive", label: "Kho ảnh tự động", description: "Chọn thư mục, tự xếp ảnh", publicTarget: "tu-lieu" },
   { id: "community", label: "Cộng đồng", description: "Đơn vị đồng hành", publicTarget: "dong-hanh" },
   { id: "updates", label: "Đang diễn ra", description: "Các hoạt động hôm nay", publicTarget: "nhip-song-hom-nay" },
   { id: "closing", label: "Theo dõi Mê Linh", description: "Phần kết, liên kết và thông tin chân trang", publicTarget: "ket-lai" },

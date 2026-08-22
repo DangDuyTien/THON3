@@ -127,20 +127,19 @@ function createSharedContourLoop({
 let currentPointerX = 0.5;
 let currentPointerY = 0.5;
 
-if (typeof window !== "undefined") {
-  window.addEventListener("pointermove", (e) => {
+function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
+  const onPointerMove = (e) => {
     currentPointerX = e.clientX / window.innerWidth;
     currentPointerY = e.clientY / window.innerHeight;
-  }, { passive: true });
-}
+  };
+  window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
   const renderer = createContourRenderer(canvas, quality);
   canvas.dataset.contourRenderer = "main";
   canvas.dataset.contourQuality = quality;
   markMotionScene(sceneName, "main-fallback");
 
-  return createSharedContourLoop({
+  const stopLoop = createSharedContourLoop({
     canvas,
     onDraw: (time, theme) => {
       renderer.setTheme(theme);
@@ -156,6 +155,11 @@ function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
     sceneName,
     subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
   });
+
+  return () => {
+    window.removeEventListener("pointermove", onPointerMove);
+    stopLoop();
+  };
 }
 
 function supportsOffscreenCanvas(canvas) {

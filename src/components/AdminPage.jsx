@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   FileJson,
+  FolderOpen,
   ImagePlus,
   LogOut,
   RotateCcw,
@@ -30,6 +31,7 @@ import {
 import { getDraftContent, saveDraftContent } from "../lib/content-api.js";
 import { isBackendConfigured } from "../lib/backend-api.js";
 import { getSession } from "../lib/auth-api.js";
+import { uploadMedia } from "../lib/media-api.js";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import { listPendingSubmissions, rejectSubmission, approveSubmission } from "../lib/submission-api.js";
 import {
@@ -77,6 +79,44 @@ function normalizeSearchText(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+const ARCHIVE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg+xml"]);
+const MAX_ARCHIVE_IMAGE_BYTES = 50 * 1024 * 1024;
+
+function getArchiveImageLabel(filename) {
+  return filename
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function readImageDimensions(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width: image.naturalWidth, height: image.naturalHeight });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Không đọc được kích thước ảnh."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function getArchiveCardAspectRatio(card, archive) {
+  const width = card.imageSrc ? card.imageWidth : archive.imageWidth;
+  const height = card.imageSrc ? card.imageHeight : archive.imageHeight;
+  return width && height ? `${width} / ${height}` : "3 / 4";
+}
+
+function hasSameAspectRatio(width, height, currentWidth, currentHeight) {
+  if (!width || !height || !currentWidth || !currentHeight) return false;
+  return Math.abs((width / height) - (currentWidth / currentHeight)) < 0.001;
 }
 
 function AdminField({ label, value, onChange, multiline = false, hint, type = "text", placeholder }) {
@@ -152,7 +192,7 @@ function AdminColorField({ label, value, onChange, hint, fallback = "#15271f" })
   );
 }
 
-function AdminImageField({ label, value, onChange, hint, alt, onAltChange, position, onPositionChange, fallbackSrc, fit, aspectRatio, target }) {
+function AdminImageField({ label, value, onChange, hint, alt, onAltChange, position, onPositionChange, fallbackSrc, fit, aspectRatio, target, onDimensionsChange }) {
   const onTarget = useContext(AdminImageTargetContext);
   return (
     <AdminImageEditor
@@ -169,7 +209,160 @@ function AdminImageField({ label, value, onChange, hint, alt, onAltChange, posit
       aspectRatio={aspectRatio}
       target={target}
       onTarget={onTarget}
+      onDimensionsChange={onDimensionsChange}
     />
+  );
+}
+
+function AdminSectionImageUploader({ title, description, targets, update }) {
+  const filesInputRef = useRef(null);
+  const folderInputRef = useRef(null);
+  const [limit, setLimit] = useState(targets.length);
+  const [autoText, setAutoText] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    setLimit((current) => Math.min(Math.max(current || 1, 1), targets.length));
+  }, [targets.length]);
+
+  const uploadFiles = async (fileList) => {
+    if (uploading) return;
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    if (!isBackendConfigured) {
+      setResult({ type: "error", message: "Backend MySQL chưa được cấu hình nên chưa thể tải ảnh." });
+      return;
+    }
+
+    const validFiles = files
+      .filter((file) => ARCHIVE_IMAGE_TYPES.has(file.type) && file.size <= MAX_ARCHIVE_IMAGE_BYTES)
+      .sort((first, second) => (first.webkitRelativePath || first.name).localeCompare(
+        second.webkitRelativePath || second.name,
+        "vi",
+        { numeric: true, sensitivity: "base" },
+      ));
+    const selectedFiles = validFiles.slice(0, Math.min(limit, targets.length));
+    const rejectedCount = files.length - validFiles.length;
+    const skippedCount = validFiles.length - selectedFiles.length;
+
+    if (!selectedFiles.length) {
+      setResult({ type: "error", message: "Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa 50 MB mỗi ảnh." });
+      return;
+    }
+
+    setUploading(true);
+    setProgress({ current: 0, total: selectedFiles.length });
+    setResult(null);
+    const failedFiles = [];
+    const pendingChanges = [];
+    let uploadedCount = 0;
+
+    for (let index = 0; index < selectedFiles.length; index += 1) {
+      const file = selectedFiles[index];
+      try {
+        const asset = await uploadMedia(file);
+        const imageSrc = asset.storage_path || asset.url;
+        if (!imageSrc) throw new Error("Máy chủ không trả về URL ảnh.");
+
+        const target = targets[uploadedCount];
+        const fileLabel = getArchiveImageLabel(file.name) || `Ảnh ${uploadedCount + 1}`;
+        pendingChanges.push([target.imagePath, imageSrc]);
+        if (autoText) {
+          if (target.labelPath) pendingChanges.push([target.labelPath, fileLabel]);
+          if (target.altPath && target.altPath !== target.labelPath) {
+            pendingChanges.push([target.altPath, target.altPrefix ? `${target.altPrefix} ${fileLabel}` : fileLabel]);
+          }
+        }
+        uploadedCount += 1;
+      } catch (error) {
+        failedFiles.push(`${file.name}: ${error?.message || "Không tải được ảnh."}`);
+      }
+      setProgress({ current: index + 1, total: selectedFiles.length });
+    }
+
+    pendingChanges.forEach(([path, value]) => update(path, value));
+    const problemCount = rejectedCount + failedFiles.length;
+    setResult({
+      type: uploadedCount ? (problemCount ? "warning" : "success") : "error",
+      message: `Đã tự điền ${uploadedCount}/${selectedFiles.length} ảnh vào ${title.toLowerCase()}.${skippedCount ? ` Bỏ qua ${skippedCount} ảnh ngoài số lượng đã chọn.` : ""}${rejectedCount ? ` Có ${rejectedCount} tệp không hợp lệ.` : ""}`,
+      details: failedFiles.slice(0, 3),
+    });
+    setUploading(false);
+  };
+
+  return (
+    <section className="admin-section-auto-images" aria-busy={uploading}>
+      <div className="admin-archive-bulk-copy">
+        <span className="admin-archive-bulk-icon"><ImagePlus aria-hidden="true" /></span>
+        <div>
+          <strong>{title}</strong>
+          <span>{description} · có {targets.length} khung ảnh</span>
+        </div>
+      </div>
+      <div className="admin-section-auto-settings">
+        <label className="admin-section-auto-count">
+          <span>Số ảnh muốn lấy</span>
+          <span className="admin-section-auto-number">
+            <input
+              type="number"
+              min="1"
+              max={targets.length}
+              value={limit}
+              disabled={uploading}
+              onChange={(event) => setLimit(Math.min(Math.max(Number(event.target.value) || 1, 1), targets.length))}
+            />
+            <small>/ {targets.length}</small>
+          </span>
+        </label>
+        <label className="admin-section-auto-toggle">
+          <input type="checkbox" checked={autoText} disabled={uploading} onChange={(event) => setAutoText(event.target.checked)} />
+          <span>Lấy tên tệp làm chữ hoặc mô tả ảnh</span>
+        </label>
+      </div>
+      <div className="admin-archive-bulk-actions">
+        <button className="admin-primary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => folderInputRef.current?.click()}>
+          <FolderOpen aria-hidden="true" />
+          <span>{uploading ? `Đang tải ${progress.current}/${progress.total}` : "Chọn thư mục"}</span>
+        </button>
+        <button className="admin-secondary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => filesInputRef.current?.click()}>
+          <Upload aria-hidden="true" />
+          <span>Chọn nhiều ảnh</span>
+        </button>
+      </div>
+      <input
+        ref={filesInputRef}
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        multiple
+        onChange={(event) => {
+          uploadFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={folderInputRef}
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        multiple
+        webkitdirectory=""
+        directory=""
+        onChange={(event) => {
+          uploadFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />
+      {uploading && <progress className="admin-archive-bulk-progress" max={progress.total} value={progress.current} />}
+      {result && (
+        <div className={`admin-archive-bulk-result is-${result.type}`} role={result.type === "error" ? "alert" : "status"}>
+          <span>{result.message}</span>
+          {result.details?.map((detail) => <small key={detail}>{detail}</small>)}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -336,6 +529,15 @@ function SettingsEditor({ draft, update }) {
 function HeroEditor({ draft, update }) {
   return (
     <AdminPanel eyebrow="02 / MỞ ĐẦU" title="Bốn khung cảnh mở đầu" description="Mỗi khung cảnh xuất hiện khi người xem cuộn qua phần đầu trang." cardCount={draft.storyFrames.length}>
+      <AdminSectionImageUploader
+        title="Tự điền ảnh mở đầu"
+        description="Ảnh được xếp vào các khung cảnh theo thứ tự tên tệp"
+        targets={draft.storyFrames.map((_, index) => ({
+          imagePath: `storyFrames[${index}].imageSrc`,
+          altPath: `storyFrames[${index}].description`,
+        }))}
+        update={update}
+      />
       <div className="admin-card-stack">
         {draft.storyFrames.map((frame, index) => (
           <AdminCard key={frame.number} index={index} title={`Khung cảnh ${frame.number}`}>
@@ -368,6 +570,15 @@ function StoryEditor({ draft, update }) {
   const message = draft.villageMessage;
   return (
     <AdminPanel eyebrow="03 / CÂU CHUYỆN" title="Lời nhắn từ Mê Linh" description="Nội dung và hình ảnh của phần câu chuyện chính.">
+      <AdminSectionImageUploader
+        title="Tự điền ảnh câu chuyện"
+        description="Thứ tự: ảnh câu chuyện, sau đó ảnh chữ ký"
+        targets={[
+          { imagePath: "villageMessage.imageSrc", altPath: "villageMessage.imageAlt" },
+          { imagePath: "villageMessage.signatureImage", altPath: "villageMessage.signatureAlt" },
+        ]}
+        update={update}
+      />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={message.eyebrow} onChange={(value) => update("villageMessage.eyebrow", value)} />
         <AdminField label="Dòng tiêu đề phía trên" value={message.headlineTop} onChange={(value) => update("villageMessage.headlineTop", value)} />
@@ -405,6 +616,15 @@ function ClosingEditor({ draft, update }) {
   const updateRow = (group, index, key, value) => update(`closing.${group}[${index}].${key}`, value);
   return (
     <AdminPanel eyebrow="10 / THEO DÕI MÊ LINH" title="Phần kết, liên kết và kênh theo dõi" description="Chỉnh nội dung hiển thị ở cuối trang, các liên kết tổng hợp và kênh mạng xã hội.">
+      <AdminSectionImageUploader
+        title="Tự điền ảnh phần kết"
+        description="Ảnh được đưa vào khung chân dung closing"
+        targets={[{
+          imagePath: "fullBleedArrival.portraitSrc",
+          altPath: "fullBleedArrival.portraitAlt",
+        }]}
+        update={update}
+      />
       <div className="admin-form-grid">
         <AdminField label="Nhãn chuyển cảnh" value={closing.transitionKicker} onChange={(value) => update("closing.transitionKicker", value)} />
         <AdminField label="Tiêu đề chuyển cảnh" value={closing.transitionTitle} onChange={(value) => update("closing.transitionTitle", value)} />
@@ -412,7 +632,7 @@ function ClosingEditor({ draft, update }) {
         <AdminField label="Nhãn cột điều hướng" value={closing.navLabel} onChange={(value) => update("closing.navLabel", value)} />
         <AdminField label="Nhãn cột theo dõi" value={closing.networkLabel} onChange={(value) => update("closing.networkLabel", value)} />
         <AdminField label="Nhãn liên hệ" value={closing.contactLabel} onChange={(value) => update("closing.contactLabel", value)} />
-        <AdminField label="Liên kết liên hệ" value={closing.contactHref} onChange={(value) => update("closing.contactHref", value)} hint="Ví dụ: #dong-hanh hoặc https://…" />
+        <AdminField label="Liên kết liên hệ" value={closing.contactHref} onChange={(value) => update("closing.contactHref", value)} hint="Ví dụ: /dong-hanh hoặc https://…" />
         <AdminField label="Dòng thiết kế" value={closing.designCredit} onChange={(value) => update("closing.designCredit", value)} />
         <AdminField label="Bản quyền" value={closing.copyrightTemplate} onChange={(value) => update("closing.copyrightTemplate", value)} hint="Dùng {siteName} để chèn tên trang." />
       </div>
@@ -462,6 +682,17 @@ function SeasonsEditor({ draft, update }) {
   const gallery = draft.seasonalGallery;
   return (
     <AdminPanel eyebrow="05 / NHỊP SỐNG" title="Bộ ảnh theo mùa" description="Thay lời dẫn, chữ ký và từng ảnh trong dải chuyển động." cardCount={gallery.photos.length}>
+      <AdminSectionImageUploader
+        title="Tự điền bộ ảnh theo mùa"
+        description="Ảnh được xếp vào dải chuyển động theo thứ tự tên tệp"
+        targets={gallery.photos.map((_, index) => ({
+          imagePath: `seasonalGallery.photos[${index}].imageSrc`,
+          labelPath: `seasonalGallery.photos[${index}].label`,
+          altPath: `seasonalGallery.photos[${index}].imageAlt`,
+          altPrefix: "Ảnh",
+        }))}
+        update={update}
+      />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={gallery.eyebrow} onChange={(value) => update("seasonalGallery.eyebrow", value)} />
         <AdminField label="Chữ ký" value={gallery.signature} onChange={(value) => update("seasonalGallery.signature", value)} />
@@ -498,7 +729,7 @@ function ChoiceEditor({ choice, path, update, index }) {
         <AdminField label="Dòng trên" value={choice.upper} onChange={(value) => update(`${path}.upper`, value)} />
         <AdminField label="Dòng nhấn" value={choice.lower} onChange={(value) => update(`${path}.lower`, value)} />
         <AdminField label="Nút dẫn tới" value={choice.actionLabel} onChange={(value) => update(`${path}.actionLabel`, value)} />
-        <AdminField label="Liên kết" value={choice.href} onChange={(value) => update(`${path}.href`, value)} hint="Ví dụ: #cau-chuyen" />
+        <AdminField label="Liên kết" value={choice.href} onChange={(value) => update(`${path}.href`, value)} hint="Ví dụ: /cau-chuyen" />
         <AdminField label="Mô tả" multiline value={choice.copy} onChange={(value) => update(`${path}.copy`, value)} />
         <AdminImageField
           label="Ảnh lựa chọn"
@@ -518,6 +749,17 @@ function ChoiceEditor({ choice, path, update, index }) {
 function VisitEditor({ draft, update }) {
   return (
     <AdminPanel eyebrow="06 / GHÉ THĂM" title="Hai lối trở về" description="Hai lựa chọn nội dung cùng hình ảnh toàn màn hình ở cuối phần này." cardCount={2}>
+      <AdminSectionImageUploader
+        title="Tự điền ảnh hai lối trở về"
+        description="Thứ tự: cổng trại, lối trái, lối phải và ảnh toàn cảnh"
+        targets={[
+          { imagePath: "visitChoices.gate.imageSrc", altPath: "visitChoices.gate.imageAlt" },
+          { imagePath: "visitChoices.left.imageSrc", altPath: "visitChoices.left.imageAlt" },
+          { imagePath: "visitChoices.right.imageSrc", altPath: "visitChoices.right.imageAlt" },
+          { imagePath: "fullBleedArrival.imageSrc", altPath: "fullBleedArrival.imageAlt" },
+        ]}
+        update={update}
+      />
       <div className="admin-form-grid">
         <AdminField label="Chú thích chung" value={draft.visitChoices.caption} onChange={(value) => update("visitChoices.caption", value)} />
       </div>
@@ -645,11 +887,178 @@ function PendingYouthUnionApproval({ draft, update }) {
   );
 }
 
+function ArchiveBulkUploader({ cards, onChange }) {
+  const filesInputRef = useRef(null);
+  const folderInputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const [limit, setLimit] = useState(0);
+  const [autoText, setAutoText] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [result, setResult] = useState(null);
+
+  const uploadFiles = async (fileList, mode = "append") => {
+    const files = Array.from(fileList || []);
+    if (!files.length || uploading) return;
+    if (!isBackendConfigured) {
+      setResult({ type: "error", message: "Backend MySQL chưa được cấu hình nên chưa thể tải kho ảnh." });
+      return;
+    }
+
+    const validFiles = files
+      .filter((file) => ARCHIVE_IMAGE_TYPES.has(file.type) && file.size <= MAX_ARCHIVE_IMAGE_BYTES)
+      .sort((first, second) => (first.webkitRelativePath || first.name).localeCompare(
+        second.webkitRelativePath || second.name,
+        "vi",
+        { numeric: true, sensitivity: "base" },
+      ));
+    const acceptedFiles = limit > 0 ? validFiles.slice(0, limit) : validFiles;
+    const rejectedCount = files.length - validFiles.length;
+    const skippedCount = validFiles.length - acceptedFiles.length;
+    if (!acceptedFiles.length) {
+      setResult({ type: "error", message: "Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa 50 MB mỗi ảnh." });
+      return;
+    }
+
+    setUploading(true);
+    setProgress({ current: 0, total: acceptedFiles.length });
+    setResult(null);
+    const addedCards = [];
+    const failedFiles = [];
+
+    for (let index = 0; index < acceptedFiles.length; index += 1) {
+      const file = acceptedFiles[index];
+      try {
+        const { width, height } = await readImageDimensions(file);
+        const asset = await uploadMedia(file);
+        const imageSrc = asset.storage_path || asset.url;
+        if (!imageSrc) throw new Error("Máy chủ không trả về URL ảnh.");
+        const existingCount = mode === "replace" ? 0 : cards.length;
+        const label = autoText
+          ? getArchiveImageLabel(file.name) || `Ảnh ${existingCount + addedCards.length + 1}`
+          : `Ảnh ${existingCount + addedCards.length + 1}`;
+        addedCards.push({
+          colorVariant: "archive-default",
+          id: typeof globalThis.crypto?.randomUUID === "function" ? `archive-${globalThis.crypto.randomUUID()}` : `archive-${Date.now()}-${index}`,
+          imageAlt: label,
+          imageHeight: height,
+          imagePosition: "center center",
+          imageSrc,
+          imageWidth: width,
+          label,
+          size: "medium",
+          year: "",
+        });
+      } catch (error) {
+        failedFiles.push(`${file.name}: ${error?.message || "Không tải được ảnh."}`);
+      }
+      setProgress({ current: index + 1, total: acceptedFiles.length });
+    }
+
+    if (addedCards.length) onChange(mode === "replace" ? addedCards : [...cards, ...addedCards]);
+    const failedCount = rejectedCount + failedFiles.length;
+    setResult({
+      type: failedCount ? "warning" : "success",
+      message: failedCount || skippedCount
+        ? `${mode === "replace" ? "Đã thay kho bằng" : "Đã thêm"} ${addedCards.length} ảnh; ${failedCount} tệp không hợp lệ hoặc tải thất bại${skippedCount ? `; bỏ qua ${skippedCount} ảnh ngoài số lượng đã chọn` : ""}.`
+        : mode === "replace"
+          ? `Đã thay toàn bộ kho bằng ${addedCards.length} ảnh và tự sắp xếp theo tỷ lệ gốc.`
+          : `Đã thêm ${addedCards.length} ảnh và tự sắp xếp theo tỷ lệ gốc.`,
+      details: failedFiles.slice(0, 3),
+    });
+    setUploading(false);
+  };
+
+  return (
+    <section
+      className={`admin-archive-bulk${dragging ? " is-dragging" : ""}`}
+      aria-busy={uploading}
+      onDragEnter={(event) => { event.preventDefault(); if (!uploading) setDragging(true); }}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false); }}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDragging(false);
+        uploadFiles(event.dataTransfer.files);
+      }}
+    >
+      <div className="admin-archive-bulk-copy">
+        <span className="admin-archive-bulk-icon"><ImagePlus aria-hidden="true" /></span>
+        <div>
+          <strong>Tải cả kho ảnh</strong>
+          <span>JPG, PNG, WebP, AVIF hoặc SVG · tối đa 50 MB mỗi ảnh</span>
+        </div>
+      </div>
+      <div className="admin-section-auto-settings">
+        <label className="admin-section-auto-count">
+          <span>Số ảnh muốn lấy</span>
+          <span className="admin-section-auto-number">
+            <input
+              type="number"
+              min="0"
+              value={limit}
+              disabled={uploading}
+              onChange={(event) => setLimit(Math.max(Number(event.target.value) || 0, 0))}
+            />
+            <small>0 = tất cả</small>
+          </span>
+        </label>
+        <label className="admin-section-auto-toggle">
+          <input type="checkbox" checked={autoText} disabled={uploading} onChange={(event) => setAutoText(event.target.checked)} />
+          <span>Lấy tên tệp làm tên ảnh</span>
+        </label>
+      </div>
+      <div className="admin-archive-bulk-actions">
+        <button className="admin-primary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => folderInputRef.current?.click()}>
+          <FolderOpen aria-hidden="true" />
+          <span>{uploading ? `Đang tải ${progress.current}/${progress.total}` : "Chọn thư mục và thay toàn bộ"}</span>
+        </button>
+        <button className="admin-secondary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => filesInputRef.current?.click()}>
+          <Upload aria-hidden="true" />
+          <span>Thêm nhiều ảnh</span>
+        </button>
+      </div>
+      <input
+        ref={filesInputRef}
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        multiple
+        onChange={(event) => {
+          uploadFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={folderInputRef}
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        multiple
+        webkitdirectory=""
+        directory=""
+        onChange={(event) => {
+          uploadFiles(event.target.files, "replace");
+          event.target.value = "";
+        }}
+      />
+      {uploading && <progress className="admin-archive-bulk-progress" max={progress.total} value={progress.current} />}
+      {result && (
+        <div className={`admin-archive-bulk-result is-${result.type}`} role={result.type === "error" ? "alert" : "status"}>
+          <span>{result.message}</span>
+          {result.details?.map((detail) => <small key={detail}>{detail}</small>)}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ArchiveEditor({ draft, update }) {
   const archive = draft.villageArchive;
   return (
-    <AdminPanel eyebrow="07 / TƯ LIỆU" title="Lưới ảnh lưu trữ" description="Thay tiêu đề, năm, mô tả và ảnh cho từng lát cắt của làng." cardCount={archive.cards.length}>
+    <AdminPanel eyebrow="07 / KHO ẢNH" title="Kho ảnh tự động" description="Tải nhiều ảnh một lần; lưới tự giữ tỷ lệ và lấp khoảng trống theo kích thước từng ảnh." cardCount={archive.cards.length}>
       <PendingYouthUnionApproval draft={draft} update={update} />
+      <ArchiveBulkUploader cards={archive.cards} onChange={(cards) => update("villageArchive.cards", cards)} />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={archive.eyebrow} onChange={(value) => update("villageArchive.eyebrow", value)} />
         <AdminField label="Tiêu đề" multiline value={archive.title} onChange={(value) => update("villageArchive.title", value)} hint="Dùng xuống dòng để tách hai dòng lớn." />
@@ -658,9 +1067,15 @@ function ArchiveEditor({ draft, update }) {
           value={archive.imageSrc}
           onChange={(value) => update("villageArchive.imageSrc", value)}
           fallbackSrc="/assets/village-hero.jpg"
-          aspectRatio="3 / 4"
+          fit="contain"
+          aspectRatio={archive.imageWidth && archive.imageHeight ? `${archive.imageWidth} / ${archive.imageHeight}` : "3 / 4"}
           target="archive-default"
           hint="Dùng làm ảnh dự phòng nếu một thẻ chưa có ảnh riêng."
+          onDimensionsChange={({ width, height }) => {
+            if (hasSameAspectRatio(width, height, archive.imageWidth, archive.imageHeight)) return;
+            update("villageArchive.imageWidth", width);
+            update("villageArchive.imageHeight", height);
+          }}
         />
       </div>
       <div className="admin-card-stack">
@@ -676,20 +1091,35 @@ function ArchiveEditor({ draft, update }) {
                 onChange={(value) => update(`villageArchive.cards[${index}].imageSrc`, value)}
                 alt={card.imageAlt}
                 onAltChange={(value) => update(`villageArchive.cards[${index}].imageAlt`, value)}
-                position={card.imagePosition}
-                onPositionChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)}
-                aspectRatio="3 / 4"
+                fit="contain"
+                aspectRatio={getArchiveCardAspectRatio(card, archive)}
                 target={`archive-${card.id}`}
+                onDimensionsChange={({ width, height }) => {
+                  if (hasSameAspectRatio(width, height, card.imageWidth, card.imageHeight)) return;
+                  update(`villageArchive.cards[${index}].imageWidth`, width);
+                  update(`villageArchive.cards[${index}].imageHeight`, height);
+                }}
               />
               <AdminImageField
                 label="Ảnh khi rê chuột (không bắt buộc)"
                 value={card.altImageSrc || ""}
                 onChange={(value) => update(`villageArchive.cards[${index}].altImageSrc`, value)}
-                position={card.imagePosition}
-                onPositionChange={(value) => update(`villageArchive.cards[${index}].imagePosition`, value)}
-                aspectRatio="3 / 4"
+                fit="contain"
+                aspectRatio={getArchiveCardAspectRatio(card, archive)}
                 target={`archive-${card.id}`}
               />
+              <button
+                className="admin-danger-text-button"
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Xóa “${card.label || `Tư liệu ${index + 1}`}” khỏi lưới ảnh?`)) {
+                    update("villageArchive.cards", archive.cards.filter((_, cardIndex) => cardIndex !== index));
+                  }
+                }}
+              >
+                <Trash2 aria-hidden="true" />
+                <span>Xóa khỏi lưới</span>
+              </button>
             </div>
           </AdminCard>
         ))}
@@ -702,6 +1132,17 @@ function CommunityEditor({ draft, update }) {
   const partners = draft.communityPartners;
   return (
     <AdminPanel eyebrow="08 / CỘNG ĐỒNG" title="Đơn vị đồng hành" description="Cập nhật lời giới thiệu, tiêu đề và nhận diện của các tổ chức." cardCount={partners.organizations.length}>
+      <AdminSectionImageUploader
+        title="Tự điền logo cộng đồng"
+        description="Logo được xếp vào từng đơn vị theo thứ tự tên tệp"
+        targets={partners.organizations.map((_, index) => ({
+          imagePath: `communityPartners.organizations[${index}].logo`,
+          labelPath: `communityPartners.organizations[${index}].label`,
+          altPath: `communityPartners.organizations[${index}].logoAlt`,
+          altPrefix: "Logo",
+        }))}
+        update={update}
+      />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={partners.eyebrow} onChange={(value) => update("communityPartners.eyebrow", value)} />
         <AdminField label="Lời giới thiệu" multiline value={partners.copy} onChange={(value) => update("communityPartners.copy", value)} />
@@ -735,6 +1176,20 @@ function UpdatesEditor({ draft, update }) {
   const updates = draft.villageUpdates;
   return (
     <AdminPanel eyebrow="09 / NHỊP SỐNG HÔM NAY" title="Các hoạt động đang diễn ra" description="Nội dung các thẻ hoạt động xuất hiện ở phần cuối trang chủ." cardCount={updates.cards.length}>
+      <AdminSectionImageUploader
+        title="Tự điền ảnh hoạt động"
+        description="Ảnh được xếp vào từng hoạt động, ảnh cuối dùng làm ảnh mặc định"
+        targets={[
+          ...updates.cards.map((_, index) => ({
+            imagePath: `villageUpdates.cards[${index}].imageSrc`,
+            labelPath: `villageUpdates.cards[${index}].label`,
+            altPath: `villageUpdates.cards[${index}].imageAlt`,
+            altPrefix: "Ảnh",
+          })),
+          { imagePath: "villageUpdates.imageSrc" },
+        ]}
+        update={update}
+      />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={updates.eyebrow} onChange={(value) => update("villageUpdates.eyebrow", value)} />
         <AdminField label="Dòng tiêu đề 1" value={updates.headline[0]} onChange={(value) => update("villageUpdates.headline[0]", value)} />
@@ -777,7 +1232,7 @@ function AdminOverview({ draft, onSelect }) {
   const counts = [
     ["Khung cảnh", draft.storyFrames.length],
     ["Ảnh theo mùa", draft.seasonalGallery.photos.length],
-    ["Tư liệu", draft.villageArchive.cards.length],
+    ["Kho ảnh", draft.villageArchive.cards.length],
     ["Hoạt động", draft.villageUpdates.cards.length],
   ];
 
@@ -786,6 +1241,14 @@ function AdminOverview({ draft, onSelect }) {
       <div className="admin-stat-grid">
         {counts.map(([label, count]) => <div className="admin-stat" key={label}><strong>{count}</strong><span>{label}</span></div>)}
       </div>
+      <button className="admin-overview-bulk-entry" type="button" onClick={() => onSelect("archive")}>
+        <span className="admin-overview-bulk-icon"><FolderOpen aria-hidden="true" /></span>
+        <span className="admin-overview-bulk-copy">
+          <small>KHO ẢNH TỰ ĐỘNG</small>
+          <strong>Chọn cả thư mục, tự thay và xếp ảnh vừa khung</strong>
+        </span>
+        <span className="admin-overview-bulk-command">Mở kho ảnh <ArrowUpRight aria-hidden="true" /></span>
+      </button>
       <div className="admin-overview-grid">
         {ADMIN_SECTIONS.map((section, index) => (
           <button className="admin-overview-item" type="button" key={section.id} onClick={() => onSelect(section.id)}>

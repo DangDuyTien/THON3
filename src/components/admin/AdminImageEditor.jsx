@@ -58,6 +58,7 @@ export default function AdminImageEditor({
   hint,
   target,
   onTarget,
+  onDimensionsChange,
 }) {
   const generatedId = useId().replace(/:/g, "");
   const fileInputRef = useRef(null);
@@ -174,6 +175,7 @@ export default function AdminImageEditor({
               const image = event.currentTarget;
               setError("");
               setImageInfo((current) => ({ ...current, width: image.naturalWidth, height: image.naturalHeight }));
+              if (value) onDimensionsChange?.({ width: image.naturalWidth, height: image.naturalHeight });
             }}
             onError={() => setError("Không tải được ảnh. Hãy kiểm tra backend hoặc URL ảnh.")}
           />

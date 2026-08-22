@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "../styles-coming-soon.css";
 import { ArrowLeft, ArrowUpRight, MapPin, X } from "lucide-react";
-import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
+import { getTransitionTitle } from "../route-transition.js";
 
 import SiteLoaderMark from "./SiteLoaderMark.jsx";
 
@@ -16,11 +16,15 @@ function KineticRollText({ children }) {
   );
 }
 
-function LoaderSignature() {
-  return <SiteLoaderMark />;
+function EditorialSignature() {
+  return (
+    <span className="coming-soon-hero-signature" aria-hidden="true">
+      <SiteLoaderMark />
+    </span>
+  );
 }
 
-export default function ComingSoonPage({ description = "Không gian này đang được biên tập và hoàn thiện.", heroRevealReady = false }) {
+export default function ComingSoonPage({ title = "Coming soon!", description = "Không gian này đang được biên tập và hoàn thiện.", heroRevealReady = false }) {
   const [entered, setEntered] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -41,6 +45,19 @@ export default function ComingSoonPage({ description = "Không gian này đang �
 
   const { content } = useSiteContent();
   const { siteName, tagline } = content.settings;
+  const organizations = content.communityPartners.organizations;
+  const sectionTitle = getTransitionTitle(window.location.href, "KHÔNG GIAN MỚI");
+
+  const renderPartnerGroup = (duplicate = false) => (
+    <div className="coming-soon-partner-group" aria-hidden={duplicate || undefined}>
+      {organizations.map((organization) => (
+        <span className="coming-soon-partner" role={duplicate ? undefined : "listitem"} key={`${organization.id}-${duplicate ? "duplicate" : "original"}`}>
+          <img src={organization.logo} alt="" width="160" height="80" loading="lazy" decoding="async" />
+          <span>{organization.label}</span>
+        </span>
+      ))}
+    </div>
+  );
 
 
   return (
@@ -58,53 +75,34 @@ export default function ComingSoonPage({ description = "Không gian này đang �
         </header>
 
         <main className="coming-soon-main" aria-labelledby="coming-soon-title">
-          <svg className="coming-soon-motion-lines" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-            <g className="coming-soon-motion-ring coming-soon-motion-ring-a">
-              <ellipse cx="500" cy="330" rx="420" ry="250" />
-            </g>
-            <g className="coming-soon-motion-ring coming-soon-motion-ring-b">
-              <ellipse cx="490" cy="340" rx="330" ry="205" />
-            </g>
-            <g className="coming-soon-motion-ring coming-soon-motion-ring-c">
-              <ellipse cx="520" cy="318" rx="235" ry="150" />
-            </g>
-            <g className="coming-soon-motion-line coming-soon-motion-line-a">
-              <path d="M -80 178 C 180 70 310 250 520 150 S 850 80 1080 220" />
-            </g>
-            <g className="coming-soon-motion-line coming-soon-motion-line-b">
-              <path d="M -80 470 C 180 570 340 390 545 475 S 850 575 1080 420" />
-            </g>
-            <g className="coming-soon-motion-ring coming-soon-motion-ring-d">
-              <ellipse cx="820" cy="170" rx="105" ry="70" />
-            </g>
-          </svg>
-          <div className="coming-soon-contour coming-soon-contour-one" aria-hidden="true" />
-          <div className="coming-soon-contour coming-soon-contour-two" aria-hidden="true" />
-          <div className="coming-soon-copy">
-            <p className="coming-soon-kicker" style={{ "--coming-delay": "80ms" }}><span /> THÔNG TIN ĐANG ĐƯỢC CHUẨN BỊ</p>
-            <LoaderSignature />
-            <h1 id="coming-soon-title" className="cs-draw-title" style={{ "--coming-delay": "420ms" }} aria-label="Coming soon!">
-              <svg className="cs-draw-svg" viewBox="0 0 820 100" aria-hidden="true">
-                <text className="cs-draw-text cs-draw-text-fill" x="410" y="78" textAnchor="middle">Coming soon!</text>
-                <text className="cs-draw-text cs-draw-text-stroke" x="410" y="78" textAnchor="middle">Coming soon!</text>
-              </svg>
-            </h1>
-            <p className="coming-soon-description" style={{ "--coming-delay": "620ms" }}>{description}</p>
-            <span className="coming-soon-divider" aria-hidden="true" style={{ "--coming-delay": "820ms" }} />
-            <p className="coming-soon-follow" style={{ "--coming-delay": "960ms" }}>THEO DÕI NHỮNG CÂU CHUYỆN MỚI TỪ MÊ LINH</p>
-            <div className="coming-soon-youth-icons" aria-label="Các trường và tổ chức đồng hành" style={{ "--coming-delay": "1040ms" }}>
-              <span className="cs-youth-flag cs-youth-logo-card" title="Trường THPT Tiền Phong">
-                <span className="cs-youth-logo-monogram" aria-hidden="true">TP</span>
-                <span className="cs-youth-logo-label">THPT TIỀN PHONG</span>
-              </span>
-              <span className="cs-youth-flag cs-youth-logo-card" title="Đoàn TNCS Hồ Chí Minh">
-                <img src="/assets/doan-tncs-logo-160.webp" alt="Biểu trưng Đoàn TNCS Hồ Chí Minh" width="72" height="48" loading="lazy" />
-                <span className="cs-youth-logo-label">ĐOÀN TNCS</span>
-              </span>
-              <span className="cs-youth-flag cs-youth-logo-card" title="Trường THPT Mê Linh">
-                <span className="cs-youth-logo-monogram cs-youth-logo-monogram-lime" aria-hidden="true">ML</span>
-                <span className="cs-youth-logo-label">THPT MÊ LINH</span>
-              </span>
+          <EditorialSignature />
+
+          <div className="coming-soon-editorial">
+            <div className="coming-soon-heading-block">
+              <p className="coming-soon-kicker"><span /> {sectionTitle}</p>
+              <h1 id="coming-soon-title" aria-label={title}>
+                <span>COMING</span>
+                <em>SOON!</em>
+              </h1>
+            </div>
+
+            <div className="coming-soon-information">
+              <p className="coming-soon-description">{description}</p>
+              <dl className="coming-soon-meta">
+                <div><dt>Không gian</dt><dd>{sectionTitle}</dd></div>
+                <div><dt>Trạng thái</dt><dd>Đang biên tập</dd></div>
+                <div><dt>Cập nhật</dt><dd>Khi nội dung sẵn sàng</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <div className="coming-soon-partners">
+            <p className="coming-soon-follow">CỘNG ĐỒNG / ĐỒNG HÀNH CÙNG MÊ LINH</p>
+            <div className="coming-soon-partner-loop" role="list" aria-label="Các tổ chức đồng hành">
+              <div className="coming-soon-partner-track">
+                {renderPartnerGroup()}
+                {renderPartnerGroup(true)}
+              </div>
             </div>
           </div>
         </main>

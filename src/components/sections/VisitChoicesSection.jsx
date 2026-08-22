@@ -21,11 +21,12 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
   const choiceMotionRefs = useRef([]);
   const pushUpMediaRef = useRef(null);
   const pushUpImageRef = useRef(null);
+  const compactArrivalOffsetRef = useRef({ offset: 0, width: 0 });
   const entryProgressRef = useRef(reducedMotion ? 1 : 0);
   const stageProgressRef = useRef(0);
 
   const prewarmVisitMedia = useCallback(() => {
-    prewarmCmsImage(gate.imageSrc, "full", "(max-width: 680px) 96vw, min(90vw, 920px)");
+    prewarmCmsImage(gate.imageSrc, "full", "(max-width: 680px) min(100vw, 600px), min(88vw, 1240px, 127svh)");
     prewarmCmsImage(fullBleedArrival.imageSrc, "full", "100vw");
   }, [fullBleedArrival.imageSrc, gate.imageSrc]);
 
@@ -62,7 +63,17 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     }
 
     if (pushUpMediaRef.current) {
-      pushUpMediaRef.current.style.transform = `translate3d(0, ${(1 - coverProgress) * 100}%, 0)`;
+      if (viewport.isCompact) {
+        const cachedOffset = compactArrivalOffsetRef.current;
+        if (cachedOffset.width !== viewport.width) {
+          cachedOffset.width = viewport.width;
+          cachedOffset.offset = (gateMediaMotionRef.current?.parentElement?.offsetHeight || 0) + 30;
+        }
+        const startOffset = Math.min(cachedOffset.offset, viewport.height);
+        pushUpMediaRef.current.style.transform = `translate3d(0, ${(1 - coverProgress) * startOffset}px, 0)`;
+      } else {
+        pushUpMediaRef.current.style.transform = `translate3d(0, ${(1 - coverProgress) * 100}%, 0)`;
+      }
     }
 
     if (pushUpImageRef.current) pushUpImageRef.current.style.transform = `scale(${arrivalImageScale})`;
@@ -102,7 +113,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
                     src={gate.imageSrc}
                     alt=""
                     imageVariant="full"
-                    sizes="(max-width: 680px) 96vw, min(90vw, 920px)"
+                    sizes="(max-width: 680px) min(100vw, 600px), min(88vw, 1240px, 127svh)"
                   />
                 </div>
               </div>

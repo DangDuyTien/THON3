@@ -225,6 +225,8 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
           const altImage = card.altImageSrc || alternateCard.imageSrc || villageArchive.imageSrc;
           const imageSize = getArchiveImageSize(card);
           const imageSizes = getArchiveImageSizes(card);
+          const imageWidth = card.imageSrc ? card.imageWidth : villageArchive.imageWidth;
+          const imageHeight = card.imageSrc ? card.imageHeight : villageArchive.imageHeight;
 
           return (
             <figure
@@ -232,6 +234,9 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
               key={card.id}
               data-preview-target={`archive-${card.id}`}
               ref={(node) => { cardRefs.current[index] = node; }}
+              style={{
+                "--archive-card-aspect-ratio": imageWidth && imageHeight ? `${imageWidth} / ${imageHeight}` : "3 / 4",
+              }}
             >
               <div className="village-archive-media">
                 <div className="village-archive-media-layer village-archive-media-layer-alt" aria-hidden="true">

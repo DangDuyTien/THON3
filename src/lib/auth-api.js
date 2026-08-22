@@ -22,8 +22,3 @@ export async function getSession() {
 export function subscribeToAuth() {
   return () => {};
 }
-
-export async function getCurrentUserRole() {
-  const session = await getSession();
-  return session?.user?.role || null;
-}

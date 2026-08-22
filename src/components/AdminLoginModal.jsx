@@ -214,7 +214,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
 
         {/* Top Header Bar inside Liquid Curtain */}
         <header className="curtain-menu-header">
-          <a className="curtain-brand-lando" href="#home" onClick={handleExitToHome}>
+          <a className="curtain-brand-lando" href="/" onClick={handleExitToHome}>
             <span>{siteName}</span>
             <span>{tagline}</span>
           </a>

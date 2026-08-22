@@ -39,6 +39,9 @@ const CAMP_GATE_TOP_MEDIA = Object.freeze(
 const CAMP_GATE_WHOLE_MEDIA = Object.freeze(
   cmsImages.find((image) => image.id === "camp-gate-whole"),
 );
+const CAMP_GATE_USER_CUTOUT_MEDIA = Object.freeze(
+  cmsImages.find((image) => image.id === "camp-gate-user-cutout"),
+);
 
 const legacyMedia = new Map([
   ["/assets/village-hero.jpg", VILLAGE_HERO_MEDIA],
@@ -46,6 +49,7 @@ const legacyMedia = new Map([
   ["/assets/camp-gate-right-v3.png", CAMP_GATE_RIGHT_MEDIA],
   ["/assets/camp-gate-top-v3.png", CAMP_GATE_TOP_MEDIA],
   ["/assets/camp-gate-thon3-v5.png", CAMP_GATE_WHOLE_MEDIA],
+  ["/assets/camp-gate-thon3-user-4k-cutout.png", CAMP_GATE_USER_CUTOUT_MEDIA],
 ]);
 const prewarmedSources = new Set();
 
@@ -111,19 +115,36 @@ export function getCmsImagePosition(mediaOrSource) {
  * khong tao them request khi scene chuyen qua lai.
  */
 export function prewarmCmsImage(mediaOrSource, sizeVariant = "full", sizes = "100vw", colorVariant = "base") {
-  if (typeof Image === "undefined") return;
+  if (typeof document === "undefined") return;
 
   const attributes = getCmsImageAttributes(mediaOrSource, sizeVariant, colorVariant);
   const src = attributes?.src || (typeof mediaOrSource === "string" ? mediaOrSource : "");
   if (!src) return;
 
-  const key = `${src}|${attributes?.srcSet || ""}|${sizes}`;
+  const key = `${src}|${attributes?.avifSrcSet || ""}|${attributes?.srcSet || ""}|${sizes}`;
   if (prewarmedSources.has(key)) return;
   prewarmedSources.add(key);
 
-  const image = new Image();
+  const picture = document.createElement("picture");
+  const image = document.createElement("img");
+  picture.hidden = true;
+  picture.setAttribute("aria-hidden", "true");
+
+  if (attributes?.avifSrcSet) {
+    const source = document.createElement("source");
+    source.sizes = sizes;
+    source.srcset = attributes.avifSrcSet;
+    source.type = "image/avif";
+    picture.appendChild(source);
+  }
+
   image.decoding = "async";
   image.sizes = sizes;
   if (attributes?.srcSet) image.srcset = attributes.srcSet;
+  picture.appendChild(image);
+  const cleanup = () => picture.remove();
+  image.addEventListener("load", cleanup, { once: true });
+  image.addEventListener("error", cleanup, { once: true });
+  document.body.appendChild(picture);
   image.src = src;
 }

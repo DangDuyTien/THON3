@@ -27,12 +27,12 @@ export default function NotFoundPage() {
 
       {/* Top Brand Bar */}
       <header className="coming-soon-header">
-        <a className="curtain-brand-lando" href="#home">
+        <a className="curtain-brand-lando" href="/">
           <span>{siteName}</span>
           <span>{tagline}</span>
         </a>
 
-        <a className="visit-link" href="#home" title="Trở về trang chủ">
+        <a className="visit-link" href="/" title="Trở về trang chủ">
           <ArrowLeft aria-hidden="true" />
           <KineticRollText>TRANG CHỦ</KineticRollText>
         </a>
@@ -52,7 +52,7 @@ export default function NotFoundPage() {
           <p className="coming-soon-description">Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển sang một lối đi khác trên website.</p>
 
           <div className="coming-soon-actions">
-            <a className="visit-link coming-soon-btn-primary" href="#home">
+            <a className="visit-link coming-soon-btn-primary" href="/">
               <Home size={16} />
               <KineticRollText>QUAY VỀ TRANG CHỦ</KineticRollText>
             </a>

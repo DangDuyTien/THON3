@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getRouteKeyForHref, getTransitionTitle, isTransitionNavigation } from "../route-transition.js";
 import SiteLoaderMark from "./SiteLoaderMark.jsx";
 
-const COVER_DURATION = 1000;
+const COVER_DURATION = 1200;
 const RETRACT_DURATION = 1100;
 
 function toClipPath(progress, retracting = false) {
@@ -41,7 +41,8 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
   const [phase, setPhase] = useState("idle");
   const [title, setTitle] = useState("");
   const [drawCycle, setDrawCycle] = useState(0);
-  const [clipPath, setClipPath] = useState(toClipPath(0));
+  const clipPathNodeRef = useRef(null);
+  const clipPathRef = useRef(toObjectBoundingBoxPath(toClipPath(0)));
   const targetKeyRef = useRef("");
   const targetLocationRef = useRef("");
   const pendingHashRef = useRef("");
@@ -58,9 +59,15 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
     timeoutRef.current = null;
   };
 
+  const updateClipPath = (progress, retracting = false) => {
+    const nextClipPath = toObjectBoundingBoxPath(toClipPath(progress, retracting));
+    clipPathRef.current = nextClipPath;
+    clipPathNodeRef.current?.setAttribute("d", nextClipPath);
+  };
+
   const finish = () => {
     stopTimers();
-    setClipPath(toClipPath(0));
+    updateClipPath(0);
     setPhase("idle");
     targetKeyRef.current = "";
     targetLocationRef.current = "";
@@ -80,7 +87,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       if (tokenRef.current !== token) return;
       const progress = Math.min((now - startedAt) / duration, 1);
       const eased = progress < 1 ? 1 - Math.pow(1 - progress, 3) : 1;
-      setClipPath(toClipPath(from + (to - from) * eased, nextPhase === "retracting"));
+      updateClipPath(from + (to - from) * eased, nextPhase === "retracting");
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(frame);
       } else if (nextPhase === "idle") {
@@ -132,6 +139,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       if (!destinationKey || (!isScrollTop && destinationLocation === getLocation(window.location.href))) return;
 
       event.preventDefault();
+      event.stopPropagation();
       focusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       targetKeyRef.current = destinationKey;
       targetLocationRef.current = destinationLocation;
@@ -158,7 +166,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       };
 
       if (reducedMotion) {
-        setClipPath(toClipPath(100));
+        updateClipPath(100);
         revealDestination();
         if (destinationKey !== currentRouteKey) setPhase("waiting");
       } else {
@@ -188,7 +196,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       <svg className="page-transition-clip" aria-hidden="true" width="0" height="0">
         <defs>
           <clipPath id="page-transition-clip-path" clipPathUnits="objectBoundingBox">
-            <path d={toObjectBoundingBoxPath(clipPath)} />
+            <path ref={clipPathNodeRef} d={clipPathRef.current} />
           </clipPath>
         </defs>
       </svg>
