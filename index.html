@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#15271f" />
     <meta name="description" content="Trang chủ giới thiệu Xã Mê Linh, Hà Nội." />
+    <script>
+      (() => {
+        const path = window.location.pathname.replace(/\/+$/, "") || "/";
+        const isAdmin = path === "/admin" || window.location.hash === "#admin" || window.location.hash.startsWith("#admin-");
+        if (isAdmin || (path !== "/" && path !== "")) document.documentElement.classList.add("non-public-route");
+      })();
+    </script>
+    <link rel="stylesheet" href="/critical.css" />
     <link
       rel="preload"
       as="image"
@@ -15,19 +23,57 @@
     />
     <link
       rel="preload"
-      as="image"
-      href="/assets/village-hero-story-message-640.webp?v=20260804"
-      imagesrcset="/assets/village-hero-story-message-640.webp?v=20260804 640w, /assets/village-hero-story-message-960.webp?v=20260804 960w, /assets/village-hero-story-message-1440.webp?v=20260804 1440w, /assets/village-hero-story-message-1920.webp?v=20260804 1920w"
-      imagesizes="100vw"
-      fetchpriority="high"
-      media="(max-width: 680px)"
+      as="font"
+      href="/fonts/QdVMSTAyLFyeg_IDWvOJmVES_HSQI286Rb0JcBaoUUU.woff2"
+      type="font/woff2"
+      crossorigin
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700;1,800&family=Dancing+Script:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+    <link
+      rel="preload"
+      as="font"
+      href="/fonts/ga6iaw1J5X9T9RW6j9bNVls-hfgvz8JcMofYTa32J4wsL2JAlAhZmlCTx8cKpKrCzi0i.woff2"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      href="/fonts/ga6saw1J5X9T9RW6j9bNfFIMZhhWnFTyNZIQD1-_FXP0RgnaOg9MYBN5g_cIrqvgzDUjNaA.woff2"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      href="/fonts/QdVMSTAyLFyeg_IDWvOJmVES_HSQI281Rb0JcBao.woff2"
+      type="font/woff2"
+      crossorigin
+    />
     <title>Xã Mê Linh, Hà Nội | Câu chuyện làng quê</title>
   </head>
   <body>
+    <a class="critical-wordmark" data-critical-wordmark href="#home" aria-label="XÃ MÊ LINH - về trang đầu" style="color:#f4f8fc;left:clamp(16px,1.667vw,24px);position:absolute;top:clamp(17px,1.528vw,22px);width:max-content;z-index:1001">
+      <span class="critical-wordmark-name" style="font-family:system-ui,-apple-system,sans-serif;font-size:clamp(18px,1.46vw,21px);font-weight:800;line-height:1.15">XÃ<br />MÊ LINH</span>
+      <span class="critical-wordmark-tagline" style="color:rgba(245,246,239,.72);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:clamp(7px,.56vw,8px);font-weight:500;line-height:1.2">HÀ NỘI</span>
+    </a>
+    <img
+      class="critical-hero-image"
+      src="/assets/village-hero-hero-home-640.webp?v=20260804"
+      srcset="/assets/village-hero-hero-home-640.webp?v=20260804 640w, /assets/village-hero-hero-home-960.webp?v=20260804 960w, /assets/village-hero-hero-home-1440.webp?v=20260804 1440w, /assets/village-hero-hero-home-1920.webp?v=20260804 1920w"
+      sizes="100vw"
+      width="1920"
+      height="1080"
+      alt=""
+      aria-hidden="true"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <div class="critical-hero-copy" data-critical-hero-copy aria-hidden="true">
+      <p class="critical-hero-copy-eyebrow">HÀNH TRÌNH VỀ MÊ LINH</p>
+      <h1><span>Xã</span><span><em>Mê Linh</em></span></h1>
+      <p>Nơi đường làng gặp mặt nước, những câu chuyện cũ vẫn được kể lại bằng nhịp sống hôm nay.</p>
+      <a href="#cau-chuyen">Đi vào câu chuyện</a>
+    </div>
     <div id="root"></div>
     <script type="module" src="./src/main.jsx"></script>
   </body>

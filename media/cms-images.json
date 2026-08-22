@@ -33,5 +33,97 @@
     },
     "placeholder": "#2a3b33",
     "version": "20260804"
+  },
+  {
+    "id": "camp-gate-whole",
+    "alt": "Cổng trại Chi đội Thôn 3 Hạ Lôi.",
+    "width": 1341,
+    "height": 1173,
+    "focalPoint": { "x": 0.5, "y": 0.5 },
+    "sources": {
+      "avif": {
+        "640": "/assets/camp-gate-thon3-v5-640.avif",
+        "960": "/assets/camp-gate-thon3-v5-960.avif",
+        "1440": "/assets/camp-gate-thon3-v5-1440.avif",
+        "1920": "/assets/camp-gate-thon3-v5-1920.avif"
+      },
+      "webp": {
+        "640": "/assets/camp-gate-thon3-v5-640.webp",
+        "960": "/assets/camp-gate-thon3-v5-960.webp",
+        "1440": "/assets/camp-gate-thon3-v5-1440.webp",
+        "1920": "/assets/camp-gate-thon3-v5-1920.webp"
+      }
+    },
+    "placeholder": "#eef3ef",
+    "version": "20260821"
+  },
+  {
+    "id": "camp-gate-left",
+    "alt": "Cánh trái cổng trại Chi đội Thôn 3 Hạ Lôi.",
+    "width": 1536,
+    "height": 1024,
+    "focalPoint": { "x": 0.27, "y": 0.5 },
+    "sources": {
+      "avif": {
+        "640": "/assets/camp-gate-left-v3-640.avif",
+        "960": "/assets/camp-gate-left-v3-960.avif",
+        "1440": "/assets/camp-gate-left-v3-1440.avif",
+        "1920": "/assets/camp-gate-left-v3-1920.avif"
+      },
+      "webp": {
+        "640": "/assets/camp-gate-left-v3-640.webp",
+        "960": "/assets/camp-gate-left-v3-960.webp",
+        "1440": "/assets/camp-gate-left-v3-1440.webp",
+        "1920": "/assets/camp-gate-left-v3-1920.webp"
+      }
+    },
+    "placeholder": "#eef3ef",
+    "version": "20260821"
+  },
+  {
+    "id": "camp-gate-right",
+    "alt": "Cánh phải cổng trại Chi đội Thôn 3 Hạ Lôi.",
+    "width": 1024,
+    "height": 1536,
+    "focalPoint": { "x": 0.5, "y": 0.5 },
+    "sources": {
+      "avif": {
+        "640": "/assets/camp-gate-right-v3-640.avif",
+        "960": "/assets/camp-gate-right-v3-960.avif",
+        "1440": "/assets/camp-gate-right-v3-1440.avif",
+        "1920": "/assets/camp-gate-right-v3-1920.avif"
+      },
+      "webp": {
+        "640": "/assets/camp-gate-right-v3-640.webp",
+        "960": "/assets/camp-gate-right-v3-960.webp",
+        "1440": "/assets/camp-gate-right-v3-1440.webp",
+        "1920": "/assets/camp-gate-right-v3-1920.webp"
+      }
+    },
+    "placeholder": "#eef3ef",
+    "version": "20260821"
+  },
+  {
+    "id": "camp-gate-top",
+    "alt": "Phần mái cổng trại Chi đội Thôn 3 Hạ Lôi.",
+    "width": 1983,
+    "height": 793,
+    "focalPoint": { "x": 0.5, "y": 0.5 },
+    "sources": {
+      "avif": {
+        "640": "/assets/camp-gate-top-v3-640.avif",
+        "960": "/assets/camp-gate-top-v3-960.avif",
+        "1440": "/assets/camp-gate-top-v3-1440.avif",
+        "1920": "/assets/camp-gate-top-v3-1920.avif"
+      },
+      "webp": {
+        "640": "/assets/camp-gate-top-v3-640.webp",
+        "960": "/assets/camp-gate-top-v3-960.webp",
+        "1440": "/assets/camp-gate-top-v3-1440.webp",
+        "1920": "/assets/camp-gate-top-v3-1920.webp"
+      }
+    },
+    "placeholder": "#eef3ef",
+    "version": "20260821"
   }
 ]

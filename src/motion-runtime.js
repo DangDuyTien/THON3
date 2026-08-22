@@ -6,7 +6,7 @@
  * luc cuon binh thuong.
  */
 
-import { markMotionScene, recordActiveMotionLayers, recordMotionSceneUpdate } from "./perf.js";
+import { markMotionScene, recordActiveMotionLayers, recordMotionSceneUpdate } from "./perf-hooks.js";
 
 export const MOTION_SCENE_STATE = Object.freeze({
   ACTIVE: "active",

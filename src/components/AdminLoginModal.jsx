@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import "../styles-admin.css";
 import { ArrowLeft, Eye, EyeOff, Lock, ShieldCheck, User, X } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";

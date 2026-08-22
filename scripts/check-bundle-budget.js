@@ -6,11 +6,11 @@
  *
  * Ngân sách từ báo cáo P0:
  *   - JavaScript tải ban đầu gzip: < 90 KB
- *   - CSS gzip: < 30 KB
+ *   - CSS tải ban đầu gzip: < 30 KB
  *   - Tổng dist (không tính ảnh): < 200 KB gzip
  */
 
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
 import { gzipSync } from "node:zlib";
 import { readFileSync } from "node:fs";
@@ -43,8 +43,12 @@ function scanAssets() {
     process.exit(1);
   }
 
-  for (const file of files) {
-    const filePath = join(ASSETS_DIR, file);
+  const assetPaths = files.map((file) => join(ASSETS_DIR, file));
+  const criticalCssPath = join(DIST_DIR, "critical.css");
+  if (existsSync(criticalCssPath)) assetPaths.push(criticalCssPath);
+
+  for (const filePath of assetPaths) {
+    const file = filePath === criticalCssPath ? "critical.css" : filePath.slice(`${ASSETS_DIR}/`.length);
     const stat = statSync(filePath);
     if (!stat.isFile()) continue;
 
@@ -79,7 +83,7 @@ function printTable(label, items, showGzip = true) {
 
 function run() {
   console.log("🔍 Kiểm tra ngân sách kích thước bundle...\n");
-  console.log(`  Ngân sách: JS tải ban đầu < ${BUDGET.jsGzipKb}KB gzip | CSS < ${BUDGET.cssGzipKb}KB gzip | Tổng code < ${BUDGET.totalCodeGzipKb}KB gzip`);
+  console.log(`  Ngân sách: JS tải ban đầu < ${BUDGET.jsGzipKb}KB gzip | CSS tải ban đầu < ${BUDGET.cssGzipKb}KB gzip | Tổng code < ${BUDGET.totalCodeGzipKb}KB gzip`);
 
   const results = scanAssets();
   let violations = 0;
@@ -106,13 +110,21 @@ function run() {
     console.log(`ℹ️ JS tải sau theo route: ${deferredJsGzip.toFixed(1)} KB`);
   }
 
-  // Kiểm tra CSS
-  const totalCssGzip = results.css.reduce((sum, f) => sum + parseFloat(f.gzipKb), 0);
-  if (totalCssGzip > BUDGET.cssGzipKb) {
-    console.log(`❌ CSS gzip: ${totalCssGzip.toFixed(1)} KB — vượt ngân sách ${BUDGET.cssGzipKb} KB`);
+  // CSS cho các route lazy không được tải khi mở trang chủ; giữ chúng trong
+  // tổng code, còn giới hạn CSS khởi đầu phản ánh payload thực tế của route đó.
+  const initialCss = results.css.filter((file) => file.file === "critical.css" || file.file.startsWith("index-"));
+  const deferredCss = results.css.filter((file) => !initialCss.includes(file));
+  const initialCssGzip = initialCss.reduce((sum, file) => sum + parseFloat(file.gzipKb), 0);
+  const deferredCssGzip = deferredCss.reduce((sum, file) => sum + parseFloat(file.gzipKb), 0);
+  const totalCssGzip = initialCssGzip + deferredCssGzip;
+  if (initialCssGzip > BUDGET.cssGzipKb) {
+    console.log(`❌ CSS tải ban đầu gzip: ${initialCssGzip.toFixed(1)} KB — vượt ngân sách ${BUDGET.cssGzipKb} KB`);
     violations++;
   } else {
-    console.log(`✅ CSS gzip: ${totalCssGzip.toFixed(1)} KB (ngân sách: ${BUDGET.cssGzipKb} KB)`);
+    console.log(`✅ CSS tải ban đầu gzip: ${initialCssGzip.toFixed(1)} KB (ngân sách: ${BUDGET.cssGzipKb} KB)`);
+  }
+  if (deferredCssGzip > 0) {
+    console.log(`ℹ️ CSS tải sau theo route: ${deferredCssGzip.toFixed(1)} KB`);
   }
 
   // Kiểm tra tổng code

@@ -1,56 +1,24 @@
-import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header.jsx";
 import SiteFooter from "./components/SiteFooter.jsx";
 import Hero from "./components/sections/Hero.jsx";
 import StoryMessageSection from "./components/sections/StoryMessageSection.jsx";
 import ExploreStatementSection from "./components/sections/ExploreStatementSection.jsx";
+import PageLoader from "./components/PageLoader.jsx";
 import { SiteContentProvider, useSiteContent } from "./content/SiteContentProvider.jsx";
 import { getSiteAppearanceClassName, getSiteAppearanceStyle } from "./content/site-theme.js";
 import { useMomentumScroll, useReducedMotion } from "./hooks/useMotion.js";
-import { AuthProvider, useAuth } from "./lib/AuthProvider.jsx";
-import { isBackendConfigured } from "./lib/backend-api.js";
-import { getPublicHomeHref } from "./components/admin/admin-registry.js";
 import { getRouteKeyFromSnapshot } from "./route-transition.js";
 
-const AdminPage = lazy(() => import("./components/AdminPage.jsx"));
-const AdminLoginModal = lazy(() => import("./components/AdminLoginModal.jsx"));
+const AdminRoute = lazy(() => import("./components/AdminRoute.jsx"));
 const CommunityPartnersSection = lazy(() => import("./components/sections/CommunityPartnersSection.jsx"));
 const ClosingSection = lazy(() => import("./components/ClosingSection.jsx"));
 const PageContour = lazy(() => import("./components/PageContour.jsx"));
 const PageTransition = lazy(() => import("./components/PageTransition.jsx"));
-const PageLoader = lazy(() => import("./components/PageLoader.jsx"));
 const SeasonsSection = lazy(() => import("./components/sections/SeasonsSection.jsx"));
 const VisitChoicesSection = lazy(() => import("./components/sections/VisitChoicesSection.jsx"));
 const VillageArchiveSection = lazy(() => import("./components/sections/VillageArchiveSection.jsx"));
 const VillageUpdatesSection = lazy(() => import("./components/sections/VillageUpdatesSection.jsx"));
-
-class AdminRouteErrorBoundary extends React.Component {
-  state = { hasError: false };
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  handleReset = () => {
-    window.location.reload();
-  };
-
-  render() {
-    if (!this.state.hasError) return this.props.children;
-
-    return (
-      <main className="admin-error-state">
-        <p className="admin-error-eyebrow">QUẢN TRỊ NỘI DUNG</p>
-        <h1>Không thể mở trang quản trị</h1>
-        <p>Bản nháp trong trình duyệt có thể không còn tương thích. Hãy tạo lại bản nháp mặc định rồi mở lại phần quản trị.</p>
-        <div className="admin-error-actions">
-          <button className="admin-primary-button" type="button" onClick={this.handleReset}>Tạo lại bản nháp</button>
-          <a className="admin-secondary-button" href={getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, "home")}>Về trang chủ</a>
-        </div>
-      </main>
-    );
-  }
-}
 
 function isAdminRoute() {
   if (typeof window === "undefined") return false;
@@ -62,6 +30,85 @@ function isAdminRoute() {
 function isPreviewRoute() {
   if (typeof window === "undefined") return false;
   return window.location.hash.startsWith("#site-preview");
+}
+
+function DeferredSection({ Component, fallbackClassName, sectionId, eager = false, ...componentProps }) {
+  const placeholderRef = useRef(null);
+  const [ready, setReady] = useState(() => (
+    eager || (typeof window !== "undefined" && window.location.hash === `#${sectionId}`)
+  ));
+  const [isHashTarget, setIsHashTarget] = useState(() => (
+    typeof window !== "undefined" && window.location.hash === `#${sectionId}`
+  ));
+
+  useEffect(() => {
+    const activateForHash = () => {
+      const matchesHash = window.location.hash === `#${sectionId}`;
+      setIsHashTarget(matchesHash);
+      if (matchesHash) setReady(true);
+    };
+    activateForHash();
+
+    if (ready) {
+      window.addEventListener("hashchange", activateForHash);
+      return () => window.removeEventListener("hashchange", activateForHash);
+    }
+
+    const placeholder = placeholderRef.current;
+    const observer = typeof IntersectionObserver === "undefined" || !placeholder
+      ? null
+      : new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return;
+        setReady(true);
+        observer.disconnect();
+      }, { rootMargin: "100% 0px" });
+
+    observer?.observe(placeholder);
+    window.addEventListener("hashchange", activateForHash);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("hashchange", activateForHash);
+    };
+  }, [ready, sectionId]);
+
+  useEffect(() => {
+    if (!ready || !isHashTarget) return undefined;
+
+    let frameId = 0;
+    let attempts = 0;
+    const scrollToTarget = () => {
+      const target = document.getElementById(sectionId);
+      if (!target || target.classList.contains("section-lazy-placeholder")) {
+        if (attempts < 120) {
+          attempts += 1;
+          frameId = window.requestAnimationFrame(scrollToTarget);
+        }
+        return;
+      }
+      target.scrollIntoView({ behavior: "auto", block: "start" });
+    };
+
+    frameId = window.requestAnimationFrame(scrollToTarget);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isHashTarget, ready, sectionId]);
+
+  const fallback = (
+    <div
+      aria-hidden="true"
+      className={fallbackClassName}
+      id={sectionId}
+      ref={placeholderRef}
+    />
+  );
+
+  if (!ready) return fallback;
+
+  return (
+    <Suspense fallback={fallback}>
+      <Component {...componentProps} />
+    </Suspense>
+  );
 }
 
 function PublicHome({ previewMode = false, heroRevealReady = false }) {
@@ -127,26 +174,50 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
         <Hero reducedMotion={reducedMotion} heroRevealReady={heroRevealReady} />
         <StoryMessageSection contourCanvasRef={contourCanvasRef} reducedMotion={reducedMotion} />
         <ExploreStatementSection reducedMotion={reducedMotion} />
-        <Suspense fallback={<div className="season-gallery-section section-lazy-placeholder" aria-hidden="true" />}>
-          <SeasonsSection reducedMotion={reducedMotion} />
-        </Suspense>
-        <Suspense fallback={<div className="visit-choices-section section-lazy-placeholder" aria-hidden="true" />}>
-          <VisitChoicesSection reducedMotion={reducedMotion} />
-        </Suspense>
-        <Suspense fallback={<div className="village-archive-section section-lazy-placeholder" aria-hidden="true" />}>
-          <VillageArchiveSection reducedMotion={reducedMotion} />
-        </Suspense>
-        <Suspense fallback={<div className="community-partners-loading" aria-hidden="true" />}>
-          <CommunityPartnersSection reducedMotion={reducedMotion} />
-        </Suspense>
-        <Suspense fallback={<div className="village-updates-section section-lazy-placeholder" aria-hidden="true" />}>
-          <VillageUpdatesSection reducedMotion={reducedMotion} />
-        </Suspense>
+        <DeferredSection
+          Component={SeasonsSection}
+          eager={previewMode}
+          fallbackClassName="season-gallery-section section-lazy-placeholder"
+          reducedMotion={reducedMotion}
+          sectionId="nhung-mua"
+        />
+        <DeferredSection
+          Component={VisitChoicesSection}
+          eager={previewMode}
+          fallbackClassName="visit-choices-section section-lazy-placeholder"
+          reducedMotion={reducedMotion}
+          sectionId="lien-he"
+        />
+        <DeferredSection
+          Component={VillageArchiveSection}
+          eager={previewMode}
+          fallbackClassName="village-archive-section section-lazy-placeholder"
+          reducedMotion={reducedMotion}
+          sectionId="tu-lieu"
+        />
+        <DeferredSection
+          Component={CommunityPartnersSection}
+          eager={previewMode}
+          fallbackClassName="community-partners-loading section-lazy-placeholder"
+          reducedMotion={reducedMotion}
+          sectionId="dong-hanh"
+        />
+        <DeferredSection
+          Component={VillageUpdatesSection}
+          eager={previewMode}
+          fallbackClassName="village-updates-section section-lazy-placeholder"
+          reducedMotion={reducedMotion}
+          sectionId="nhip-song-hom-nay"
+        />
       </main>
 
-      <Suspense fallback={<div className="closing-section closing-section-loading" aria-hidden="true" />}>
-        <ClosingSection />
-      </Suspense>
+      <DeferredSection
+        Component={ClosingSection}
+        eager={previewMode}
+        fallbackClassName="closing-section closing-section-loading section-lazy-placeholder"
+        reducedMotion={reducedMotion}
+        sectionId="ket-lai"
+      />
       <SiteFooter />
     </div>
   );
@@ -217,9 +288,7 @@ function getRouteSnapshot() {
 
 function AppRouter({ heroRevealReady = false, onRouteReady }) {
   const { content } = useSiteContent();
-  const { configured, loading: authLoading, isAdmin, logout } = useAuth();
   const [route, setRoute] = useState(getRouteSnapshot);
-  const [adminLoginReady, setAdminLoginReady] = useState(false);
 
   useEffect(() => {
     const updateRoute = () => setRoute(getRouteSnapshot());
@@ -232,14 +301,8 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
   }, []);
 
   useEffect(() => {
-    if (route.type !== "admin") setAdminLoginReady(false);
-  }, [route.type]);
-
-  useEffect(() => {
-    const routeKey = getRouteKeyFromSnapshot(route);
-    const adminWaiting = route.type === "admin" && (authLoading || (!configured ? false : !isAdmin && !adminLoginReady));
-    if (!adminWaiting) onRouteReady?.(routeKey);
-  }, [adminLoginReady, authLoading, configured, isAdmin, onRouteReady, route]);
+    if (route.type !== "admin") onRouteReady?.(getRouteKeyFromSnapshot(route));
+  }, [onRouteReady, route]);
 
   useEffect(() => {
     document.title = route.type === "admin"
@@ -252,22 +315,6 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
       description.setAttribute("content", `${content.settings.siteName} - ${content.settings.tagline}`);
     }
   }, [route.type, content.settings.siteName, content.settings.tagline]);
-
-  const navigateHome = useCallback(() => {
-    const destination = getPublicHomeHref(window.location.pathname, "home");
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    window.history.pushState({}, "", destination);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }, []);
-
-  const handleAdminLogout = async () => {
-    await logout();
-    navigateHome();
-  };
-
-  const handleAdminCancel = () => {
-    navigateHome();
-  };
 
   if (route.type === "preview") {
     return <PublicHome previewMode heroRevealReady={heroRevealReady} />;
@@ -288,63 +335,31 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
     return <PublicHome heroRevealReady={heroRevealReady} />;
   }
 
-  if (authLoading && route.type === "admin") {
-    return <div className="admin-loading">Đang xác thực quản trị...</div>;
-  }
-
-  if (!configured && route.type === "admin") {
-    return (
-      <main className="admin-error-state">
-        <p className="admin-error-eyebrow">QUẢN TRỊ NỘI DUNG</p>
-        <h1>Backend chưa được cấu hình</h1>
-        <p>Hãy khởi động backend MySQL và đặt VITE_API_BASE_URL để đăng nhập và lưu dữ liệu trên máy chủ.</p>
-        <button className="admin-secondary-button" type="button" onClick={handleAdminCancel}>Về trang chủ</button>
-      </main>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <>
-        <PublicHome heroRevealReady={heroRevealReady} />
-        <Suspense fallback={<div className="admin-route-transition-fallback" aria-hidden="true" />}>
-          <AdminLoginModal
-            onLoginSuccess={() => undefined}
-            onReady={() => setAdminLoginReady(true)}
-            onCancel={handleAdminCancel}
-          />
-        </Suspense>
-      </>
-    );
-  }
-
   return (
-    <AdminRouteErrorBoundary>
-      <Suspense fallback={<div className="admin-loading">Đang mở quản trị nội dung...</div>}>
-        <AdminPage onLogout={handleAdminLogout} />
-      </Suspense>
-    </AdminRouteErrorBoundary>
+    <Suspense fallback={<div className="admin-loading">Đang mở quản trị nội dung...</div>}>
+      <AdminRoute onRouteReady={onRouteReady} />
+    </Suspense>
   );
 }
 
 function App() {
-  const [heroRevealReady, setHeroRevealReady] = useState(false);
+  // Start the hero reveal behind the intro loader so its existing animation
+  // can finish without extending the first meaningful paint on slow CPUs.
+  const [heroRevealReady, setHeroRevealReady] = useState(true);
   const reducedMotion = useReducedMotion();
   const [currentRouteKey, setCurrentRouteKey] = useState(() => getRouteKeyFromSnapshot(getRouteSnapshot()));
   const handleLoaderExit = useCallback(() => setHeroRevealReady(true), []);
 
   return (
-    <AuthProvider>
-      <SiteContentProvider>
-        <AppRouter heroRevealReady={heroRevealReady} onRouteReady={setCurrentRouteKey} />
-        <Suspense fallback={null}>
-          <PageTransition currentRouteKey={currentRouteKey} reducedMotion={reducedMotion} />
-        </Suspense>
-      </SiteContentProvider>
+    <SiteContentProvider>
+      <AppRouter heroRevealReady={heroRevealReady} onRouteReady={setCurrentRouteKey} />
+      <Suspense fallback={null}>
+        <PageTransition currentRouteKey={currentRouteKey} reducedMotion={reducedMotion} />
+      </Suspense>
       <Suspense fallback={null}>
         <PageLoader onExitComplete={handleLoaderExit} />
       </Suspense>
-    </AuthProvider>
+    </SiteContentProvider>
   );
 }
 

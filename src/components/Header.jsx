@@ -1,4 +1,5 @@
 import { MapPin, Menu, X } from "lucide-react";
+import { useEffect } from "react";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import CurtainMenu from "./CurtainMenu.jsx";
 
@@ -24,16 +25,25 @@ function IconRoll({ isOpen }) {
 export default function Header({ menuOpen, onToggleMenu, onCloseMenu }) {
   const { content } = useSiteContent();
   const { siteName, tagline } = content.settings;
-  const nameLines = siteName.split(" ");
+
+  useEffect(() => {
+    const wordmark = document.querySelector("[data-critical-wordmark]");
+    if (!wordmark) return;
+    const nameLines = siteName.split(" ");
+    const name = wordmark.querySelector(".critical-wordmark-name");
+    const taglineNode = wordmark.querySelector(".critical-wordmark-tagline");
+    const expectedNameText = `${nameLines[0]}${nameLines.slice(1).join(" ")}`;
+    if (name && name.textContent !== expectedNameText) {
+      name.replaceChildren(nameLines[0], document.createElement("br"), nameLines.slice(1).join(" "));
+    }
+    if (taglineNode && taglineNode.textContent !== tagline) taglineNode.textContent = tagline;
+    const label = `${siteName} - về trang đầu`;
+    if (wordmark.getAttribute("aria-label") !== label) wordmark.setAttribute("aria-label", label);
+  }, [siteName, tagline]);
 
   return (
     <>
       <header className={`site-header${menuOpen ? " is-menu-open" : ""}`} data-header>
-        <a className="wordmark" href="#home" aria-label={`${siteName} - về trang đầu`}>
-          <span className="wordmark-name">{nameLines[0]}<br />{nameLines.slice(1).join(" ")}</span>
-          <span className="wordmark-tagline">{tagline}</span>
-        </a>
-
         <div className="header-actions">
           <a className="visit-link" href="#lien-he" aria-label="Ghé thăm">
             <MapPin aria-hidden="true" />

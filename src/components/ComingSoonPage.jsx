@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import "../styles-coming-soon.css";
 import { ArrowLeft, ArrowUpRight, MapPin, X } from "lucide-react";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";

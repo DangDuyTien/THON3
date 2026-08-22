@@ -23,10 +23,10 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     }
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
+      if (!entry.isIntersecting || entry.intersectionRatio < 0.1) return;
       setPhotoReady(true);
       observer.disconnect();
-    }, { rootMargin: "0px 0px -40px 0px" });
+    }, { rootMargin: "0px", threshold: 0.1 });
     observer.observe(photo);
     return () => observer.disconnect();
   }, []);
@@ -129,7 +129,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
               colorVariant={villageMessage.colorVariant}
               imagePosition={villageMessage.imagePosition}
               imageVariant="ultra"
-              priority
+              loading="lazy"
               sizes="100vw"
             />
           )}

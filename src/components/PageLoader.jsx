@@ -21,7 +21,7 @@ export default function PageLoader({ onExitComplete }) {
       setRunning(true);
       safetyTimer = window.setTimeout(() => {
         if (!cancelled) setReady(true);
-      }, prefersReducedMotion ? 180 : 1200);
+      }, prefersReducedMotion ? 180 : 1000);
     };
 
     startMotion();
@@ -40,7 +40,7 @@ export default function PageLoader({ onExitComplete }) {
         onExitComplete?.();
       }
       setMounted(false);
-    }, prefersReducedMotion ? 80 : 320);
+    }, prefersReducedMotion ? 80 : 240);
     return () => window.clearTimeout(removeTimer);
   }, [onExitComplete, prefersReducedMotion, ready]);
 

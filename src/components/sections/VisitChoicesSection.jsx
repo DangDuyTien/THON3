@@ -25,39 +25,29 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
   const stageProgressRef = useRef(0);
 
   const prewarmVisitMedia = useCallback(() => {
-    prewarmCmsImage(gate.imageSrc, "medium", "(max-width: 680px) 92vw, min(78vw, 760px)");
-    prewarmCmsImage(visitChoices.left.imageSrc, "small", "(max-width: 680px) 56vw, 20vw");
-    prewarmCmsImage(visitChoices.right.imageSrc, "small", "(max-width: 680px) 56vw, 20vw");
+    prewarmCmsImage(gate.imageSrc, "full", "(max-width: 680px) 96vw, min(90vw, 920px)");
     prewarmCmsImage(fullBleedArrival.imageSrc, "full", "100vw");
-  }, [fullBleedArrival.imageSrc, gate.imageSrc, visitChoices.left.imageSrc, visitChoices.right.imageSrc]);
+  }, [fullBleedArrival.imageSrc, gate.imageSrc]);
 
-  const applyProgress = (viewport) => {
+  const applyProgress = useCallback((viewport) => {
     const stageProgress = stageProgressRef.current;
-    const coverProgress = smoothStep(stageProgress / 0.78);
+    const coverProgress = smoothStep(Math.min(Math.max((stageProgress - 0.76) / 0.24, 0), 1));
+    const gateEntryProgress = smoothStep(Math.min(entryProgressRef.current * 1.2, 1));
     const baseRevealProgress = Math.min(entryProgressRef.current, 1 - coverProgress);
-    const sideReveal = smoothStep(baseRevealProgress);
+    const choiceOpenProgress = reducedMotion
+      ? 1
+      : smoothStep(Math.min(Math.max((stageProgress - (viewport.isCompact ? 0.08 : 0.18)) / 0.22, 0), 1));
+    const sideReveal = smoothStep(baseRevealProgress) * choiceOpenProgress;
     const sideTravel = viewport.isCompact ? 30 : 24;
-    const sideOpacity = 0.06 + sideReveal * 0.94;
+    const sideOpacity = viewport.isCompact ? 0.06 + sideReveal * 0.94 : sideReveal;
     const arrivalImageScale = 1.04 + coverProgress * 0.06;
-    const gateAssembly = smoothStep(Math.min(entryProgressRef.current * 1.2, 1));
-    const gateSeparation = 1 - gateAssembly;
-    const gateOpacity = 0.03 + gateAssembly * 0.97;
-    const gateEntrySide = viewport.isCompact
-      ? gateSeparation * Math.min(viewport.width * 0.08, 28)
-      : gateSeparation * Math.min(viewport.width * 0.12, 120);
-    const gateEntryTop = gateSeparation * Math.min(viewport.height * 0.06, 36);
+    const gateOpacity = 0.03 + gateEntryProgress * 0.97;
 
     baseRef.current?.style.setProperty("--reveal-progress", `${sideReveal}`);
 
     if (gateMediaMotionRef.current) {
       gateMediaMotionRef.current.style.opacity = `${gateOpacity}`;
       gateMediaMotionRef.current.style.transform = `translate3d(0, ${(1 - sideReveal) * 4}vh, 0)`;
-      gateMediaMotionRef.current.style.setProperty("--gate-side-shift", `${gateSeparation * 12}px`);
-      gateMediaMotionRef.current.style.setProperty("--gate-side-angle", `${18 + gateSeparation * 6}deg`);
-      gateMediaMotionRef.current.style.setProperty("--gate-top-lift", `${gateSeparation * -8}px`);
-      gateMediaMotionRef.current.style.setProperty("--gate-top-angle", `${gateSeparation * -6}deg`);
-      gateMediaMotionRef.current.style.setProperty("--gate-entry-side", `${gateEntrySide}px`);
-      gateMediaMotionRef.current.style.setProperty("--gate-entry-top", `${gateEntryTop}px`);
     }
 
     const leftChoice = choiceMotionRefs.current[0];
@@ -76,7 +66,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     }
 
     if (pushUpImageRef.current) pushUpImageRef.current.style.transform = `scale(${arrivalImageScale})`;
-  };
+  }, [reducedMotion]);
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport, motion) => {
     entryProgressRef.current = motion.entryProgress;
@@ -91,7 +81,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
       gateMediaMotionRef.current,
       ...choiceMotionRefs.current,
       pushUpMediaRef.current,
-      ...(typeof window !== "undefined" && window.innerWidth > 680 ? [pushUpImageRef.current] : []),
+      pushUpImageRef.current,
     ],
   });
 
@@ -107,28 +97,12 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
           <figure className="visit-gate-media" role="img" aria-label={gate.imageAlt} data-preview-target="visit-gate">
             <div className="visit-gate-media-motion" ref={gateMediaMotionRef}>
               <div className="visit-gate-portal" aria-hidden="true">
-                <div className="visit-gate-panel visit-gate-panel--top">
+                <div className="visit-gate-whole">
                   <AdaptiveImage
                     src={gate.imageSrc}
                     alt=""
-                    imageVariant="medium"
-                    sizes="(max-width: 680px) 92vw, min(78vw, 760px)"
-                  />
-                </div>
-                <div className="visit-gate-panel visit-gate-panel--left">
-                  <AdaptiveImage
-                    src={gate.imageSrc}
-                    alt=""
-                    imageVariant="medium"
-                    sizes="(max-width: 680px) 92vw, min(78vw, 760px)"
-                  />
-                </div>
-                <div className="visit-gate-panel visit-gate-panel--right">
-                  <AdaptiveImage
-                    src={gate.imageSrc}
-                    alt=""
-                    imageVariant="medium"
-                    sizes="(max-width: 680px) 92vw, min(78vw, 760px)"
+                    imageVariant="full"
+                    sizes="(max-width: 680px) 96vw, min(90vw, 920px)"
                   />
                 </div>
               </div>
@@ -143,15 +117,6 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
                 data-preview-target={`visit-${index}`}
                 ref={(node) => { choiceMotionRefs.current[index] = node; }}
               >
-                <div className="visit-choice-mobile-media" aria-hidden="true">
-                  <AdaptiveImage
-                    src={choice.imageSrc}
-                    alt={choice.imageAlt || ""}
-                    imagePosition={choice.imagePosition}
-                    imageVariant="small"
-                    sizes="(max-width: 680px) 90vw, 20vw"
-                  />
-                </div>
                 <p className="visit-choice-kicker"><RevealLine>{choice.kicker}</RevealLine></p>
                 <h2 id={choice === visitChoices.left ? "visit-title" : undefined}>
                   <RevealLine direction={index % 2 === 0 ? "right" : "left"}><span>{choice.upper}</span></RevealLine>

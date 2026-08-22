@@ -1,3 +1,5 @@
+import { getMotionMetrics } from "./perf-hooks.js";
+
 /**
  * Điểm tập trung cho performance budget, RUM va trace marker.
  * RUM chi duoc gui khi VITE_RUM_ENDPOINT duoc cau hinh.
@@ -41,15 +43,12 @@ const showOverlay = isDev && ["1", "true"].includes(import.meta.env.VITE_PERF_OV
 
 const metrics = {
   cls: null,
-  dynamicLayerCount: 0,
-  dynamicLayerPeak: 0,
   fcp: null,
   frameBudgetViolations: 0,
   frameCount: 0,
   inp: null,
   lcp: null,
   longTasks: [],
-  sceneUpdates: {},
   scrollSessions: [],
   ttfb: null,
   worstFrameMs: 0,
@@ -67,7 +66,6 @@ let frameMeasuring = false;
 let frameId = null;
 let frameLastTime = 0;
 let frameSession = null;
-let dynamicLayerWarningActive = false;
 let scrollTimer = null;
 
 function getConnection() {
@@ -278,46 +276,6 @@ function initScrollFrameMonitor() {
  * Runtime goi marker nay khi scene chuyen state. Marker chi xuat hien o
  * lifecycle, khong tao hang nghin entry trong trace khi cuon.
  */
-export function markMotionScene(sceneName, phase) {
-  if (!sceneName || typeof performance === "undefined") return;
-
-  performance.mark?.(`motion:${sceneName}:${phase}`);
-}
-
-/**
- * Runtime goi sau moi update. Chi tong hop so lieu; khong ghi layout hay log
- * trong scroll frame.
- */
-export function recordMotionSceneUpdate(sceneName, duration) {
-  if (!sceneName || !Number.isFinite(duration)) return;
-
-  const summary = metrics.sceneUpdates[sceneName] || {
-    calls: 0,
-    longestMs: 0,
-    totalMs: 0,
-  };
-  summary.calls += 1;
-  summary.longestMs = Math.max(summary.longestMs, duration);
-  summary.totalMs += duration;
-  metrics.sceneUpdates[sceneName] = summary;
-
-  if (isDev && duration > getPerformanceBudget().sceneUpdateMs) {
-    console.warn(`[perf] scene ${sceneName} took ${duration.toFixed(2)}ms`);
-  }
-}
-
-export function recordActiveMotionLayers(count) {
-  metrics.dynamicLayerCount = count;
-  metrics.dynamicLayerPeak = Math.max(metrics.dynamicLayerPeak, count);
-
-  const overBudget = count > getPerformanceBudget().dynamicLayers;
-  if (isDev && overBudget && !dynamicLayerWarningActive) {
-    console.warn(`[perf] active motion layers ${count} exceed the budget`);
-  }
-  dynamicLayerWarningActive = overBudget;
-  scheduleOverlayUpdate();
-}
-
 function averageFrameMs() {
   const allSessions = metrics.scrollSessions;
   const totalFrames = allSessions.reduce((total, session) => total + session.frameCount, 0);
@@ -330,7 +288,7 @@ function averageFrameMs() {
 }
 
 function sceneSummary() {
-  return Object.entries(metrics.sceneUpdates)
+  return Object.entries(getMotionMetrics().sceneUpdates)
     .map(([name, item]) => ({
       averageMs: Number((item.totalMs / item.calls).toFixed(3)),
       calls: item.calls,
@@ -360,7 +318,7 @@ function sendRumSummary() {
     scenes: sceneSummary(),
     scroll: {
       averageFrameMs: Number(averageFrameMs().toFixed(2)),
-      dynamicLayerPeak: metrics.dynamicLayerPeak,
+      dynamicLayerPeak: getMotionMetrics().dynamicLayerPeak,
       frameBudgetViolations: metrics.frameBudgetViolations,
       frameCount: metrics.frameCount,
       worstFrameMs: metrics.worstFrameMs,
@@ -403,7 +361,7 @@ function renderOverlay() {
       <span>FPS avg</span><span class="perf-badge ${avgFrame > budget.frameMs ? "perf-over" : "perf-ok"}">${avgFps}</span>
       <span>Worst</span><span class="perf-badge ${metrics.worstFrameMs > budget.frameMs * 2 ? "perf-over" : "perf-ok"}">${metrics.worstFrameMs.toFixed(1)}ms</span>
       <span>Long tasks</span><span class="perf-badge ${recentLongTasks.length ? "perf-over" : "perf-ok"}">${recentLongTasks.length}</span>
-      <span>Layers</span><span class="perf-badge ${metrics.dynamicLayerCount > budget.dynamicLayers ? "perf-over" : "perf-ok"}">${metrics.dynamicLayerCount}/${budget.dynamicLayers}</span>
+      <span>Layers</span><span class="perf-badge ${getMotionMetrics().dynamicLayerCount > budget.dynamicLayers ? "perf-over" : "perf-ok"}">${getMotionMetrics().dynamicLayerCount}/${budget.dynamicLayers}</span>
     </div>
   `;
 }
@@ -454,10 +412,11 @@ export function initPerfMonitor({ endpoint = import.meta.env.VITE_RUM_ENDPOINT }
 export function getPerfMetrics() {
   return {
     ...metrics,
+    ...getMotionMetrics(),
     averageFrameMs: averageFrameMs(),
     longTasks: [...metrics.longTasks],
     sceneUpdates: Object.fromEntries(
-      Object.entries(metrics.sceneUpdates).map(([name, item]) => [name, { ...item }]),
+      Object.entries(getMotionMetrics().sceneUpdates).map(([name, item]) => [name, { ...item }]),
     ),
     scrollSessions: [...metrics.scrollSessions],
   };

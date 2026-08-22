@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
+import { subscribeContinuousFrame } from "../motion-frame-scheduler.js";
 
 const DEFAULT_SOCIAL_ITEMS = [
   { label: "Facebook", href: "#dong-hanh" },
@@ -42,7 +43,7 @@ function KineticRollText({ children }) {
   );
 }
 
-export default function ClosingSection() {
+export default function ClosingSection({ reducedMotion }) {
   const { content } = useSiteContent();
   const { settings, fullBleedArrival, communityPartners } = content;
   const closing = content.closing || {};
@@ -57,42 +58,71 @@ export default function ClosingSection() {
   const closingImageSrc = fullBleedArrival.portraitSrc || fullBleedArrival.imageSrc;
   const closingImageAlt = fullBleedArrival.portraitAlt || fullBleedArrival.imageAlt;
   const closingImagePosition = fullBleedArrival.imagePosition || "center 58%";
+  const sectionRef = useRef(null);
   const marqueeRef = useRef(null);
 
-  // Smooth continuous infinite marquee sliding for the bottom logo strip
   useEffect(() => {
-    let animationFrameId;
+    const section = sectionRef.current;
+    const marquee = marqueeRef.current;
+    if (!section || !marquee || reducedMotion) return undefined;
+
+    const firstGroup = marquee.firstElementChild;
+    const groupWidthRef = { current: 0 };
+    const measure = () => {
+      if (!firstGroup) return;
+      const width = Math.max(firstGroup.scrollWidth, firstGroup.getBoundingClientRect().width);
+      if (width > 0) groupWidthRef.current = width;
+    };
+    measure();
+
+    const resizeObserver = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(measure);
+    resizeObserver?.observe(firstGroup || marquee);
+    if (!resizeObserver) window.addEventListener("resize", measure, { passive: true });
+
     let position = 0;
     let lastTime = performance.now();
-
-    const loop = (timestamp) => {
+    const onFrame = (timestamp) => {
       const delta = Math.min(timestamp - lastTime, 32);
       lastTime = timestamp;
+      const groupWidth = groupWidthRef.current;
+      if (!groupWidth || !marqueeRef.current) return;
 
-      if (marqueeRef.current) {
-        const firstGroup = marqueeRef.current.firstElementChild;
-        if (firstGroup) {
-          const groupWidth = firstGroup.scrollWidth || firstGroup.getBoundingClientRect().width;
-
-          if (groupWidth > 0) {
-            position -= delta * 0.045; // Smooth 45px/sec drift speed
-            if (position <= -groupWidth) {
-              position += groupWidth;
-            }
-            marqueeRef.current.style.transform = `translate3d(${position}px, 0, 0)`;
-          }
-        }
+      position -= delta * 0.045;
+      if (position <= -groupWidth) {
+        position += groupWidth;
       }
-
-      animationFrameId = requestAnimationFrame(loop);
+      marqueeRef.current.style.transform = `translate3d(${position}px, 0, 0)`;
     };
 
-    animationFrameId = requestAnimationFrame(loop);
+    let unsubscribeFrame = null;
+    const startFrameLoop = () => {
+      if (unsubscribeFrame) return;
+      lastTime = performance.now();
+      unsubscribeFrame = subscribeContinuousFrame(onFrame);
+    };
+    const stopFrameLoop = () => {
+      unsubscribeFrame?.();
+      unsubscribeFrame = null;
+    };
+    const intersectionObserver = typeof IntersectionObserver === "undefined"
+      ? null
+      : new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) startFrameLoop();
+        else stopFrameLoop();
+      }, { rootMargin: "80% 0px 80% 0px" });
+
+    if (intersectionObserver) intersectionObserver.observe(section);
+    else startFrameLoop();
 
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      stopFrameLoop();
+      resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
+      if (!resizeObserver) window.removeEventListener("resize", measure);
     };
-  }, []);
+  }, [reducedMotion]);
 
   const renderPartnerGroup = (isClone = false) =>
     organizations.map((organization, idx) => (
@@ -106,7 +136,7 @@ export default function ClosingSection() {
     ));
 
   return (
-    <section className="closing-section" id="ket-lai" aria-labelledby="closing-title">
+    <section className="closing-section" id="ket-lai" ref={sectionRef} aria-labelledby="closing-title">
       {/* Top Section Transition Kicker */}
       <div className="closing-transition">
         <p className="closing-transition-kicker">{closing.transitionKicker || "CỘNG ĐỒNG / MÊ LINH"}</p>

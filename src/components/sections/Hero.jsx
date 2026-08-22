@@ -19,6 +19,11 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
   };
 
   useEffect(() => {
+    document.documentElement.classList.add("react-hero-ready");
+    return () => document.documentElement.classList.remove("react-hero-ready");
+  }, []);
+
+  useEffect(() => {
     const copy = copyRef.current;
     if (!copy) return undefined;
     if (reducedMotion) {
@@ -43,7 +48,7 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
     <section className={`hero${reducedMotion ? " hero-reduced-motion" : ""}`} id="home" aria-labelledby="hero-title">
       <div className="hero-stage">
         <article className="story-slide" data-preview-target="hero-0">
-          <div className="story-slide-media" aria-hidden="true">
+          <div className="story-slide-media">
             <AdaptiveImage
               src={frame.imageSrc || "/assets/village-hero.jpg"}
               alt={settings.siteName}

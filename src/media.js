@@ -27,9 +27,25 @@ const VARIANT_MAX_WIDTH = Object.freeze({
 export const VILLAGE_HERO_MEDIA = Object.freeze(
   cmsImages.find((image) => image.id === "village-hero"),
 );
+const CAMP_GATE_LEFT_MEDIA = Object.freeze(
+  cmsImages.find((image) => image.id === "camp-gate-left"),
+);
+const CAMP_GATE_RIGHT_MEDIA = Object.freeze(
+  cmsImages.find((image) => image.id === "camp-gate-right"),
+);
+const CAMP_GATE_TOP_MEDIA = Object.freeze(
+  cmsImages.find((image) => image.id === "camp-gate-top"),
+);
+const CAMP_GATE_WHOLE_MEDIA = Object.freeze(
+  cmsImages.find((image) => image.id === "camp-gate-whole"),
+);
 
 const legacyMedia = new Map([
   ["/assets/village-hero.jpg", VILLAGE_HERO_MEDIA],
+  ["/assets/camp-gate-left-v3.png", CAMP_GATE_LEFT_MEDIA],
+  ["/assets/camp-gate-right-v3.png", CAMP_GATE_RIGHT_MEDIA],
+  ["/assets/camp-gate-top-v3.png", CAMP_GATE_TOP_MEDIA],
+  ["/assets/camp-gate-thon3-v5.png", CAMP_GATE_WHOLE_MEDIA],
 ]);
 const prewarmedSources = new Set();
 

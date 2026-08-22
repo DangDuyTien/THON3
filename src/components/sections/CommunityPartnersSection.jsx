@@ -36,14 +36,6 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
     resizeObserver?.observe(firstGroup || track);
     if (!resizeObserver) window.addEventListener("resize", measure, { passive: true });
 
-    const intersectionObserver = typeof IntersectionObserver === "undefined"
-      ? null
-      : new IntersectionObserver(([entry]) => {
-        visibleRef.current = entry.isIntersecting;
-      }, { rootMargin: "80% 0px 80% 0px" });
-    if (intersectionObserver) intersectionObserver.observe(section);
-    else visibleRef.current = true;
-
     let lastTime = performance.now();
     const onFrame = (timestamp) => {
       if (!visibleRef.current || !marqueeRef.current || !groupWidthRef.current) return;
@@ -56,7 +48,29 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       if (positionRef.current >= groupWidthRef.current) positionRef.current -= groupWidthRef.current;
       marqueeRef.current.style.transform = `translate3d(-${positionRef.current.toFixed(2)}px, 0, 0)`;
     };
-    const unsubscribe = subscribeContinuousFrame(onFrame);
+    let unsubscribeFrame = null;
+    const startFrameLoop = () => {
+      if (unsubscribeFrame) return;
+      lastTime = performance.now();
+      unsubscribeFrame = subscribeContinuousFrame(onFrame);
+    };
+    const stopFrameLoop = () => {
+      unsubscribeFrame?.();
+      unsubscribeFrame = null;
+    };
+
+    const intersectionObserver = typeof IntersectionObserver === "undefined"
+      ? null
+      : new IntersectionObserver(([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) startFrameLoop();
+        else stopFrameLoop();
+      }, { rootMargin: "80% 0px 80% 0px" });
+    if (intersectionObserver) intersectionObserver.observe(section);
+    else {
+      visibleRef.current = true;
+      startFrameLoop();
+    }
 
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -69,7 +83,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      unsubscribe();
+      stopFrameLoop();
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
       if (!resizeObserver) window.removeEventListener("resize", measure);

@@ -20,7 +20,7 @@ function mixRgb(from, to, progress) {
   return from.map((channel, index) => Math.round(channel + (to[index] - channel) * progress));
 }
 
-function SeasonalGalleryPhotos({ photos, preview = false }) {
+function SeasonalGalleryPhotos({ photos, mountedPhotoIds, preview = false }) {
   return photos.map((photo, index) => (
     <figure
       className={`season-gallery-photo season-gallery-photo-${photo.id}`}
@@ -30,14 +30,16 @@ function SeasonalGalleryPhotos({ photos, preview = false }) {
     >
       <figcaption><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{photo.label}</RevealLine></figcaption>
       <div className="season-gallery-photo-frame">
-        <AdaptiveImage
-          src={photo.imageSrc}
-          alt={preview ? "" : photo.imageAlt}
-          colorVariant={photo.colorVariant}
-          imagePosition={photo.imagePosition}
-          imageVariant="large"
-          sizes="(max-width: 680px) 72vw, 32vw"
-        />
+        {mountedPhotoIds?.has(photo.id) && (
+          <AdaptiveImage
+            src={photo.imageSrc}
+            alt={preview ? "" : photo.imageAlt}
+            colorVariant={photo.colorVariant}
+            imagePosition={photo.imagePosition}
+            imageVariant="large"
+            sizes="(max-width: 680px) 72vw, 32vw"
+          />
+        )}
       </div>
     </figure>
   ));
@@ -166,7 +168,10 @@ export default memo(function SeasonsSection({ reducedMotion }) {
             </div>
 
             <div className="season-gallery-media-track">
-              <SeasonalGalleryPhotos photos={seasonalGallery.photos} />
+              <SeasonalGalleryPhotos
+                photos={seasonalGallery.photos}
+                mountedPhotoIds={mountedPhotoIds}
+              />
             </div>
           </div>
 

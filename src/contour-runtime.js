@@ -1,5 +1,5 @@
 import { createContourRenderer } from "./contour-draw.js";
-import { markMotionScene, recordMotionSceneUpdate } from "./perf.js";
+import { markMotionScene, recordMotionSceneUpdate } from "./perf-hooks.js";
 import { getPerformanceProfile, PERFORMANCE_PROFILE } from "./perf-profile.js";
 
 const contourMounts = new WeakMap();

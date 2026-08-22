@@ -115,8 +115,8 @@ export function getSeasonalGalleryMediaIds(focus, reducedMotion = false, photos 
 
 export const visitChoices = {
   gate: {
-    imageAlt: "Cổng trại Chi đội Thôn 3 Hạ Lôi với bố cục ba khung.",
-    imageSrc: "/assets/camp-gate-thon3.png",
+    imageAlt: "Cổng trại Chi đội Thôn 3 Hạ Lôi.",
+    imageSrc: "/assets/camp-gate-thon3-user-4k-cutout.png",
   },
   left: {
     actionLabel: "Đi vào câu chuyện Mê Linh",
