@@ -5,11 +5,24 @@ import { isBackendConfigured } from "../lib/backend-api.js";
 import { getSession } from "../lib/auth-api.js";
 
 const SiteContentContext = createContext(null);
+const BOOT_RETRY_DELAY_MS = 2000;
+const BOOT_TIMEOUT_MS = 60000;
+
+function waitForRetry(signal) {
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(resolve, BOOT_RETRY_DELAY_MS);
+    signal.addEventListener("abort", () => {
+      window.clearTimeout(timer);
+      resolve();
+    }, { once: true });
+  });
+}
 
 export function SiteContentProvider({ children }) {
   const [content, setContent] = useState(cloneDefaultSiteContent);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     if (!isBackendConfigured) {
@@ -17,13 +30,49 @@ export function SiteContentProvider({ children }) {
       setLoading(false);
       return undefined;
     }
+
     let active = true;
-    getPublishedContent()
-      .then((nextContent) => active && setContent(nextContent))
-      .catch((loadError) => active && setError(loadError?.message || "Không thể tải nội dung từ máy chủ."))
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, []);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), BOOT_TIMEOUT_MS);
+    setError("");
+    setLoading(true);
+
+    const loadPublishedContent = async () => {
+      let lastError = null;
+
+      while (active && !controller.signal.aborted) {
+        try {
+          const nextContent = await getPublishedContent({ signal: controller.signal });
+          if (!active) return;
+          window.clearTimeout(timeout);
+          setContent(nextContent);
+          setError("");
+          setLoading(false);
+          return;
+        } catch (loadError) {
+          lastError = loadError;
+          if (controller.signal.aborted || (loadError?.status && loadError.status < 500)) break;
+          await waitForRetry(controller.signal);
+        }
+      }
+
+      if (!active) return;
+      setError(controller.signal.aborted
+        ? "Máy chủ chưa phản hồi sau 60 giây. Hãy thử kết nối lại."
+        : lastError?.message || "Không thể tải nội dung từ máy chủ.");
+      setLoading(false);
+    };
+
+    loadPublishedContent();
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [loadAttempt]);
+
+  const retryLoad = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
 
   const saveContent = useCallback(async (nextContent) => {
     if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
@@ -51,8 +100,9 @@ export function SiteContentProvider({ children }) {
     configured: isBackendConfigured,
     replaceContent,
     resetContent,
+    retryLoad,
     saveContent,
-  }), [content, error, loading, replaceContent, resetContent, saveContent]);
+  }), [content, error, loading, replaceContent, resetContent, retryLoad, saveContent]);
 
   return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>;
 }

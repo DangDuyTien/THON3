@@ -355,22 +355,36 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
   );
 }
 
-function App() {
+function AppContent() {
   // Keep route entrance motion behind the loader from competing for the same frames.
+  const { error, loading, retryLoad } = useSiteContent();
   const [heroRevealReady, setHeroRevealReady] = useState(false);
   const reducedMotion = useReducedMotion();
   const [currentRouteKey, setCurrentRouteKey] = useState(() => getRouteKeyFromSnapshot(getRouteSnapshot()));
   const handleLoaderExit = useCallback(() => setHeroRevealReady(true), []);
 
   return (
-    <SiteContentProvider>
+    <>
       <AppRouter heroRevealReady={heroRevealReady} onRouteReady={setCurrentRouteKey} />
       <Suspense fallback={null}>
         <PageTransition currentRouteKey={currentRouteKey} reducedMotion={reducedMotion} />
       </Suspense>
       <Suspense fallback={null}>
-        <PageLoader onExitComplete={handleLoaderExit} />
+        <PageLoader
+          contentError={error}
+          contentReady={!loading && !error}
+          onExitComplete={handleLoaderExit}
+          onRetry={retryLoad}
+        />
       </Suspense>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <SiteContentProvider>
+      <AppContent />
     </SiteContentProvider>
   );
 }

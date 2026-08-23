@@ -21,7 +21,6 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
   const choiceMotionRefs = useRef([]);
   const pushUpMediaRef = useRef(null);
   const pushUpImageRef = useRef(null);
-  const compactArrivalOffsetRef = useRef({ offset: 0, width: 0 });
   const entryProgressRef = useRef(reducedMotion ? 1 : 0);
   const stageProgressRef = useRef(0);
 
@@ -68,12 +67,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
 
     if (pushUpMediaRef.current) {
       if (viewport.isCompact) {
-        const cachedOffset = compactArrivalOffsetRef.current;
-        if (cachedOffset.width !== viewport.width) {
-          cachedOffset.width = viewport.width;
-          cachedOffset.offset = (gateMediaMotionRef.current?.parentElement?.offsetHeight || 0) + 30;
-        }
-        const startOffset = Math.min(cachedOffset.offset, viewport.height);
+        const startOffset = Math.ceil(viewport.height) + 2;
         pushUpMediaRef.current.style.transform = `translate3d(0, ${(1 - coverProgress) * startOffset}px, 0)`;
       } else {
         pushUpMediaRef.current.style.transform = `translate3d(0, ${(1 - coverProgress) * 100}%, 0)`;

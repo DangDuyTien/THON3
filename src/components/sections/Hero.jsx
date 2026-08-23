@@ -4,12 +4,17 @@ import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
 import RevealLines from "../RevealLines.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
+import { useSectionProgress } from "../../hooks/useMotion.js";
 
 export default memo(function Hero({ reducedMotion, heroRevealReady }) {
   const { content } = useSiteContent();
   const { storyFrames, settings } = content;
   const revealEnabled = heroRevealReady || reducedMotion;
   const copyRef = useRef(null);
+  const imageRef = useRef(null);
+  const mobilePanDistanceRef = useRef(0);
+  const mobilePanProgressRef = useRef(0);
+  const sectionRef = useRef(null);
   const frame = storyFrames[0] || {
     imageSrc: "/assets/village-hero.jpg",
     eyebrow: "HÀNH TRÌNH VỀ MÊ LINH",
@@ -18,10 +23,63 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
     description: "Nơi những con đường làng và câu chuyện quê hiện lên qua nhịp sống hôm nay.",
   };
 
+  useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport) => {
+    const image = imageRef.current;
+    if (!image) return;
+
+    const mobileProgress = viewport.isCompact ? progress : 0;
+    mobilePanProgressRef.current = mobileProgress;
+    image.style.setProperty(
+      "--hero-mobile-pan",
+      `${-mobilePanDistanceRef.current * mobileProgress}px`,
+    );
+  }, 0, {
+    name: "hero-mobile-pan",
+    willChange: "transform",
+    willChangeTargets: () => imageRef.current,
+  });
+
   useEffect(() => {
     document.documentElement.classList.add("react-hero-ready");
     return () => document.documentElement.classList.remove("react-hero-ready");
   }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const image = imageRef.current;
+    if (!section || !image) return undefined;
+
+    const measureMobilePan = () => {
+      if (window.innerWidth > 680 || reducedMotion || !image.naturalHeight) {
+        mobilePanDistanceRef.current = 0;
+        section.style.removeProperty("--hero-mobile-pan-distance");
+        image.style.removeProperty("--hero-mobile-pan");
+        return;
+      }
+
+      const media = image.closest(".story-slide-media");
+      if (!media) return;
+      const { height, width } = media.getBoundingClientRect();
+      const renderedWidth = height * (image.naturalWidth / image.naturalHeight);
+      const distance = Math.max(renderedWidth - width, 0);
+
+      mobilePanDistanceRef.current = distance;
+      section.style.setProperty("--hero-mobile-pan-distance", `${distance}px`);
+      image.style.setProperty(
+        "--hero-mobile-pan",
+        `${-distance * mobilePanProgressRef.current}px`,
+      );
+    };
+
+    if (image.complete) measureMobilePan();
+    image.addEventListener("load", measureMobilePan);
+    window.addEventListener("resize", measureMobilePan, { passive: true });
+
+    return () => {
+      image.removeEventListener("load", measureMobilePan);
+      window.removeEventListener("resize", measureMobilePan);
+    };
+  }, [frame.imageSrc, reducedMotion]);
 
   useEffect(() => {
     const copy = copyRef.current;
@@ -45,11 +103,12 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
   }, [reducedMotion]);
 
   return (
-    <section className={`hero${reducedMotion ? " hero-reduced-motion" : ""}`} id="home" aria-labelledby="hero-title">
+    <section ref={sectionRef} className={`hero${reducedMotion ? " hero-reduced-motion" : ""}`} id="home" aria-labelledby="hero-title">
       <div className="hero-stage">
         <article className="story-slide" data-preview-target="hero-0">
           <div className="story-slide-media">
             <AdaptiveImage
+              ref={imageRef}
               src={frame.imageSrc || "/assets/village-hero.jpg"}
               alt={settings.siteName}
               colorVariant={frame.colorVariant}
@@ -57,7 +116,7 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
               imageVariant="ultra"
               loading="eager"
               priority
-              sizes="100vw"
+              sizes="(max-width: 680px) 150svh, 100vw"
             />
           </div>
           <div className="story-slide-wash" aria-hidden="true" />

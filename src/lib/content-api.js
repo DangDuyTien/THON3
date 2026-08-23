@@ -5,9 +5,9 @@ function requireBackend() {
   if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
 }
 
-export async function getPublishedContent() {
+export async function getPublishedContent(options = {}) {
   requireBackend();
-  const result = await apiRequest("/api/content/published");
+  const result = await apiRequest("/api/content/published", options);
   return result.data?.content ? normalizeSiteContent(result.data.content) : normalizeSiteContent({});
 }
 
