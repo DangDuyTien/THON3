@@ -30,7 +30,7 @@ export function useMomentumScroll(reducedMotion) {
     }
 
     const compactOrTouch = window.matchMedia("(pointer: coarse), (max-width: 680px)").matches;
-    const maximumTargetLead = window.innerHeight * (compactOrTouch ? 0.58 : 0.72);
+    const maximumTargetLead = window.innerHeight * 0.72;
     const maximumWheelDelta = compactOrTouch ? 120 : 240;
     let lenis;
     lenis = new Lenis({
@@ -42,15 +42,16 @@ export function useMomentumScroll(reducedMotion) {
       overscroll: false,
       smoothWheel: true,
       syncTouch: compactOrTouch,
-      syncTouchLerp: 0.065,
-      touchInertiaExponent: 1.1,
-      touchMultiplier: 0.65,
+      syncTouchLerp: 0.09,
+      touchInertiaExponent: 1.22,
+      touchMultiplier: 0.74,
       virtualScroll: (data) => {
-        const maximumDelta = data.event.type.includes("touch") ? 96 : maximumWheelDelta;
+        const isTouch = data.event.type.includes("touch");
+        const maximumDelta = isTouch ? 112 : maximumWheelDelta;
         data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumDelta);
         data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumDelta);
         const targetLead = lenis.targetScroll - lenis.animatedScroll;
-        if (Math.sign(targetLead) === Math.sign(data.deltaY)) {
+        if (!isTouch && Math.sign(targetLead) === Math.sign(data.deltaY)) {
           const remainingLead = Math.max(maximumTargetLead - Math.abs(targetLead), 0);
           data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), remainingLead);
         }
