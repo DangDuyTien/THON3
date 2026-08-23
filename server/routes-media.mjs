@@ -12,6 +12,7 @@ const imageKitPrivateKey = String(process.env.IMAGEKIT_PRIVATE_KEY || "").trim()
 const imageKitFolder = String(process.env.IMAGEKIT_FOLDER || "/thon3/site").trim() || "/thon3/site";
 const imageKitConfigured = Boolean(imageKitPrivateKey);
 const imageKitFreeMaxMediaBytes = 25 * 1024 * 1024;
+const maxImagePixels = 80_000_000;
 const configuredMaxMediaBytes = Number(process.env.MAX_MEDIA_BYTES);
 const requestedMaxMediaBytes = Number.isFinite(configuredMaxMediaBytes) && configuredMaxMediaBytes > 0
   ? configuredMaxMediaBytes
@@ -29,12 +30,15 @@ const router = Router();
 
 async function validateImage(file) {
   try {
-    const metadata = await sharp(file.buffer, { limitInputPixels: 40_000_000 }).metadata();
+    const metadata = await sharp(file.buffer, { limitInputPixels: maxImagePixels }).metadata();
     const mimeType = formatMimeTypes[metadata.format];
     if (!mimeType || !metadata.width || !metadata.height || metadata.width > 12_000 || metadata.height > 12_000) throw new Error();
     return { mimeType, width: metadata.width, height: metadata.height };
-  } catch {
-    const error = new Error("Tệp tải lên không phải ảnh JPG, PNG, WebP hoặc AVIF hợp lệ.");
+  } catch (cause) {
+    const exceedsPixelLimit = String(cause?.message || "").includes("pixel limit");
+    const error = new Error(exceedsPixelLimit
+      ? `Ảnh vượt quá giới hạn ${maxImagePixels / 1_000_000} megapixel.`
+      : "Tệp tải lên không phải ảnh JPG, PNG, WebP hoặc AVIF hợp lệ.");
     error.statusCode = 400;
     throw error;
   }
