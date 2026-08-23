@@ -201,14 +201,14 @@ export const villageArchive = {
   imageSrc: "/assets/village-hero.jpg",
   imageWidth: 1440,
   cards: [
-    { colorVariant: "archive-default", id: "member1", label: "Nguyễn Văn An", year: "Bí thư Chi đoàn", imageAlt: "Bí thư Nguyễn Văn An", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-default", id: "member2", label: "Trần Thị Mai", year: "Phó Bí thư", imageAlt: "Phó Bí thư Trần Thị Mai", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-muted", id: "member3", label: "Lê Hoàng Nam", year: "Ủy viên BCH", imageAlt: "Ủy viên Lê Hoàng Nam", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-default", id: "member4", label: "Phạm Đức Anh", year: "Đội trưởng TNXP", imageAlt: "Đội trưởng Phạm Đức Anh", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-warm", id: "member5", label: "Hoàng Thị Hương", year: "Đoàn viên Xuất sắc", imageAlt: "Đoàn viên Hoàng Thị Hương", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-muted", id: "member6", label: "Vũ Minh Tuấn", year: "Bí thư Thôn 1", imageAlt: "Bí thư Vũ Minh Tuấn", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-vivid", id: "member7", label: "Đặng Thanh Hà", year: "Trưởng Ban Văn Thể", imageAlt: "Trưởng ban Đặng Thanh Hà", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-default", id: "member8", label: "Bùi Quốc Việt", year: "Bí thư Chi đoàn 2", imageAlt: "Bí thư Bùi Quốc Việt", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member1", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member2", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member3", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member4", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member5", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member6", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member7", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member8", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
   ],
 };
 

@@ -6,7 +6,6 @@ import {
   registerScene,
 } from "../motion-runtime.js";
 import { queueMotionFrame, subscribeContinuousFrame } from "../motion-frame-scheduler.js";
-import { getPerformanceProfile, PERFORMANCE_PROFILE } from "../perf-profile.js";
 
 export function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -26,26 +25,49 @@ export function useMomentumScroll(reducedMotion) {
   useEffect(() => {
     initMotionRuntime({ scheduleUpdate: queueMotionFrame });
 
-    if (reducedMotion || getPerformanceProfile() === PERFORMANCE_PROFILE.LOW) {
+    if (reducedMotion) {
       return () => destroyMotionRuntime();
     }
 
-    const lenis = new Lenis({
+    const compactOrTouch = window.matchMedia("(pointer: coarse), (max-width: 680px)").matches;
+    const maximumTargetLead = window.innerHeight * (compactOrTouch ? 0.58 : 0.72);
+    const maximumWheelDelta = compactOrTouch ? 120 : 240;
+    let lenis;
+    lenis = new Lenis({
+      allowNestedScroll: true,
       anchors: true,
       autoRaf: false,
-      duration: 0.65,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      duration: compactOrTouch ? 1.2 : 1.1,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
       overscroll: false,
       smoothWheel: true,
-      syncTouch: false,
-      touchInertiaMultiplier: 1.2,
-      wheelMultiplier: 0.9,
+      syncTouch: compactOrTouch,
+      syncTouchLerp: 0.065,
+      touchInertiaExponent: 1.1,
+      touchMultiplier: 0.65,
+      virtualScroll: (data) => {
+        const maximumDelta = data.event.type.includes("touch") ? 96 : maximumWheelDelta;
+        data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumDelta);
+        data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumDelta);
+        const targetLead = lenis.targetScroll - lenis.animatedScroll;
+        if (Math.sign(targetLead) === Math.sign(data.deltaY)) {
+          const remainingLead = Math.max(maximumTargetLead - Math.abs(targetLead), 0);
+          data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), remainingLead);
+        }
+        return true;
+      },
+      wheelMultiplier: 0.55,
     });
     let unsubscribeAnimationFrame = null;
 
-    // Keep Lenis and scroll-linked scenes on the same frame before paint.
+    const stopAnimation = () => {
+      unsubscribeAnimationFrame?.();
+      unsubscribeAnimationFrame = null;
+    };
+
     const animate = (time) => {
       lenis.raf(time);
+      if (!lenis.isScrolling) stopAnimation();
     };
 
     const startAnimation = () => {
@@ -53,28 +75,27 @@ export function useMomentumScroll(reducedMotion) {
       unsubscribeAnimationFrame = subscribeContinuousFrame(animate);
     };
 
-    const stopAnimation = () => {
-      unsubscribeAnimationFrame?.();
-      unsubscribeAnimationFrame = null;
-    };
-
     const onVisibilityChange = () => {
       if (document.hidden) stopAnimation();
-      else startAnimation();
+      else if (lenis.isScrolling === "smooth") startAnimation();
     };
 
     const onLenisScroll = () => {
       queueMotionFrame("scroll");
+      if (lenis.isScrolling === "smooth") startAnimation();
     };
 
     const unsubscribeScroll = lenis.on("scroll", onLenisScroll);
+    const unsubscribeVirtualScroll = lenis.on("virtual-scroll", startAnimation);
     document.addEventListener("visibilitychange", onVisibilityChange);
-    startAnimation();
+    document.addEventListener("click", startAnimation, true);
 
     return () => {
       stopAnimation();
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("click", startAnimation, true);
       unsubscribeScroll();
+      unsubscribeVirtualScroll();
       lenis.destroy();
       destroyMotionRuntime();
     };

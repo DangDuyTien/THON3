@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Plus, Upload, CheckCircle2, X, AlertCircle, Trash2 } from "lucide-react";
+import { Plus, Upload, CheckCircle2, X, AlertCircle, Trash2, UserRound } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
 import YouthUnionPartyLogo from "../icons/YouthUnionPartyLogo.jsx";
@@ -79,11 +79,14 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
 
   const prewarmArchiveMedia = useCallback(() => {
     villageArchive.cards.forEach((card, index) => {
+      if (!card.imageSrc) return;
       const alternateCard = villageArchive.cards[(index + 1) % villageArchive.cards.length] || card;
       const imageSize = getArchiveImageSize(card);
       const imageSizes = getArchiveImageSizes(card);
-      prewarmCmsImage(card.imageSrc || villageArchive.imageSrc, imageSize, imageSizes, card.colorVariant);
-      prewarmCmsImage(alternateCard.imageSrc || villageArchive.imageSrc, imageSize, imageSizes, alternateCard.colorVariant);
+      prewarmCmsImage(card.imageSrc, imageSize, imageSizes, card.colorVariant);
+      if (alternateCard.imageSrc) {
+        prewarmCmsImage(alternateCard.imageSrc, imageSize, imageSizes, alternateCard.colorVariant);
+      }
     });
   }, [villageArchive.cards, villageArchive.imageSrc]);
 
@@ -277,45 +280,41 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
       <div className="village-archive-grid">
         {villageArchive.cards.map((card, index) => {
           const alternateCard = villageArchive.cards[(index + 1) % villageArchive.cards.length] || card;
-          const altImage = card.altImageSrc || alternateCard.imageSrc || villageArchive.imageSrc;
+          const imageSrc = String(card.imageSrc || "").trim();
+          const altImage = card.altImageSrc || alternateCard.imageSrc || imageSrc;
+          const hasMemberDetails = Boolean(String(card.label || "").trim() || String(card.year || "").trim());
           const imageSize = getArchiveImageSize(card);
           const imageSizes = getArchiveImageSizes(card);
           return (
             <figure
-              className={`village-archive-card village-archive-card-${String(card.size || "medium").split("-")[0]} village-archive-card-shape-${index % 4}`}
+              className={`village-archive-card village-archive-card-${String(card.size || "medium").split("-")[0]} village-archive-card-shape-${index % 4}${imageSrc ? "" : " village-archive-card-empty"}`}
               key={card.id}
               data-preview-target={`archive-${card.id}`}
               ref={(node) => { cardRefs.current[index] = node; }}
             >
               <div className="village-archive-media">
-                <div className="village-archive-media-layer village-archive-media-layer-alt" aria-hidden="true">
-                  <AdaptiveImage
-                    src={altImage}
-                    alt=""
-                    colorVariant={alternateCard.colorVariant}
-                    loading="lazy"
-                    imagePosition={alternateCard.imagePosition || card.imagePosition}
-                    imageVariant={imageSize}
-                    sizes={imageSizes}
-                  />
-                </div>
-                <div className="village-archive-media-layer village-archive-media-layer-front">
-                  <AdaptiveImage
-                    src={card.imageSrc || villageArchive.imageSrc}
-                    alt={card.imageAlt}
-                    colorVariant={card.colorVariant}
-                    loading="lazy"
-                    imagePosition={card.imagePosition}
-                    imageVariant={imageSize}
-                    sizes={imageSizes}
-                  />
-                </div>
+                {imageSrc ? (
+                  <>
+                    <div className="village-archive-media-layer village-archive-media-layer-alt" aria-hidden="true">
+                      <AdaptiveImage src={altImage} alt="" colorVariant={alternateCard.colorVariant} loading="lazy" imagePosition={alternateCard.imagePosition || card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
+                    </div>
+                    <div className="village-archive-media-layer village-archive-media-layer-front">
+                      <AdaptiveImage src={imageSrc} alt={card.imageAlt} colorVariant={card.colorVariant} loading="lazy" imagePosition={card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="village-archive-empty-avatar" aria-label="Chưa có ảnh đoàn viên">
+                    <UserRound aria-hidden="true" />
+                  </div>
+                )}
               </div>
 
-              <figcaption>
-                <span className="archive-card-label"><RevealLine direction={index % 2 === 0 ? "left" : "right"}>{card.label}</RevealLine></span>
-                <strong className="archive-card-meta"><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{card.year}</RevealLine></strong>
-              </figcaption>
+              {hasMemberDetails && (
+                <figcaption>
+                  {card.label && <span className="archive-card-label"><RevealLine direction={index % 2 === 0 ? "left" : "right"}>{card.label}</RevealLine></span>}
+                  {card.year && <strong className="archive-card-meta"><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{card.year}</RevealLine></strong>}
+                </figcaption>
+              )}
             </figure>
           );
         })}

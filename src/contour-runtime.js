@@ -3,16 +3,10 @@ import { markMotionScene, recordMotionSceneUpdate } from "./perf-hooks.js";
 import { getPerformanceProfile, PERFORMANCE_PROFILE } from "./perf-profile.js";
 
 const contourMounts = new WeakMap();
-const STANDARD_CONTOUR_FRAME_INTERVAL = 10;
-const LOW_CONTOUR_FRAME_INTERVAL = 34;
 
 function getContourQuality() {
   if (window.matchMedia?.("(pointer: coarse), (max-width: 680px)").matches) return "mobile";
   return getPerformanceProfile() === PERFORMANCE_PROFILE.LOW ? "low" : "standard";
-}
-
-function getContourFrameInterval(quality) {
-  return quality === "standard" ? STANDARD_CONTOUR_FRAME_INTERVAL : LOW_CONTOUR_FRAME_INTERVAL;
 }
 
 function getPixelRatioCap(quality, inWorker) {
@@ -34,8 +28,7 @@ function getTheme() {
 }
 
 /**
- * Canvas duoc lap lich theo display frame chung; renderer bo qua cac frame qua
- * sat nhau de khong tranh tai nguyen voi scroll tren man hinh tan so cao.
+ * Canvas duoc lap lich theo display frame de tu dong bam tan so quet cua man hinh.
  */
 function createSharedContourLoop({
   canvas,
@@ -45,7 +38,6 @@ function createSharedContourLoop({
   onResume,
   onThemeChange,
   pixelRatioCap = 1.5,
-  minimumFrameInterval = STANDARD_CONTOUR_FRAME_INTERVAL,
   queueFrame,
   sceneName = "page-contour",
   subscribeAnimationFrame,
@@ -55,12 +47,9 @@ function createSharedContourLoop({
   let theme = getTheme();
   let themeObserver = null;
   let canvasVisible = true;
-  let lastDrawTime = Number.NEGATIVE_INFINITY;
 
   let unsubscribeAnimationFrame = subscribeAnimationFrame((time) => {
     if (stopped || document.hidden || !canvasVisible) return;
-    if (time - lastDrawTime < minimumFrameInterval) return;
-    lastDrawTime = time;
     onDraw(time, theme);
   });
 
@@ -160,7 +149,6 @@ function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
     onResize: ({ height, ratio, width }) => renderer.resize(width, height, ratio),
     queueFrame: scheduler.queueFrame,
     pixelRatioCap: getPixelRatioCap(quality, false),
-    minimumFrameInterval: getContourFrameInterval(quality),
     sceneName,
     subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
   });
@@ -181,7 +169,6 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
   const worker = new Worker(`${import.meta.env.BASE_URL}contour-worker.js`, { type: "module" });
   const offscreen = canvas.transferControlToOffscreen();
   const pixelRatioCap = getPixelRatioCap(quality, true);
-  const minimumFrameInterval = getContourFrameInterval(quality);
   const initialSize = getCanvasSize(canvas, pixelRatioCap);
   let workerOwnsFrameLoop = false;
   const workerTheme = getTheme();
@@ -206,7 +193,6 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
     width: initialSize.width,
     x: currentPointerX,
     y: currentPointerY,
-    minimumFrameInterval,
   }, [offscreen]);
 
   worker.addEventListener("message", (event) => {
@@ -236,7 +222,6 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
     onThemeChange: (theme) => worker.postMessage({ theme, type: "theme" }),
     queueFrame: scheduler.queueFrame,
     pixelRatioCap,
-    minimumFrameInterval,
     sceneName,
     subscribeAnimationFrame: scheduler.subscribeAnimationFrame,
   });

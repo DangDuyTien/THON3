@@ -12,6 +12,17 @@ import {
 } from "./site-content.js";
 import { DEFAULT_SITE_APPEARANCE } from "./site-theme.js";
 
+const LEGACY_ARCHIVE_PLACEHOLDERS = new Map([
+  ["member1", ["Nguyễn Văn An", "Bí thư Chi đoàn"]],
+  ["member2", ["Trần Thị Mai", "Phó Bí thư"]],
+  ["member3", ["Lê Hoàng Nam", "Ủy viên BCH"]],
+  ["member4", ["Phạm Đức Anh", "Đội trưởng TNXP"]],
+  ["member5", ["Hoàng Thị Hương", "Đoàn viên Xuất sắc"]],
+  ["member6", ["Vũ Minh Tuấn", "Bí thư Thôn 1"]],
+  ["member7", ["Đặng Thanh Hà", "Trưởng Ban Văn Thể"]],
+  ["member8", ["Bùi Quốc Việt", "Bí thư Chi đoàn 2"]],
+]);
+
 export const defaultSiteContent = {
   settings: {
     siteName: "XÃ MÊ LINH",
@@ -90,5 +101,11 @@ export function cloneDefaultSiteContent() {
 }
 
 export function normalizeSiteContent(value) {
-  return mergeWithDefaults(defaultSiteContent, value);
+  const content = mergeWithDefaults(defaultSiteContent, value);
+  content.villageArchive.cards = content.villageArchive.cards.map((card) => {
+    const legacy = LEGACY_ARCHIVE_PLACEHOLDERS.get(card.id);
+    if (!legacy || card.label !== legacy[0] || card.year !== legacy[1]) return card;
+    return { ...card, altImageSrc: "", imageAlt: "", imageSrc: "", label: "", year: "" };
+  });
+  return content;
 }
