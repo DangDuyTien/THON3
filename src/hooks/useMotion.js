@@ -32,8 +32,8 @@ export function useMomentumScroll(reducedMotion) {
 
     const lenis = new Lenis({
       anchors: true,
-      autoRaf: true,
-      duration: 1.1,
+      autoRaf: false,
+      duration: 0.65,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       overscroll: false,
       smoothWheel: true,
@@ -41,14 +41,39 @@ export function useMomentumScroll(reducedMotion) {
       touchInertiaMultiplier: 1.2,
       wheelMultiplier: 0.9,
     });
+    let unsubscribeAnimationFrame = null;
+
+    // Keep Lenis and scroll-linked scenes on the same frame before paint.
+    const animate = (time) => {
+      lenis.raf(time);
+    };
+
+    const startAnimation = () => {
+      if (document.hidden || unsubscribeAnimationFrame) return;
+      unsubscribeAnimationFrame = subscribeContinuousFrame(animate);
+    };
+
+    const stopAnimation = () => {
+      unsubscribeAnimationFrame?.();
+      unsubscribeAnimationFrame = null;
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) stopAnimation();
+      else startAnimation();
+    };
 
     const onLenisScroll = () => {
       queueMotionFrame("scroll");
     };
 
     const unsubscribeScroll = lenis.on("scroll", onLenisScroll);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    startAnimation();
 
     return () => {
+      stopAnimation();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       unsubscribeScroll();
       lenis.destroy();
       destroyMotionRuntime();
