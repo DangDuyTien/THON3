@@ -12,6 +12,7 @@ import {
   FileJson,
   FolderOpen,
   ImagePlus,
+  KeyRound,
   LogOut,
   RotateCcw,
   Save,
@@ -25,6 +26,7 @@ import {
 import AdminLivePreview from "./admin/AdminLivePreview.jsx";
 import AdminImageEditor from "./admin/AdminImageEditor.jsx";
 import AdminMediaLibrary from "./admin/AdminMediaLibrary.jsx";
+import AdminPasswordDialog from "./admin/AdminPasswordDialog.jsx";
 import {
   cloneDefaultSiteContent,
   normalizeSiteContent,
@@ -1293,6 +1295,7 @@ export default function AdminPage({ onLogout }) {
   const [cardCommandState, setCardCommandState] = useState({ action: "", version: 0 });
   const [previewFocusTarget, setPreviewFocusTarget] = useState("");
   const [mediaLibraryRequest, setMediaLibraryRequest] = useState(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const editorRef = useRef(null);
   const contentSnapshot = useMemo(() => JSON.stringify(content), [content]);
   const draftSnapshot = useMemo(() => JSON.stringify(draft), [draft]);
@@ -1476,6 +1479,10 @@ export default function AdminPage({ onLogout }) {
             <Eye aria-hidden="true" />
             <span>Xem trang</span>
           </a>
+          <button className="admin-secondary-button admin-icon-text-button" type="button" onClick={() => setPasswordDialogOpen(true)}>
+            <KeyRound aria-hidden="true" />
+            <span>Bảo mật</span>
+          </button>
           <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={!dirty} aria-label="Lưu thay đổi">
             <Save aria-hidden="true" />
             <span>Lưu thay đổi</span>
@@ -1578,6 +1585,7 @@ export default function AdminPage({ onLogout }) {
           )}
           </main>
           <AdminMediaLibrary request={mediaLibraryRequest} onClose={() => setMediaLibraryRequest(null)} />
+          {passwordDialogOpen && <AdminPasswordDialog onClose={() => setPasswordDialogOpen(false)} />}
           </AdminMediaLibraryContext.Provider>
           </AdminImageTargetContext.Provider>
         </AdminCardCommandContext.Provider>

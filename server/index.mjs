@@ -4,12 +4,43 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 import { pool, withTransaction } from "./db.mjs";
-import { clearSessionCookie, issueSession, requireRole, requireUser, setSessionCookie } from "./auth.mjs";
+import { clearSessionCookie, issueSession, requireRole, requireUser, safeCompare, setSessionCookie, validateAdminPassword } from "./auth.mjs";
 import mediaRouter from "./routes-media.mjs";
 
 const app = express();
 const port = Number(process.env.PORT || process.env.API_PORT || 8787);
 const siteKey = "default";
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 8;
+const loginAttempts = new Map();
+
+function getAttemptKey(req, email, kind = "login") {
+  return `${kind}:${req.ip || req.socket.remoteAddress || "unknown"}:${email}`;
+}
+
+function isRateLimited(req, email, kind) {
+  const key = getAttemptKey(req, email, kind);
+  const current = loginAttempts.get(key);
+  if (!current || current.expiresAt <= Date.now()) {
+    loginAttempts.delete(key);
+    return false;
+  }
+  return current.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+function recordLoginFailure(req, email, kind) {
+  const key = getAttemptKey(req, email, kind);
+  const current = loginAttempts.get(key);
+  if (!current || current.expiresAt <= Date.now()) {
+    loginAttempts.set(key, { count: 1, expiresAt: Date.now() + LOGIN_WINDOW_MS });
+    return;
+  }
+  current.count += 1;
+}
+
+function clearLoginFailures(req, email, kind) {
+  loginAttempts.delete(getAttemptKey(req, email, kind));
+}
 
 await pool.query("SELECT 1").catch((error) => {
   console.warn(`MySQL chưa kết nối: ${error.message}`);
@@ -32,9 +63,14 @@ app.post("/api/auth/login", async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");
+    if (isRateLimited(req, email, "login")) return res.status(429).json({ error: "Bạn đã thử quá nhiều lần. Hãy đợi 15 phút rồi thử lại." });
     const [rows] = await pool.execute("SELECT id, email, password_hash, display_name, role, disabled_at FROM users WHERE email = ? LIMIT 1", [email]);
     const user = rows[0];
-    if (!user || user.disabled_at || !(await bcrypt.compare(password, user.password_hash))) return res.status(401).json({ error: "Tài khoản hoặc mật khẩu không chính xác." });
+    if (!user || user.disabled_at || !(await bcrypt.compare(password, user.password_hash))) {
+      recordLoginFailure(req, email, "login");
+      return res.status(401).json({ error: "Tài khoản hoặc mật khẩu không chính xác." });
+    }
+    clearLoginFailures(req, email, "login");
     setSessionCookie(res, issueSession(user));
     return res.json({ data: { user: { id: user.id, email: user.email, display_name: user.display_name, role: user.role } } });
   } catch (error) {
@@ -45,6 +81,45 @@ app.post("/api/auth/login", async (req, res, next) => {
 app.post("/api/auth/logout", (_req, res) => { clearSessionCookie(res); res.status(204).end(); });
 app.get("/api/auth/me", requireUser, (req, res) => res.json({ data: { user: req.user } }));
 app.get("/api/auth/session", requireUser, (req, res) => res.json({ data: { user: req.user } }));
+
+app.post("/api/auth/password/change", requireUser, requireRole("admin", "editor"), async (req, res, next) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || "");
+    const nextPassword = validateAdminPassword(req.body?.newPassword);
+    const [rows] = await pool.execute("SELECT password_hash FROM users WHERE id = ? LIMIT 1", [req.user.id]);
+    if (!rows[0] || !(await bcrypt.compare(currentPassword, rows[0].password_hash))) return res.status(401).json({ error: "Mật khẩu hiện tại không chính xác." });
+    const passwordHash = await bcrypt.hash(nextPassword, 12);
+    await pool.execute("UPDATE users SET password_hash = ? WHERE id = ?", [passwordHash, req.user.id]);
+    return res.json({ data: { changed: true } });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/api/auth/password/recover", async (req, res, next) => {
+  try {
+    const recoveryCode = String(req.body?.recoveryCode || "");
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const nextPassword = validateAdminPassword(req.body?.newPassword);
+    if (isRateLimited(req, email, "recovery")) return res.status(429).json({ error: "Bạn đã thử quá nhiều lần. Hãy đợi 15 phút rồi thử lại." });
+    const configuredRecoveryCode = String(process.env.ADMIN_RECOVERY_CODE || "");
+    if (!configuredRecoveryCode || !safeCompare(recoveryCode, configuredRecoveryCode)) {
+      recordLoginFailure(req, email, "recovery");
+      return res.status(401).json({ error: "Mã khôi phục không chính xác hoặc chưa được cấu hình." });
+    }
+    const [rows] = await pool.execute("SELECT id FROM users WHERE email = ? AND role = 'admin' AND disabled_at IS NULL LIMIT 1", [email]);
+    if (!rows[0]) {
+      recordLoginFailure(req, email, "recovery");
+      return res.status(401).json({ error: "Mã khôi phục không chính xác hoặc chưa được cấu hình." });
+    }
+    const passwordHash = await bcrypt.hash(nextPassword, 12);
+    await pool.execute("UPDATE users SET password_hash = ? WHERE id = ?", [passwordHash, rows[0].id]);
+    clearLoginFailures(req, email, "recovery");
+    return res.json({ data: { changed: true } });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 app.get("/api/content/published", async (_req, res, next) => {
   try {

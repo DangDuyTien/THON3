@@ -13,6 +13,25 @@ const cookieOptions = {
   path: "/",
 };
 
+export const ADMIN_PASSWORD_PATTERN = /^\d{12,18}$/;
+
+export function validateAdminPassword(value) {
+  const password = String(value || "");
+  if (!ADMIN_PASSWORD_PATTERN.test(password)) {
+    const error = new Error("Mật khẩu quản trị phải gồm 12 đến 18 chữ số.");
+    error.statusCode = 400;
+    throw error;
+  }
+  return password;
+}
+
+export function safeCompare(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  if (leftBuffer.length !== rightBuffer.length) return false;
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
 export function issueSession(user) {
   return jwt.sign({ sub: String(user.id), role: user.role, email: user.email }, SESSION_SECRET, { expiresIn: SESSION_TTL_SECONDS });
 }

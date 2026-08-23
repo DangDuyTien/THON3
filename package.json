@@ -9,6 +9,7 @@
     "server": "node server/index.mjs",
     "db:migrate": "node server/scripts/migrate.mjs",
     "db:seed-admin": "node server/scripts/seed-admin.mjs",
+    "admin:create": "node server/scripts/create-admin.mjs",
     "build": "vite build",
     "build:check": "node scripts/validate-cms-media.js && vite build && node scripts/check-bundle-budget.js",
     "budget": "node scripts/check-bundle-budget.js",

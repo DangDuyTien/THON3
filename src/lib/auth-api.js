@@ -5,6 +5,16 @@ export async function signIn(credentials) {
   return (await apiRequest("/api/auth/login", { method: "POST", body: JSON.stringify(credentials) })).data;
 }
 
+export async function changePassword(credentials) {
+  if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
+  return (await apiRequest("/api/auth/password/change", { method: "POST", body: JSON.stringify(credentials) })).data;
+}
+
+export async function recoverPassword(credentials) {
+  if (!isBackendConfigured) throw new Error("Backend MySQL chưa được cấu hình.");
+  return (await apiRequest("/api/auth/password/recover", { method: "POST", body: JSON.stringify(credentials) })).data;
+}
+
 export async function signOut() {
   if (isBackendConfigured) await apiRequest("/api/auth/logout", { method: "POST" });
 }
