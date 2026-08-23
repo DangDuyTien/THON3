@@ -10,12 +10,23 @@ import mediaRouter from "./routes-media.mjs";
 const app = express();
 const port = Number(process.env.PORT || process.env.API_PORT || 8787);
 const siteKey = "default";
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://thon3-1.onrender.com",
+  ...String(process.env.CORS_ORIGIN || "").split(",").map((origin) => origin.trim()).filter(Boolean),
+]);
 
 await pool.query("SELECT 1").catch((error) => {
   console.warn(`MySQL chưa kết nối: ${error.message}`);
 });
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173", credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use(express.json({ limit: process.env.JSON_LIMIT || "10mb" }));
 
