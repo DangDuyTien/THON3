@@ -126,12 +126,14 @@ export default function AdminLivePreview({ draft, activeSection, dirty, focusTar
             "--preview-device-scale": scale,
           }}
         >
-          <iframe
-            ref={iframeRef}
-            src={previewSrc}
-            title={`Trang chủ bản nháp ở chế độ ${viewportConfig.label}`}
-            onLoad={() => setReady(false)}
-          />
+          <div className="admin-preview-device-frame">
+            <iframe
+              ref={iframeRef}
+              src={previewSrc}
+              title={`Trang chủ bản nháp ở chế độ ${viewportConfig.label}`}
+              onLoad={() => setReady(false)}
+            />
+          </div>
         </div>
       </div>
       <div className="admin-preview-scale-note" aria-hidden="true">
