@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import {
-  getCmsImageAttributes,
+  getImageAttributes,
   getCmsImagePosition,
   resolveCmsImage,
 } from "../media.js";
@@ -22,7 +22,7 @@ const AdaptiveImage = forwardRef(function AdaptiveImage(
   ref,
 ) {
   const cmsImage = resolveCmsImage(media || src);
-  const attributes = getCmsImageAttributes(cmsImage, imageVariant, colorVariant);
+  const attributes = getImageAttributes(cmsImage || src, imageVariant, colorVariant);
   const image = (
     <img
       {...imageProps}

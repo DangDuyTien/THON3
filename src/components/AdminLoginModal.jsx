@@ -3,7 +3,7 @@ import "../styles-admin.css";
 import { ArrowLeft, Eye, EyeOff, Lock, ShieldCheck, User, X } from "lucide-react";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import YouthUnionEmblem from "./icons/YouthUnionEmblem.jsx";
-import { recoverPassword } from "../lib/auth-api.js";
+import { confirmPasswordRecovery, requestPasswordRecovery } from "../lib/auth-api.js";
 import { useAuth } from "../lib/AuthProvider.jsx";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 
@@ -30,16 +30,19 @@ function IconRoll() {
 
 export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
   const { content } = useSiteContent();
-  const { login } = useAuth();
+  const { login, verifyLogin } = useAuth();
   const { siteName, tagline, adminLoginImage } = content.settings;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
+  const [loginChallenge, setLoginChallenge] = useState(null);
+  const [recoveryChallenge, setRecoveryChallenge] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [statusMsg, setStatusMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [animating, setAnimating] = useState(true);
   const [curveD, setCurveD] = useState("M 0 0 L 100 0 L 100 100 Q 50 100 0 100 Z");
@@ -169,21 +172,49 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setStatusMsg("");
     setIsSubmitting(true);
 
     try {
       if (recoveryMode) {
+        if (!recoveryChallenge) {
+          const challenge = await requestPasswordRecovery({ email: username.trim() });
+          setRecoveryChallenge(challenge);
+          setStatusMsg(challenge?.message || "Nếu email hợp lệ, mã khôi phục đã được gửi.");
+          setIsSubmitting(false);
+          return;
+        }
         if (newPassword !== confirmPassword) throw new Error("Mật khẩu mới nhập lại chưa khớp.");
-        await recoverPassword({ email: username.trim(), recoveryCode, newPassword });
+        await confirmPasswordRecovery({
+          email: username.trim(),
+          challengeId: recoveryChallenge.challengeId,
+          code: recoveryCode,
+          newPassword,
+        });
         setRecoveryMode(false);
+        setRecoveryChallenge(null);
         setPassword("");
         setRecoveryCode("");
         setNewPassword("");
         setConfirmPassword("");
-        setErrorMsg("Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.");
-      } else {
-        await login({ email: username.trim(), password });
+        setStatusMsg("Đã đặt lại mật khẩu và đăng xuất mọi phiên cũ. Hãy đăng nhập lại.");
+      } else if (loginChallenge) {
+        await verifyLogin({
+          email: username.trim(),
+          challengeId: loginChallenge.challengeId,
+          code: recoveryCode,
+        });
         onLoginSuccess();
+      } else {
+        const result = await login({ email: username.trim(), password });
+        if (result?.mfaRequired) {
+          setLoginChallenge(result);
+          setPassword("");
+          setRecoveryCode("");
+          setStatusMsg(`Mã xác thực đã được gửi tới ${result.maskedEmail}.`);
+        } else {
+          onLoginSuccess();
+        }
       }
     } catch (error) {
       setErrorMsg(error?.message || "Tài khoản hoặc mật khẩu không chính xác!");
@@ -192,8 +223,17 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
   };
 
   const toggleRecoveryMode = () => {
+    if (loginChallenge) {
+      setLoginChallenge(null);
+      setRecoveryCode("");
+      setStatusMsg("");
+      setErrorMsg("");
+      return;
+    }
     setRecoveryMode((current) => !current);
     setErrorMsg("");
+    setStatusMsg("");
+    setRecoveryChallenge(null);
     setRecoveryCode("");
     setNewPassword("");
     setConfirmPassword("");
@@ -300,6 +340,11 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
                     <span>⚠️ {errorMsg}</span>
                   </div>
                 )}
+                {statusMsg && (
+                  <div className="admin-login-error-pill is-success" role="status">
+                    <span>{statusMsg}</span>
+                  </div>
+                )}
 
                 <div className="admin-login-field-group">
                   <label htmlFor="admin-username">TÀI KHOẢN QUẢN TRỊ</label>
@@ -310,67 +355,73 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="admin"
+                      placeholder="email quản trị"
+                      disabled={Boolean(loginChallenge || recoveryChallenge)}
                       required
                       autoFocus
                     />
                   </div>
                 </div>
 
-                <div className="admin-login-field-group">
-                  <label htmlFor={recoveryMode ? "admin-new-password" : "admin-password"}>{recoveryMode ? "MẬT KHẨU MỚI (12–18 SỐ)" : "MẬT KHẨU BẢO MẬT"}</label>
-                  <div className="admin-login-input-box">
-                    <Lock className="admin-login-field-icon" aria-hidden="true" />
-                    <input
-                      id={recoveryMode ? "admin-new-password" : "admin-password"}
-                      type={showPassword ? "text" : "password"}
-                      inputMode={recoveryMode ? "numeric" : undefined}
-                      pattern={recoveryMode ? "[0-9]{12,18}" : undefined}
-                      value={recoveryMode ? newPassword : password}
-                      onChange={(e) => recoveryMode ? setNewPassword(e.target.value.replace(/\D/g, "").slice(0, 18)) : setPassword(e.target.value)}
-                      placeholder={recoveryMode ? "12–18 chữ số" : "••••••••"}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="admin-login-pwd-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                      title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {recoveryMode && (
-                  <>
-                    <div className="admin-login-field-group">
-                      <label htmlFor="admin-recovery-code">MÃ KHÔI PHỤC</label>
-                      <div className="admin-login-input-box">
-                        <ShieldCheck className="admin-login-field-icon" aria-hidden="true" />
-                        <input id="admin-recovery-code" type="password" value={recoveryCode} onChange={(e) => setRecoveryCode(e.target.value)} placeholder="Mã do người quản trị lưu riêng" required />
-                      </div>
+                {!loginChallenge && (!recoveryMode || recoveryChallenge) && (
+                  <div className="admin-login-field-group">
+                    <label htmlFor={recoveryMode ? "admin-new-password" : "admin-password"}>{recoveryMode ? "MẬT KHẨU MỚI (16–18 SỐ)" : "MẬT KHẨU BẢO MẬT"}</label>
+                    <div className="admin-login-input-box">
+                      <Lock className="admin-login-field-icon" aria-hidden="true" />
+                      <input
+                        id={recoveryMode ? "admin-new-password" : "admin-password"}
+                        type={showPassword ? "text" : "password"}
+                        inputMode={recoveryMode ? "numeric" : undefined}
+                        pattern={recoveryMode ? "[0-9]{16,18}" : undefined}
+                        value={recoveryMode ? newPassword : password}
+                        onChange={(e) => recoveryMode ? setNewPassword(e.target.value.replace(/\D/g, "").slice(0, 18)) : setPassword(e.target.value)}
+                        placeholder={recoveryMode ? "16–18 chữ số" : "••••••••"}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="admin-login-pwd-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
+                  </div>
+                )}
+
+                {(loginChallenge || recoveryChallenge) && (
+                  <div className="admin-login-field-group">
+                    <label htmlFor="admin-recovery-code">MÃ XÁC THỰC EMAIL</label>
+                    <div className="admin-login-input-box">
+                      <ShieldCheck className="admin-login-field-icon" aria-hidden="true" />
+                      <input id="admin-recovery-code" type="text" inputMode="numeric" pattern="[0-9]{8}" maxLength="8" value={recoveryCode} onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="8 chữ số" autoComplete="one-time-code" required />
+                    </div>
+                  </div>
+                )}
+
+                {recoveryMode && recoveryChallenge && (
+                  <>
                     <div className="admin-login-field-group">
                       <label htmlFor="admin-confirm-password">NHẬP LẠI MẬT KHẨU MỚI</label>
                       <div className="admin-login-input-box">
                         <Lock className="admin-login-field-icon" aria-hidden="true" />
-                        <input id="admin-confirm-password" type={showPassword ? "text" : "password"} inputMode="numeric" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value.replace(/\D/g, "").slice(0, 18))} placeholder="Nhập lại dãy số" required />
+                        <input id="admin-confirm-password" type={showPassword ? "text" : "password"} inputMode="numeric" pattern="[0-9]{16,18}" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value.replace(/\D/g, "").slice(0, 18))} placeholder="Nhập lại dãy số" required />
                       </div>
                     </div>
                   </>
                 )}
 
                 <div className="admin-login-hint-strip">
-                  <span>{recoveryMode ? "Mã khôi phục được đặt trong biến ADMIN_RECOVERY_CODE của máy chủ." : "Mật khẩu mới nên là dãy số ngẫu nhiên và không dùng lại ở nơi khác."}</span>
+                  <span>{loginChallenge ? "Mã chỉ dùng một lần và hết hạn sau 10 phút." : recoveryMode ? (recoveryChallenge ? "Nhập mã email cùng mật khẩu mới để hoàn tất." : "Mã khôi phục dùng một lần sẽ được gửi tới email quản trị.") : "Mật khẩu phải là dãy số ngẫu nhiên và không dùng lại ở nơi khác."}</span>
                 </div>
 
                 <div className="admin-login-actions-group">
                   <button type="submit" className="visit-link admin-login-submit-btn" disabled={isSubmitting}>
                     <ShieldCheck size={18} />
-                    <KineticRollText>{isSubmitting ? "ĐANG XỬ LÝ..." : recoveryMode ? "ĐẶT LẠI MẬT KHẨU" : "XÁC NHẬN ĐĂNG NHẬP"}</KineticRollText>
+                    <KineticRollText>{isSubmitting ? "ĐANG XỬ LÝ..." : loginChallenge ? "XÁC NHẬN MÃ" : recoveryMode ? (recoveryChallenge ? "ĐẶT LẠI MẬT KHẨU" : "GỬI MÃ KHÔI PHỤC") : "XÁC NHẬN ĐĂNG NHẬP"}</KineticRollText>
                   </button>
-                  <button type="button" className="admin-login-recovery-toggle" onClick={toggleRecoveryMode}>{recoveryMode ? "Quay lại đăng nhập" : "Quên mật khẩu?"}</button>
+                  <button type="button" className="admin-login-recovery-toggle" onClick={toggleRecoveryMode}>{loginChallenge || recoveryMode ? "Quay lại đăng nhập" : "Quên mật khẩu?"}</button>
                 </div>
               </form>
 

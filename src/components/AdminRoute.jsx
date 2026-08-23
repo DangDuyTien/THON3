@@ -34,7 +34,7 @@ class AdminRouteErrorBoundary extends React.Component {
 }
 
 function AdminRouteContent({ onRouteReady }) {
-  const { configured, loading: authLoading, isAdmin, logout } = useAuth();
+  const { configured, loading: authLoading, isAdmin, logout, forgetSession } = useAuth();
   const [adminLoginReady, setAdminLoginReady] = useState(false);
 
   useEffect(() => {
@@ -51,6 +51,11 @@ function AdminRouteContent({ onRouteReady }) {
 
   const handleAdminLogout = async () => {
     await logout();
+    navigateHome();
+  };
+
+  const handleSessionRevoked = () => {
+    forgetSession();
     navigateHome();
   };
 
@@ -84,7 +89,7 @@ function AdminRouteContent({ onRouteReady }) {
   return (
     <AdminRouteErrorBoundary>
       <Suspense fallback={<div className="admin-loading">Đang mở quản trị nội dung...</div>}>
-        <AdminPage onLogout={handleAdminLogout} />
+        <AdminPage onLogout={handleAdminLogout} onSessionRevoked={handleSessionRevoked} />
       </Suspense>
     </AdminRouteErrorBoundary>
   );

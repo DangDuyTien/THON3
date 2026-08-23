@@ -1,6 +1,15 @@
 const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
 export const isBackendConfigured = Boolean(rawBaseUrl.trim());
 export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, "");
+let csrfToken = "";
+
+export function setCsrfToken(value) {
+  csrfToken = String(value || "");
+}
+
+export function getCsrfToken() {
+  return csrfToken;
+}
 
 function apiUrl(path) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -29,7 +38,10 @@ async function parseResponse(response) {
 export async function apiRequest(path, options = {}) {
   const headers = new Headers(options.headers || {});
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const method = String(options.method || "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method) && csrfToken && !headers.has("X-CSRF-Token")) headers.set("X-CSRF-Token", csrfToken);
   const response = await fetch(apiUrl(path), { ...options, headers, credentials: "include" });
+  if (response.status === 401) setCsrfToken("");
   return parseResponse(response);
 }
 

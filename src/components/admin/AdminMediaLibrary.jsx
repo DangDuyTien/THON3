@@ -2,8 +2,9 @@ import { Check, FolderOpen, ImagePlus, LoaderCircle, Search, Upload, X } from "l
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isBackendConfigured } from "../../lib/backend-api.js";
 import { listMediaAssets, MAX_MEDIA_BYTES, MEDIA_ACCEPT, uploadMedia } from "../../lib/media-api.js";
+import { getImageAttributes } from "../../media.js";
 
-const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg+xml"]);
+const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 function formatBytes(value) {
   if (!value) return "0 KB";
@@ -13,7 +14,8 @@ function formatBytes(value) {
 }
 
 function getAssetSrc(asset) {
-  return asset?.storage_path || asset?.url || "";
+  const source = asset?.storage_path || asset?.url || "";
+  return getImageAttributes(source, "small")?.src || source;
 }
 
 function fileKey(file, index) {
@@ -76,7 +78,7 @@ export default function AdminMediaLibrary({ request, onClose }) {
     const validFiles = files.filter((file) => MEDIA_TYPES.has(file.type) && file.size <= MAX_MEDIA_BYTES);
     const rejectedCount = files.length - validFiles.length;
     if (!validFiles.length) {
-      setError(`Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa ${formatBytes(MAX_MEDIA_BYTES)} mỗi ảnh.`);
+      setError(`Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP hoặc AVIF, tối đa ${formatBytes(MAX_MEDIA_BYTES)} mỗi ảnh.`);
       return;
     }
 

@@ -22,6 +22,8 @@ const VARIANT_MAX_WIDTH = Object.freeze({
   medium: 960,
   small: 640,
 });
+const IMAGEKIT_WIDTHS = Object.freeze([640, 960, 1440, 1920, 2560, 3840]);
+const IMAGEKIT_VARIANT_MAX_WIDTH = Object.freeze({ ...VARIANT_MAX_WIDTH, full: 3840, ultra: 3840 });
 
 /** @type {CmsImage} */
 export const VILLAGE_HERO_MEDIA = Object.freeze(
@@ -104,6 +106,33 @@ export function getCmsImageAttributes(mediaOrSource, sizeVariant = "full", color
   };
 }
 
+function getImageKitUrl(source, width) {
+  try {
+    const url = new URL(source);
+    if (url.hostname !== "ik.imagekit.io") return "";
+    url.searchParams.set("tr", `w-${width},q-90,f-auto`);
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function getImageKitAttributes(source, sizeVariant) {
+  if (typeof source !== "string") return null;
+  const maxWidth = IMAGEKIT_VARIANT_MAX_WIDTH[sizeVariant] || IMAGEKIT_VARIANT_MAX_WIDTH.full;
+  const widths = IMAGEKIT_WIDTHS.filter((width) => width <= maxWidth);
+  if (!widths.length || !getImageKitUrl(source, widths[0])) return null;
+  return {
+    src: getImageKitUrl(source, Math.min(maxWidth, 1920)),
+    srcSet: widths.map((width) => `${getImageKitUrl(source, width)} ${width}w`).join(", "),
+  };
+}
+
+export function getImageAttributes(mediaOrSource, sizeVariant = "full", colorVariant = "base") {
+  return getCmsImageAttributes(mediaOrSource, sizeVariant, colorVariant)
+    || getImageKitAttributes(mediaOrSource, sizeVariant);
+}
+
 export function getCmsImagePosition(mediaOrSource) {
   const media = resolveCmsImage(mediaOrSource);
   if (!media?.focalPoint) return undefined;
@@ -117,7 +146,7 @@ export function getCmsImagePosition(mediaOrSource) {
 export function prewarmCmsImage(mediaOrSource, sizeVariant = "full", sizes = "100vw", colorVariant = "base") {
   if (typeof document === "undefined") return;
 
-  const attributes = getCmsImageAttributes(mediaOrSource, sizeVariant, colorVariant);
+  const attributes = getImageAttributes(mediaOrSource, sizeVariant, colorVariant);
   const src = attributes?.src || (typeof mediaOrSource === "string" ? mediaOrSource : "");
   if (!src) return;
 

@@ -22,6 +22,7 @@ import {
   Save,
   Search,
   Settings,
+  ShieldCheck,
   Trash2,
   Upload,
   Waves,
@@ -31,6 +32,7 @@ import AdminLivePreview from "./admin/AdminLivePreview.jsx";
 import AdminImageEditor from "./admin/AdminImageEditor.jsx";
 import AdminMediaLibrary from "./admin/AdminMediaLibrary.jsx";
 import AdminPasswordDialog from "./admin/AdminPasswordDialog.jsx";
+import AdminSecurityDialog from "./admin/AdminSecurityDialog.jsx";
 import AdaptiveImage from "./AdaptiveImage.jsx";
 import {
   cloneDefaultSiteContent,
@@ -90,7 +92,7 @@ function normalizeSearchText(value) {
     .toLowerCase();
 }
 
-const ARCHIVE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg+xml"]);
+const ARCHIVE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 function getArchiveImageLabel(filename) {
   return filename
@@ -1392,8 +1394,8 @@ function getInitialSection() {
   return getAdminSectionFromHash(window.location.hash);
 }
 
-export default function AdminPage({ onLogout }) {
-  const { content, saveContent } = useSiteContent();
+export default function AdminPage({ onLogout, onSessionRevoked }) {
+  const { content, replaceContent, saveContent } = useSiteContent();
   const [serverDraft, setServerDraft] = useState(null);
   const [serverDraftLoading, setServerDraftLoading] = useState(true);
   const [draft, setDraft] = useState(() => clone(content));
@@ -1410,6 +1412,7 @@ export default function AdminPage({ onLogout }) {
   const [previewFocusTarget, setPreviewFocusTarget] = useState("");
   const [mediaLibraryRequest, setMediaLibraryRequest] = useState(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [securityDialogOpen, setSecurityDialogOpen] = useState(false);
   const editorRef = useRef(null);
   const sectionSearchRef = useRef(null);
   const sectionNavRef = useRef(null);
@@ -1622,6 +1625,17 @@ export default function AdminPage({ onLogout }) {
     reader.readAsText(file);
   };
 
+  const handleContentRestored = (result) => {
+    if (!result?.content) return;
+    replaceContent(result.content);
+    setDraft(clone(result.content));
+    setServerDraft(null);
+    publishedSnapshotRef.current = JSON.stringify(result.content);
+    lastDraftSnapshotRef.current = publishedSnapshotRef.current;
+    setNotice(`Đã khôi phục nội dung và xuất bản thành phiên bản ${result.version}.`);
+    setSaveError("");
+  };
+
   const renderEditor = () => {
     switch (activeSection) {
       case "settings": return <SettingsEditor draft={draft} update={update} />;
@@ -1668,6 +1682,7 @@ export default function AdminPage({ onLogout }) {
               if (event.target.closest("button, label")) event.currentTarget.parentElement.removeAttribute("open");
             }}>
               <button type="button" onClick={() => setPasswordDialogOpen(true)}><KeyRound aria-hidden="true" /><span><strong>Đổi mật khẩu</strong><small>Bảo mật tài khoản quản trị</small></span></button>
+              <button type="button" onClick={() => setSecurityDialogOpen(true)}><ShieldCheck aria-hidden="true" /><span><strong>Bảo mật & lịch sử</strong><small>2 bước, phiên đăng nhập và khôi phục</small></span></button>
               <button type="button" onClick={handleExport}><Download aria-hidden="true" /><span><strong>Xuất bản sao JSON</strong><small>Tải nội dung hiện tại về máy</small></span></button>
               <label><FileJson aria-hidden="true" /><span><strong>Nạp bản sao JSON</strong><small>Khôi phục nội dung từ tệp</small></span><input className="sr-only" type="file" accept="application/json,.json" onChange={handleImport} /></label>
               <button type="button" onClick={handleReset}><RotateCcw aria-hidden="true" /><span><strong>Tạo bản nháp mặc định</strong><small>Không xuất bản cho tới khi bấm lưu</small></span></button>
@@ -1777,6 +1792,7 @@ export default function AdminPage({ onLogout }) {
           </main>
           <AdminMediaLibrary request={mediaLibraryRequest} onClose={() => setMediaLibraryRequest(null)} />
           {passwordDialogOpen && <AdminPasswordDialog onClose={() => setPasswordDialogOpen(false)} />}
+          {securityDialogOpen && <AdminSecurityDialog onClose={() => setSecurityDialogOpen(false)} onContentRestored={handleContentRestored} onSessionRevoked={onSessionRevoked} />}
           </AdminMediaLibraryContext.Provider>
           </AdminImageTargetContext.Provider>
         </AdminCardCommandContext.Provider>

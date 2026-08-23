@@ -15,8 +15,8 @@ export default function AdminPasswordDialog({ onClose }) {
     event.preventDefault();
     setError("");
     setMessage("");
-    if (!/^\d{12,18}$/.test(newPassword)) {
-      setError("Mật khẩu mới phải gồm 12 đến 18 chữ số.");
+    if (!/^\d{16,18}$/.test(newPassword)) {
+      setError("Mật khẩu mới phải gồm 16 đến 18 chữ số.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -44,7 +44,7 @@ export default function AdminPasswordDialog({ onClose }) {
           <div>
             <p className="admin-panel-eyebrow">BẢO MẬT TÀI KHOẢN</p>
             <h2 id="admin-password-title">Đổi mật khẩu admin</h2>
-            <p>Dùng dãy số ngẫu nhiên dài 12–18 số. Mật khẩu không được lưu trong mã nguồn.</p>
+            <p>Dùng dãy số ngẫu nhiên dài 16–18 số. Các phiên cũ sẽ bị vô hiệu ngay.</p>
           </div>
           <button className="admin-password-modal-close" type="button" onClick={onClose} disabled={busy} aria-label="Đóng đổi mật khẩu">
             <X aria-hidden="true" />
@@ -58,12 +58,12 @@ export default function AdminPasswordDialog({ onClose }) {
             <input type={showPasswords ? "text" : "password"} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" required />
           </label>
           <label className="admin-field">
-            <span className="admin-field-label">Mật khẩu mới (12–18 số)</span>
-            <input type={showPasswords ? "text" : "password"} inputMode="numeric" pattern="[0-9]{12,18}" value={newPassword} onChange={(event) => setNewPassword(event.target.value.replace(/\D/g, "").slice(0, 18))} autoComplete="new-password" required />
+            <span className="admin-field-label">Mật khẩu mới (16–18 số)</span>
+            <input type={showPasswords ? "text" : "password"} inputMode="numeric" pattern="[0-9]{16,18}" value={newPassword} onChange={(event) => setNewPassword(event.target.value.replace(/\D/g, "").slice(0, 18))} autoComplete="new-password" required />
           </label>
           <label className="admin-field">
             <span className="admin-field-label">Nhập lại mật khẩu mới</span>
-            <input type={showPasswords ? "text" : "password"} inputMode="numeric" pattern="[0-9]{12,18}" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value.replace(/\D/g, "").slice(0, 18))} autoComplete="new-password" required />
+            <input type={showPasswords ? "text" : "password"} inputMode="numeric" pattern="[0-9]{16,18}" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value.replace(/\D/g, "").slice(0, 18))} autoComplete="new-password" required />
           </label>
           <button className="admin-password-visibility" type="button" onClick={() => setShowPasswords((current) => !current)}>
             {showPasswords ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}

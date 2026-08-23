@@ -6,7 +6,7 @@ import { validateAdminPassword } from "../auth.mjs";
 
 const email = String(process.env.ADMIN_NEW_EMAIL || "").trim().toLowerCase();
 const displayName = String(process.env.ADMIN_NEW_DISPLAY_NAME || "Quản trị viên").trim();
-const generatedPassword = process.env.ADMIN_NEW_PASSWORD || Array.from({ length: 14 }, () => crypto.randomInt(0, 10)).join("");
+const generatedPassword = process.env.ADMIN_NEW_PASSWORD || Array.from({ length: 18 }, () => crypto.randomInt(0, 10)).join("");
 
 if (!email || !email.includes("@")) throw new Error("Cần ADMIN_NEW_EMAIL là một địa chỉ email hợp lệ.");
 const password = validateAdminPassword(generatedPassword);

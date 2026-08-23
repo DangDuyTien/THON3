@@ -1,9 +1,9 @@
-import { apiRequest, apiUrl, isBackendConfigured } from "./backend-api.js";
+import { apiRequest, apiUrl, getCsrfToken, isBackendConfigured } from "./backend-api.js";
 
 const SITE_MEDIA_BUCKET = "site-media";
 const SUBMISSION_MEDIA_BUCKET = "submission-media";
-export const MAX_MEDIA_BYTES = 100 * 1024 * 1024;
-export const MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,image/avif,image/svg+xml";
+export const MAX_MEDIA_BYTES = 25 * 1024 * 1024;
+export const MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
 
 function parseUploadPayload(text, status) {
   let payload = null;
@@ -37,6 +37,7 @@ export async function uploadMedia(file, { onProgress, signal } = {}) {
     const abort = () => request.abort();
     request.open("POST", apiUrl("/api/media"), true);
     request.withCredentials = true;
+    if (getCsrfToken()) request.setRequestHeader("X-CSRF-Token", getCsrfToken());
     request.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) onProgress?.(event.loaded / event.total);
     });
@@ -61,7 +62,13 @@ export async function listMediaAssets({ limit = 200 } = {}) {
   return (await apiRequest(`/api/media?${query.toString()}`)).data || [];
 }
 
-export async function createSignedMediaUrl(asset) {
+export async function listDeletedMediaAssets({ limit = 100 } = {}) {
+  if (!isBackendConfigured) throw new Error("Backend chưa được cấu hình.");
+  const query = new URLSearchParams({ deleted: "true", limit: String(Math.min(Math.max(Number(limit) || 1, 1), 500)) });
+  return (await apiRequest(`/api/media?${query.toString()}`)).data || [];
+}
+
+export function createSignedMediaUrl(asset) {
   if (!asset?.storage_path) return "";
   return asset.storage_path.startsWith("http") ? asset.storage_path : apiUrl(asset.storage_path);
 }
@@ -69,6 +76,11 @@ export async function createSignedMediaUrl(asset) {
 export async function removeMedia(asset) {
   if (!isBackendConfigured || !asset?.id) throw new Error("Không thể xóa ảnh khi backend chưa kết nối.");
   await apiRequest(`/api/media/${asset.id}`, { method: "DELETE" });
+}
+
+export async function restoreMedia(asset) {
+  if (!isBackendConfigured || !asset?.id) throw new Error("Không thể khôi phục ảnh khi backend chưa kết nối.");
+  return (await apiRequest(`/api/media/${asset.id}/restore`, { method: "POST" })).data;
 }
 
 export { SITE_MEDIA_BUCKET, SUBMISSION_MEDIA_BUCKET };

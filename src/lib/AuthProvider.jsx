@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getSession, signIn, signOut, subscribeToAuth } from "./auth-api.js";
+import { getSession, signIn, signOut, subscribeToAuth, verifyLoginOtp } from "./auth-api.js";
 import { isBackendConfigured } from "./backend-api.js";
 
 const AuthContext = createContext(null);
@@ -35,12 +35,24 @@ export function AuthProvider({ children }) {
     isAdmin: role === "admin" || role === "editor",
     login: async (credentials) => {
       const nextSession = await signIn(credentials);
+      if (nextSession?.user) {
+        setSession(nextSession);
+        setRole(nextSession.user.role || null);
+      }
+      return nextSession;
+    },
+    verifyLogin: async (credentials) => {
+      const nextSession = await verifyLoginOtp(credentials);
       setSession(nextSession);
       setRole(nextSession?.user?.role || null);
       return nextSession;
     },
     logout: async () => {
       await signOut();
+      setSession(null);
+      setRole(null);
+    },
+    forgetSession: () => {
       setSession(null);
       setRole(null);
     },
