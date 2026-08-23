@@ -572,6 +572,10 @@ body.site-loading {
   transform: translateY(-8px);
 }
 
+.site-loader.is-waiting .site-loader-center {
+  pointer-events: auto;
+}
+
 .route-state-loading {
   background: var(--page-background);
   inset: 0;

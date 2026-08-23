@@ -10,11 +10,13 @@ const BOOT_TIMEOUT_MS = 60000;
 
 function waitForRetry(signal) {
   return new Promise((resolve) => {
-    const timer = window.setTimeout(resolve, BOOT_RETRY_DELAY_MS);
-    signal.addEventListener("abort", () => {
+    const finish = () => {
       window.clearTimeout(timer);
+      signal.removeEventListener("abort", finish);
       resolve();
-    }, { once: true });
+    };
+    const timer = window.setTimeout(finish, BOOT_RETRY_DELAY_MS);
+    signal.addEventListener("abort", finish, { once: true });
   });
 }
 

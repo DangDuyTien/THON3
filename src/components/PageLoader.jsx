@@ -138,7 +138,7 @@ export default function PageLoader({ contentError = "", contentReady = true, onE
     >
       <div className="site-loader-center">
         <SiteLoaderMark key={drawCycle} onAnimationEnd={handleOrbitAnimationEnd} />
-        <span className="site-loader-caption">MÊ LINH / HÀ NỘI</span>
+        <span className="site-loader-caption">THÔN 3 / MÊ LINH</span>
         {waitingForBackend && (
           <div className="site-loader-wait">
             {contentError ? (
