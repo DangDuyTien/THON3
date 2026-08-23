@@ -1,26 +1,19 @@
 import { memo, useEffect, useRef } from "react";
-import { ArrowDownRight } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
-import RevealLine from "../RevealLine.jsx";
-import RevealLines from "../RevealLines.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useSectionProgress } from "../../hooks/useMotion.js";
 
-export default memo(function Hero({ reducedMotion, heroRevealReady }) {
+export default memo(function Hero({ reducedMotion }) {
   const { content } = useSiteContent();
   const { storyFrames, settings } = content;
-  const revealEnabled = heroRevealReady || reducedMotion;
-  const copyRef = useRef(null);
   const imageRef = useRef(null);
   const mobilePanDistanceRef = useRef(0);
   const mobilePanProgressRef = useRef(0);
   const sectionRef = useRef(null);
   const frame = storyFrames[0] || {
     imageSrc: "/assets/village-hero.jpg",
-    eyebrow: "HÀNH TRÌNH VỀ MÊ LINH",
-   lead: "Xã",
-    accent: "Mê Linh",
-    description: "Nơi những con đường làng và câu chuyện quê hiện lên qua nhịp sống hôm nay.",
+    colorVariant: "hero-home",
+    position: "center 58%",
   };
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport) => {
@@ -81,30 +74,10 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
     };
   }, [frame.imageSrc, reducedMotion]);
 
-  useEffect(() => {
-    const copy = copyRef.current;
-    if (!copy) return undefined;
-    if (reducedMotion) {
-      copy.style.setProperty("--reveal-progress", "1");
-      return undefined;
-    }
-
-    let frameId = 0;
-    let startTime = 0;
-    const animate = (time) => {
-      if (!startTime) startTime = time;
-      const progress = Math.min((time - startTime) / 780, 1);
-      copy.style.setProperty("--reveal-progress", `${progress}`);
-      if (progress < 1) frameId = window.requestAnimationFrame(animate);
-    };
-
-    frameId = window.requestAnimationFrame(animate);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [reducedMotion]);
-
   return (
     <section ref={sectionRef} className={`hero${reducedMotion ? " hero-reduced-motion" : ""}`} id="home" aria-labelledby="hero-title">
       <div className="hero-stage">
+        <h1 className="sr-only" id="hero-title">{settings.siteName}</h1>
         <article className="story-slide" data-preview-target="hero-0">
           <div className="story-slide-media">
             <AdaptiveImage
@@ -118,20 +91,6 @@ export default memo(function Hero({ reducedMotion, heroRevealReady }) {
               priority
               sizes="(max-width: 680px) 150svh, 100vw"
             />
-          </div>
-          <div className="story-slide-wash" aria-hidden="true" />
-
-          <div className="story-slide-copy" ref={copyRef} style={{ "--reveal-progress": reducedMotion ? 1 : 0, opacity: 1 }}>
-            <p className="eyebrow"><span /> <RevealLine enabled={revealEnabled}>{frame.eyebrow}</RevealLine></p>
-            <h1 id="hero-title" className="story-title">
-              <RevealLine direction="right" enabled={revealEnabled}>{frame.lead}</RevealLine>
-              <RevealLine direction="left" enabled={revealEnabled}><em>{frame.accent}</em></RevealLine>
-            </h1>
-            <p className="hero-intro"><RevealLines direction="left" enabled={revealEnabled}>{frame.description}</RevealLines></p>
-            <a className="command-link" href="/cau-chuyen">
-              <RevealLine direction="right" enabled={revealEnabled}>Đi vào câu chuyện</RevealLine>
-              <ArrowDownRight aria-hidden="true" />
-            </a>
           </div>
         </article>
 
