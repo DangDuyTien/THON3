@@ -1,4 +1,4 @@
-import { FolderOpen, ImagePlus, Link, LocateFixed, RotateCcw, Trash2, Upload } from "lucide-react";
+import { ChevronDown, FolderOpen, ImagePlus, Link, LocateFixed, RotateCcw, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import { MAX_MEDIA_BYTES, MEDIA_ACCEPT, uploadMedia } from "../../lib/media-api.js";
@@ -155,100 +155,112 @@ export default function AdminImageEditor({
           <span className="admin-field-label" id={`admin-image-${generatedId}`}>{label}</span>
           <small>{usingFallback ? "Đang dùng ảnh mặc định" : value?.startsWith("data:") ? "Ảnh tải từ máy" : value ? "Ảnh từ đường dẫn" : "Chưa có ảnh"}</small>
         </div>
-        {usingFallback && <span className="admin-image-fallback-badge">FALLBACK</span>}
+        {usingFallback && <span className="admin-image-fallback-badge">ẢNH MẶC ĐỊNH</span>}
       </div>
 
-      <div
-        className={`admin-image-crop${fit === "contain" ? " is-contain" : ""}`}
-        style={{ "--admin-image-aspect-ratio": aspectRatio }}
-        onPointerDown={handleFocalPointer}
-      >
-        {effectiveSrc ? (
-          <AdaptiveImage
-            src={effectiveSrc}
-            alt=""
-            imagePosition={position}
-            imageVariant="ultra"
-            loading="lazy"
-            onLoad={(event) => {
-              const image = event.currentTarget;
-              setError("");
-              setImageInfo((current) => ({ ...current, width: image.naturalWidth, height: image.naturalHeight }));
-              if (value) onDimensionsChange?.({ width: image.naturalWidth, height: image.naturalHeight });
-            }}
-            onError={() => setError("Không tải được ảnh. Hãy kiểm tra backend hoặc URL ảnh.")}
-          />
-        ) : (
-          <div className="admin-image-empty"><ImagePlus aria-hidden="true" /><span>Thêm ảnh để xem crop thực tế</span></div>
-        )}
-        {effectiveSrc && fit === "cover" && onPositionChange && (
-          <span className="admin-image-focal-marker" style={{ left: `${focal.x}%`, top: `${focal.y}%` }} aria-hidden="true"><LocateFixed /></span>
-        )}
-      </div>
-
-      <div className="admin-image-source-row">
-        <div className="admin-image-url-control">
-          <Link aria-hidden="true" />
-          <input
-            type="url"
-            value={urlValue}
-            onChange={(event) => setUrlValue(event.target.value)}
-            onBlur={commitUrl}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                commitUrl();
-              }
-            }}
-            placeholder="Dán URL hoặc /assets/... rồi Enter"
-            aria-label={`${label} - URL ảnh`}
-          />
+      <div className="admin-image-editor-main">
+        <div
+          className={`admin-image-crop${fit === "contain" ? " is-contain" : ""}`}
+          style={{ "--admin-image-aspect-ratio": aspectRatio }}
+          onPointerDown={handleFocalPointer}
+        >
+          {effectiveSrc ? (
+            <AdaptiveImage
+              src={effectiveSrc}
+              alt=""
+              imagePosition={position}
+              imageVariant="ultra"
+              loading="lazy"
+              onLoad={(event) => {
+                const image = event.currentTarget;
+                setError("");
+                setImageInfo((current) => ({ ...current, width: image.naturalWidth, height: image.naturalHeight }));
+                if (value) onDimensionsChange?.({ width: image.naturalWidth, height: image.naturalHeight });
+              }}
+              onError={() => setError("Không tải được ảnh. Hãy kiểm tra backend hoặc URL ảnh.")}
+            />
+          ) : (
+            <div className="admin-image-empty"><ImagePlus aria-hidden="true" /><span>Chưa có ảnh</span></div>
+          )}
+          {effectiveSrc && fit === "cover" && onPositionChange && (
+            <span className="admin-image-focal-marker" style={{ left: `${focal.x}%`, top: `${focal.y}%` }} aria-hidden="true"><LocateFixed /></span>
+          )}
         </div>
-        <button className="admin-secondary-button admin-image-upload-button" type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-          <Upload aria-hidden="true" /><span>{uploading ? "Đang tải..." : "Tải ảnh"}</span>
-        </button>
-        {onOpenLibrary && (
-          <button className="admin-secondary-button admin-image-library-button" type="button" disabled={uploading} onClick={onOpenLibrary}>
-            <FolderOpen aria-hidden="true" /><span>Chọn từ thư viện</span>
-          </button>
-        )}
-        {value && (
-          <button className="admin-quiet-button admin-image-remove-button" type="button" onClick={() => { onChange(""); setUrlValue(""); }} aria-label={`Xóa ${label.toLowerCase()}`} title={fallbackSrc ? "Bỏ ảnh riêng và dùng ảnh mặc định" : "Xóa ảnh"}>
-            <Trash2 aria-hidden="true" />
-          </button>
-        )}
-        <input ref={fileInputRef} className="sr-only" type="file" accept={MEDIA_ACCEPT} onChange={handleFile} />
-      </div>
 
-      {fit === "cover" && onPositionChange && effectiveSrc && (
-        <div className="admin-image-focal-controls">
-          <div className="admin-image-focal-title"><LocateFixed aria-hidden="true" /><span>Điểm lấy nét</span><code>{Math.round(focal.x)}% · {Math.round(focal.y)}%</code></div>
-          <label>
-            <span>Ngang</span>
-            <input type="range" min="0" max="100" value={focal.x} onChange={(event) => updateFocal(Number(event.target.value), focal.y)} aria-label={`${label} - vị trí ngang`} />
-          </label>
-          <label>
-            <span>Dọc</span>
-            <input type="range" min="0" max="100" value={focal.y} onChange={(event) => updateFocal(focal.x, Number(event.target.value))} aria-label={`${label} - vị trí dọc`} />
-          </label>
-          <button type="button" onClick={() => updateFocal(50, 50)}><RotateCcw aria-hidden="true" /> Đặt giữa</button>
+        <div className="admin-image-primary-actions">
+          {onOpenLibrary && (
+            <button className="admin-primary-button admin-icon-text-button admin-image-library-button" type="button" disabled={uploading} onClick={onOpenLibrary}>
+              <FolderOpen aria-hidden="true" /><span>Chọn từ thư viện</span>
+            </button>
+          )}
+          <button className={`${onOpenLibrary ? "admin-secondary-button" : "admin-primary-button"} admin-icon-text-button admin-image-upload-button`} type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+            <Upload aria-hidden="true" /><span>{uploading ? "Đang tải..." : value ? "Tải ảnh thay thế" : "Tải ảnh từ máy"}</span>
+          </button>
+          {value && (
+            <button className="admin-quiet-button admin-image-remove-button" type="button" onClick={() => { onChange(""); setUrlValue(""); }} aria-label={`Xóa ${label.toLowerCase()}`} title={fallbackSrc ? "Bỏ ảnh riêng và dùng ảnh mặc định" : "Xóa ảnh"}>
+              <Trash2 aria-hidden="true" />
+            </button>
+          )}
+          <input ref={fileInputRef} className="sr-only" type="file" accept={MEDIA_ACCEPT} onChange={handleFile} />
+          <div className="admin-image-meta">
+            {imageInfo?.width && <span>{imageInfo.width} × {imageInfo.height}px</span>}
+            {(imageInfo?.bytes || uploadedBytes) > 0 && <span>{formatBytes(imageInfo?.bytes || uploadedBytes)}</span>}
+            {imageInfo?.type && <span>{imageInfo.type.replace("image/", "").toUpperCase()}</span>}
+            {value?.startsWith("data:") && <span>Ảnh cũ trong bản nháp trình duyệt</span>}
+          </div>
         </div>
-      )}
-
-      {onAltChange && (
-        <label className="admin-image-alt-field">
-          <span className="admin-field-label">Mô tả ảnh cho trình đọc màn hình</span>
-          <textarea rows="2" value={alt || ""} onChange={(event) => onAltChange(event.target.value)} placeholder="Mô tả ngắn nội dung quan trọng trong ảnh" />
-        </label>
-      )}
-
-      <div className="admin-image-meta">
-        {imageInfo?.width && <span>{imageInfo.width} × {imageInfo.height}px</span>}
-        {(imageInfo?.bytes || uploadedBytes) > 0 && <span>{formatBytes(imageInfo?.bytes || uploadedBytes)}</span>}
-        {imageInfo?.type && <span>{imageInfo.type.replace("image/", "").toUpperCase()}</span>}
-        {value?.startsWith("data:") && <span>Ảnh cũ trong bản nháp trình duyệt</span>}
       </div>
-      {hint && <p className="admin-field-hint">{hint}</p>}
+
+      <details className="admin-image-advanced">
+        <summary>
+          <span><SlidersHorizontal aria-hidden="true" /> Tùy chỉnh ảnh</span>
+          <small>Đường dẫn · lấy nét · mô tả</small>
+          <ChevronDown aria-hidden="true" />
+        </summary>
+        <div className="admin-image-advanced-body">
+          <div className="admin-image-url-control">
+            <Link aria-hidden="true" />
+            <input
+              type="url"
+              value={urlValue}
+              onChange={(event) => setUrlValue(event.target.value)}
+              onBlur={commitUrl}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  commitUrl();
+                }
+              }}
+              placeholder="Dán URL hoặc /assets/... rồi Enter"
+              aria-label={`${label} - URL ảnh`}
+            />
+          </div>
+
+          {fit === "cover" && onPositionChange && effectiveSrc && (
+            <div className="admin-image-focal-controls">
+              <div className="admin-image-focal-title"><LocateFixed aria-hidden="true" /><span>Điểm lấy nét</span><code>{Math.round(focal.x)}% · {Math.round(focal.y)}%</code></div>
+              <label>
+                <span>Ngang</span>
+                <input type="range" min="0" max="100" value={focal.x} onChange={(event) => updateFocal(Number(event.target.value), focal.y)} aria-label={`${label} - vị trí ngang`} />
+              </label>
+              <label>
+                <span>Dọc</span>
+                <input type="range" min="0" max="100" value={focal.y} onChange={(event) => updateFocal(focal.x, Number(event.target.value))} aria-label={`${label} - vị trí dọc`} />
+              </label>
+              <button type="button" onClick={() => updateFocal(50, 50)}><RotateCcw aria-hidden="true" /> Đặt giữa</button>
+            </div>
+          )}
+
+          {onAltChange && (
+            <label className="admin-image-alt-field">
+              <span className="admin-field-label">Mô tả ảnh cho trình đọc màn hình</span>
+              <textarea rows="2" value={alt || ""} onChange={(event) => onAltChange(event.target.value)} placeholder="Mô tả ngắn nội dung quan trọng trong ảnh" />
+            </label>
+          )}
+          {hint && <p className="admin-field-hint">{hint}</p>}
+        </div>
+      </details>
+
       {uploadedBytes > MAX_MEDIA_BYTES * 0.75 && <p className="admin-image-warning">Ảnh này chiếm nhiều bộ nhớ. Nên nén ảnh trước khi thêm ảnh khác.</p>}
       {error && <p className="admin-field-error" role="alert">{error}</p>}
     </section>

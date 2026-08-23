@@ -31,6 +31,7 @@ import AdminLivePreview from "./admin/AdminLivePreview.jsx";
 import AdminImageEditor from "./admin/AdminImageEditor.jsx";
 import AdminMediaLibrary from "./admin/AdminMediaLibrary.jsx";
 import AdminPasswordDialog from "./admin/AdminPasswordDialog.jsx";
+import AdaptiveImage from "./AdaptiveImage.jsx";
 import {
   cloneDefaultSiteContent,
   normalizeSiteContent,
@@ -232,6 +233,7 @@ function AdminImageField({ label, value, onChange, hint, alt, onAltChange, posit
 }
 
 function AdminSectionImageUploader({ title, description, targets, update }) {
+  const mediaLibrary = useContext(AdminMediaLibraryContext);
   const filesInputRef = useRef(null);
   const folderInputRef = useRef(null);
   const [limit, setLimit] = useState(targets.length);
@@ -243,6 +245,23 @@ function AdminSectionImageUploader({ title, description, targets, update }) {
   useEffect(() => {
     setLimit((current) => Math.min(Math.max(current || 1, 1), targets.length));
   }, [targets.length]);
+
+  const applyAssets = (assets) => {
+    const selectedAssets = assets.slice(0, Math.min(limit, targets.length));
+    selectedAssets.forEach((asset, index) => {
+      const target = targets[index];
+      const imageSrc = asset?.storage_path || asset?.url;
+      if (!target || !imageSrc) return;
+      update(target.imagePath, imageSrc);
+      if (!autoText) return;
+      const fileLabel = getArchiveImageLabel(asset.original_name || "") || `Ảnh ${index + 1}`;
+      if (target.labelPath) update(target.labelPath, fileLabel);
+      if (target.altPath && target.altPath !== target.labelPath) {
+        update(target.altPath, target.altPrefix ? `${target.altPrefix} ${fileLabel}` : fileLabel);
+      }
+    });
+    setResult({ type: "success", message: `Đã điền ${selectedAssets.length} ảnh từ thư viện vào ${title.toLowerCase()}.` });
+  };
 
   const uploadFiles = async (fileList) => {
     if (uploading) return;
@@ -339,7 +358,18 @@ function AdminSectionImageUploader({ title, description, targets, update }) {
         </label>
       </div>
       <div className="admin-archive-bulk-actions">
-        <button className="admin-primary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => folderInputRef.current?.click()}>
+        {mediaLibrary && (
+          <button className="admin-primary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => mediaLibrary.open({
+            title,
+            multiple: true,
+            maxSelect: Math.min(limit, targets.length),
+            onSelectMany: applyAssets,
+          })}>
+            <ImagePlus aria-hidden="true" />
+            <span>Chọn trong thư viện</span>
+          </button>
+        )}
+        <button className="admin-secondary-button admin-icon-text-button" type="button" disabled={uploading} onClick={() => folderInputRef.current?.click()}>
           <FolderOpen aria-hidden="true" />
           <span>{uploading ? `Đang tải ${progress.current}/${progress.total}` : "Chọn thư mục"}</span>
         </button>
@@ -426,7 +456,7 @@ function getAppearanceChoiceLabel(group, value) {
   return option?.label?.replace(/\s*\(.*/, "") || value;
 }
 
-function AdminCard({ title, index, children, openByDefault = index === 0 }) {
+function AdminCard({ title, index, children, openByDefault = index === 0, summary, thumbnail }) {
   const cardCommand = useContext(AdminCardCommandContext);
   const [open, setOpen] = useState(openByDefault);
   const handledCommandRef = useRef(0);
@@ -444,8 +474,12 @@ function AdminCard({ title, index, children, openByDefault = index === 0 }) {
         setOpen((current) => !current);
       }}>
         <span className="admin-card-heading-copy">
+          {thumbnail && <span className="admin-card-thumbnail"><AdaptiveImage src={thumbnail} alt="" loading="lazy" /></span>}
           <span className="admin-card-index">{String(index + 1).padStart(2, "0")}</span>
-          <span className="admin-card-title">{title}</span>
+          <span className="admin-card-title-group">
+            <span className="admin-card-title">{title}</span>
+            {summary && <small>{summary}</small>}
+          </span>
         </span>
         <ChevronDown aria-hidden="true" />
       </summary>
@@ -578,7 +612,7 @@ function SettingsEditor({ draft, update }) {
           <AdminSelectField label="Xử lý ảnh" value={appearance.effects.imageTreatment} onChange={(value) => update("settings.appearance.effects.imageTreatment", value)} options={SITE_APPEARANCE_OPTIONS.imageTreatment} />
           <AdminSelectField label="Hiệu ứng rê chuột" value={appearance.effects.hover} onChange={(value) => update("settings.appearance.effects.hover", value)} options={SITE_APPEARANCE_OPTIONS.hover} />
         </div>
-        <p className="admin-settings-callout"><Waves aria-hidden="true" /> Preview phía trên dùng chính các lựa chọn này. Hãy thử đổi từng nhóm rồi bấm “Lưu thay đổi” khi đã ưng ý.</p>
+        <p className="admin-settings-callout"><Waves aria-hidden="true" /> Bản xem trước dùng chính các lựa chọn này. Xuất bản khi bạn đã kiểm tra xong.</p>
       </div>
     </AdminPanel>
   );
@@ -598,7 +632,7 @@ function HeroEditor({ draft, update }) {
       />
       <div className="admin-card-stack">
         {draft.storyFrames.map((frame, index) => (
-          <AdminCard key={frame.number} index={index} title={`Khung cảnh ${frame.number}`}>
+          <AdminCard key={frame.number} index={index} title={`Khung cảnh ${frame.number}`} summary={[frame.lead, frame.accent].filter(Boolean).join(" ")} thumbnail={frame.imageSrc}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Nhãn nhỏ" value={frame.eyebrow} onChange={(value) => update(`storyFrames[${index}].eyebrow`, value)} />
               <AdminField label="Dòng chính" value={frame.lead} onChange={(value) => update(`storyFrames[${index}].lead`, value)} />
@@ -723,7 +757,7 @@ function StatementEditor({ draft, update }) {
       </div>
       <div className="admin-card-stack admin-card-stack-compact">
         {draft.exploreStatement.lines.map((line, index) => (
-          <AdminCard key={`line-${index}`} index={index} title={`Dòng ${index + 1}`}>
+          <AdminCard key={`line-${index}`} index={index} title={`Dòng ${index + 1}`} summary={[line.before, line.accent, line.after].filter(Boolean).join(" ")}>
             <div className="admin-form-grid admin-form-grid-three">
               <AdminField label="Chữ trước" value={line.before} onChange={(value) => update(`exploreStatement.lines[${index}].before`, value)} />
               <AdminField label="Chữ nhấn" value={line.accent} onChange={(value) => update(`exploreStatement.lines[${index}].accent`, value)} />
@@ -758,7 +792,7 @@ function SeasonsEditor({ draft, update }) {
       </div>
       <div className="admin-card-stack">
         {gallery.photos.map((photo, index) => (
-          <AdminCard key={photo.id} index={index} title={photo.label || `Ảnh ${index + 1}`}>
+          <AdminCard key={photo.id} index={index} title={photo.label || `Ảnh ${index + 1}`} summary={photo.imageAlt} thumbnail={photo.imageSrc}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên ảnh" value={photo.label} onChange={(value) => update(`seasonalGallery.photos[${index}].label`, value)} />
               <AdminImageField
@@ -781,7 +815,7 @@ function SeasonsEditor({ draft, update }) {
 
 function ChoiceEditor({ choice, path, update, index }) {
   return (
-    <AdminCard index={index} title={index === 0 ? "Lối vào câu chuyện" : "Lối khám phá nhịp sống"}>
+    <AdminCard index={index} title={index === 0 ? "Lối vào câu chuyện" : "Lối khám phá nhịp sống"} summary={choice.copy} thumbnail={choice.imageSrc}>
       <div className="admin-form-grid admin-form-grid-wide">
         <AdminField label="Nhãn nhỏ" value={choice.kicker} onChange={(value) => update(`${path}.kicker`, value)} />
         <AdminField label="Dòng trên" value={choice.upper} onChange={(value) => update(`${path}.upper`, value)} />
@@ -1138,7 +1172,7 @@ function ArchiveEditor({ draft, update }) {
       </div>
       <div className="admin-card-stack">
         {archive.cards.map((card, index) => (
-          <AdminCard key={card.id} index={index} title={card.label || `Tư liệu ${index + 1}`}>
+          <AdminCard key={card.id} index={index} title={card.label || `Tư liệu ${index + 1}`} summary={card.year} thumbnail={card.imageSrc || archive.imageSrc}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên tư liệu" value={card.label} onChange={(value) => update(`villageArchive.cards[${index}].label`, value)} />
               <AdminField label="Năm" value={card.year} onChange={(value) => update(`villageArchive.cards[${index}].year`, value)} />
@@ -1209,7 +1243,7 @@ function CommunityEditor({ draft, update }) {
       </div>
       <div className="admin-card-stack">
         {partners.organizations.map((organization, index) => (
-          <AdminCard key={organization.id} index={index} title={organization.label || `Đơn vị ${index + 1}`}>
+          <AdminCard key={organization.id} index={index} title={organization.label || `Đơn vị ${index + 1}`} summary={organization.mark} thumbnail={organization.logo}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên đơn vị" value={organization.label} onChange={(value) => update(`communityPartners.organizations[${index}].label`, value)} />
               <AdminField label="Ký hiệu chữ" value={organization.mark} onChange={(value) => update(`communityPartners.organizations[${index}].mark`, value)} hint="Hiển thị khi không có logo." />
@@ -1263,7 +1297,7 @@ function UpdatesEditor({ draft, update }) {
       </div>
       <div className="admin-card-stack">
         {updates.cards.map((card, index) => (
-          <AdminCard key={card.id} index={index} title={card.label || `Hoạt động ${index + 1}`}>
+          <AdminCard key={card.id} index={index} title={card.label || `Hoạt động ${index + 1}`} summary={card.meta} thumbnail={card.imageSrc || updates.imageSrc}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Tên hoạt động" value={card.label} onChange={(value) => update(`villageUpdates.cards[${index}].label`, value)} />
               <AdminField label="Thời gian" value={card.meta} onChange={(value) => update(`villageUpdates.cards[${index}].meta`, value)} />
@@ -1370,7 +1404,7 @@ export default function AdminPage({ onLogout }) {
   const [draftSaveState, setDraftSaveState] = useState("idle");
   const [publishing, setPublishing] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(() => (
-    typeof window === "undefined" || window.matchMedia("(min-width: 841px)").matches
+    typeof window !== "undefined" && window.sessionStorage.getItem("admin-preview-visible") === "true"
   ));
   const [cardCommandState, setCardCommandState] = useState({ action: "", version: 0 });
   const [previewFocusTarget, setPreviewFocusTarget] = useState("");
@@ -1378,6 +1412,7 @@ export default function AdminPage({ onLogout }) {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const editorRef = useRef(null);
   const sectionSearchRef = useRef(null);
+  const sectionNavRef = useRef(null);
   const contentSnapshot = useMemo(() => JSON.stringify(content), [content]);
   const draftSnapshot = useMemo(() => JSON.stringify(draft), [draft]);
   const dirty = draftSnapshot !== contentSnapshot;
@@ -1459,6 +1494,18 @@ export default function AdminPage({ onLogout }) {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
+  useEffect(() => {
+    window.sessionStorage.setItem("admin-preview-visible", String(previewVisible));
+  }, [previewVisible]);
+
+  useEffect(() => {
+    const nav = sectionNavRef.current;
+    const activeItem = nav?.querySelector("button.is-active");
+    if (!nav || !activeItem || !window.matchMedia("(max-width: 680px)").matches) return;
+    const left = activeItem.offsetLeft - ((nav.clientWidth - activeItem.offsetWidth) / 2);
+    nav.scrollTo({ left, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [activeSection]);
+
   const update = (path, value) => {
     setDraft((current) => setAtPath(current, path, value));
     setNotice("");
@@ -1484,7 +1531,7 @@ export default function AdminPage({ onLogout }) {
       const normalizedContent = await saveContent(draft);
       publishedSnapshotRef.current = JSON.stringify(normalizedContent);
       lastDraftSnapshotRef.current = publishedSnapshotRef.current;
-      setNotice("Đã lưu nội dung trang chủ trên máy chủ.");
+      setNotice("Đã xuất bản nội dung mới lên trang chủ.");
       setSaveError("");
     } catch (error) {
       setSaveError(error?.message || "Không thể lưu nội dung.");
@@ -1520,15 +1567,17 @@ export default function AdminPage({ onLogout }) {
   const draftStatusLabel = publishing
     ? "Đang xuất bản..."
     : !dirty
-      ? "Đã đồng bộ"
+      ? "Trang chủ đã cập nhật"
       : draftSaveState === "saving"
         ? "Đang lưu nháp..."
         : draftSaveState === "error"
           ? "Lỗi lưu nháp"
-          : "Đã lưu bản nháp";
+          : draftSaveState === "saved"
+            ? "Bản nháp đã lưu"
+            : "Có thay đổi chưa xuất bản";
 
   const handleReset = () => {
-    if (!window.confirm("Tạo bản nháp từ nội dung mặc định? Trang chủ hiện tại vẫn giữ nguyên cho đến khi bạn bấm Lưu thay đổi.")) return;
+    if (!window.confirm("Tạo bản nháp từ nội dung mặc định? Trang chủ hiện tại vẫn giữ nguyên cho đến khi bạn bấm Xuất bản.")) return;
     setDraft(cloneDefaultSiteContent());
     setNotice("Đã tạo bản nháp mặc định. Trang chủ chưa thay đổi.");
     setSaveError("");
@@ -1606,9 +1655,9 @@ export default function AdminPage({ onLogout }) {
             <Eye aria-hidden="true" />
             <span>Xem trang</span>
           </a>
-          <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={!dirty || publishing} aria-label="Lưu và xuất bản thay đổi">
+          <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={!dirty || publishing} aria-label="Xuất bản thay đổi lên trang chủ">
             <Save aria-hidden="true" />
-            <span>{publishing ? "Đang lưu..." : "Lưu thay đổi"}</span>
+            <span>{publishing ? "Đang xuất bản..." : "Xuất bản"}</span>
           </button>
           <details className="admin-more-menu">
             <summary className="admin-secondary-button" role="button" aria-label="Mở công cụ quản trị" title="Công cụ quản trị">
@@ -1651,7 +1700,7 @@ export default function AdminPage({ onLogout }) {
               )}
             </div>
           </div>
-          <nav className="admin-section-nav" id="admin-section-navigation">
+          <nav className="admin-section-nav" id="admin-section-navigation" ref={sectionNavRef}>
             {visibleNavItems.map((section) => (
               <button className={activeSection === section.id ? "is-active" : ""} type="button" key={section.id} onClick={() => selectSection(section.id)} aria-current={activeSection === section.id ? "page" : undefined}>
                 <span className="admin-nav-label"><span className="admin-nav-index">{section.index}</span>{section.label}</span>
@@ -1697,7 +1746,6 @@ export default function AdminPage({ onLogout }) {
             </button>
             <div>
               <strong>{String(activeSectionIndex + 1).padStart(2, "0")} / {String(ADMIN_NAV_ITEMS.length).padStart(2, "0")}</strong>
-              <small>Dùng menu trái hoặc hai nút này để chuyển mục</small>
             </div>
             <button type="button" disabled={!nextSection} onClick={() => nextSection && selectSection(nextSection.id)} title={nextSection ? `Tới ${nextSection.label}` : "Đây là mục cuối cùng"}>
               <span>{nextSection?.label || "Mục sau"}</span>
@@ -1716,13 +1764,13 @@ export default function AdminPage({ onLogout }) {
           {dirty && (
             <div className="admin-save-dock" role="status">
               <div>
-                <strong>Bản nháp đã tự lưu</strong>
-                <span>Chỉ “Lưu thay đổi” mới cập nhật trang chủ.</span>
+                <strong>{draftSaveState === "saving" ? "Đang lưu bản nháp..." : draftSaveState === "error" ? "Chưa lưu được bản nháp" : "Bản nháp đã lưu an toàn"}</strong>
+                <span>Trang chủ chưa thay đổi. Xuất bản khi đã kiểm tra xong.</span>
               </div>
               <button className="admin-save-dock-discard" type="button" onClick={handleDiscardDraft}>Bỏ bản nháp</button>
               <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={publishing} aria-label="Lưu và xuất bản bản nháp">
                 <Save aria-hidden="true" />
-                <span>{publishing ? "Đang lưu..." : "Xuất bản"}</span>
+                <span>{publishing ? "Đang xuất bản..." : "Xuất bản"}</span>
               </button>
             </div>
           )}
