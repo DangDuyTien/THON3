@@ -17,8 +17,10 @@ export function getPerformanceProfile() {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   const memory = Number(navigator.deviceMemory);
   const cores = Number(navigator.hardwareConcurrency);
+  const compactOrTouch = window.matchMedia?.("(pointer: coarse), (max-width: 680px)").matches;
 
   if (getReducedMotionPreference()) return PERFORMANCE_PROFILE.LOW;
+  if (compactOrTouch) return PERFORMANCE_PROFILE.LOW;
   if (connection?.saveData === true) return PERFORMANCE_PROFILE.LOW;
   if (Number.isFinite(memory) && memory <= LOW_MEMORY_GB) return PERFORMANCE_PROFILE.LOW;
   if (Number.isFinite(cores) && cores <= LOW_CPU_CORES) return PERFORMANCE_PROFILE.LOW;

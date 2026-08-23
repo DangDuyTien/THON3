@@ -340,8 +340,9 @@ export function createContourRenderer(canvas, quality = "standard") {
   let theme = "light";
   const sim = createSimulationState();
 
-  const cols = quality === "low" ? 32 : 46;
-  const rows = quality === "low" ? 20 : 28;
+  const compactQuality = quality === "low" || quality === "mobile";
+  const cols = compactQuality ? 32 : 46;
+  const rows = compactQuality ? 20 : 28;
   const isoLevels = quality === "low" ? [0.75, 0.35] : [0.92, 0.58, 0.32, 0.16];
 
   function resize(width, height, ratio = 1) {

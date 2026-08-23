@@ -26,7 +26,7 @@ export function useMomentumScroll(reducedMotion) {
   useEffect(() => {
     initMotionRuntime({ scheduleUpdate: queueMotionFrame });
 
-    if (reducedMotion) {
+    if (reducedMotion || getPerformanceProfile() === PERFORMANCE_PROFILE.LOW) {
       return () => destroyMotionRuntime();
     }
 

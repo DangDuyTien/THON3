@@ -35,7 +35,10 @@ function isPreviewRoute() {
 function DeferredSection({ Component, fallbackClassName, sectionId, eager = false, ...componentProps }) {
   const placeholderRef = useRef(null);
   const [ready, setReady] = useState(() => (
-    eager || (typeof window !== "undefined" && window.location.hash === `#${sectionId}`)
+    eager || (typeof window !== "undefined" && (
+      window.location.hash === `#${sectionId}`
+      || window.matchMedia("(max-width: 680px)").matches
+    ))
   ));
   const [isHashTarget, setIsHashTarget] = useState(() => (
     typeof window !== "undefined" && window.location.hash === `#${sectionId}`

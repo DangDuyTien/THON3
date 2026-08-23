@@ -104,7 +104,12 @@ export default memo(function SeasonsSection({ reducedMotion }) {
     const photoEntryOffset = reducedMotion
       ? 0
       : 61 * (1 - photoEntryProgress);
-    const nextFocus = getSeasonalGalleryFocus(progress, horizontalTravel, seasonalGallery.photos.length);
+    const nextFocus = getSeasonalGalleryFocus(
+      progress,
+      horizontalTravel,
+      seasonalGallery.photos.length,
+      compactViewport,
+    );
 
     if (nextFocus !== galleryFocusRef.current) {
       galleryFocusRef.current = nextFocus;
