@@ -601,6 +601,21 @@
   font-weight: 800;
 }
 
+.admin-nav-notification {
+  align-items: center;
+  background: #d74a36;
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 9px;
+  height: 20px;
+  justify-content: center;
+  margin-left: 3px;
+  min-width: 20px;
+  padding: 0 5px;
+}
+
 .admin-nav-index {
   color: #849286;
   font-family: var(--mono);
@@ -5761,6 +5776,15 @@ body.youth-modal-open {
   margin: 0;
 }
 
+.admin-pending-error {
+  background: rgba(255, 85, 85, 0.12);
+  border-left: 3px solid #ff5555;
+  color: #ffb0b0;
+  font-size: 12px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+}
+
 .admin-pending-list {
   display: flex;
   flex-direction: column;
@@ -5857,6 +5881,27 @@ body.youth-modal-open {
   transition: all 0.2s ease;
 }
 
+.admin-btn-approve,
+.admin-btn-reject {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
+  min-height: 42px;
+}
+
+.admin-btn-approve svg,
+.admin-btn-reject svg {
+  height: 15px;
+  width: 15px;
+}
+
+.admin-btn-approve:disabled,
+.admin-btn-reject:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .admin-btn-approve:hover {
   background: #ffffff;
 }
@@ -5877,6 +5922,55 @@ body.youth-modal-open {
 .admin-btn-reject:hover {
   background: #ff5555;
   color: #ffffff;
+}
+
+.admin-submission-alert {
+  align-items: center;
+  background: #fff9e8;
+  border: 1px solid #d8b44b;
+  border-radius: 8px;
+  color: #243027;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.admin-submission-alert > svg {
+  color: #9a7210;
+  height: 20px;
+  width: 20px;
+}
+
+.admin-submission-alert > svg:last-child {
+  color: #627066;
+  height: 16px;
+  width: 16px;
+}
+
+.admin-submission-alert span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-submission-alert strong {
+  font-size: 12px;
+}
+
+.admin-submission-alert small {
+  color: #627066;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.admin-submission-alert:hover {
+  background: #fff3c7;
+  border-color: #a77f18;
 }
 
 @media (max-width: 768px) {

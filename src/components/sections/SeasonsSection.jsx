@@ -82,7 +82,7 @@ export default memo(function SeasonsSection({ reducedMotion }) {
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport, motion) => {
     const compactViewport = viewport.isCompact;
-    const horizontalTravel = compactViewport ? 125 : 132;
+    const horizontalTravel = compactViewport ? 170 : 132;
     const horizontalOffset = -progress * horizontalTravel;
     // Start the tone while the section enters, then carry the color change
     // across the whole horizontal gallery instead of finishing at frame one.

@@ -6,6 +6,8 @@ import "dotenv/config";
 import { pool, withTransaction } from "./db.mjs";
 import { clearSessionCookie, issueCsrfToken, issueSession, requireCsrf, requireRole, requireUser, SESSION_TTL_SECONDS, setSessionCookie, validateAdminPassword } from "./auth.mjs";
 import mediaRouter from "./routes-media.mjs";
+import { appendApprovedSubmissionCard, buildApprovedSubmissionCard } from "./submission-content.mjs";
+import { isValidYouthBirthYear, isYouthSchoolOption } from "../src/lib/submission-options.js";
 import {
   assertAuthAllowed,
   clearAuthFailures,
@@ -26,6 +28,7 @@ import {
 const app = express();
 const port = Number(process.env.PORT || process.env.API_PORT || 8787);
 const siteKey = "default";
+const publicApiBaseUrl = String(process.env.PUBLIC_API_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/+$/, "");
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "https://thon3-1.onrender.com",
@@ -476,9 +479,16 @@ app.post("/api/submissions", async (req, res, next) => {
     const normalizedAge = String(age).trim().slice(0, 30);
     const normalizedSchool = String(school).trim().slice(0, 120);
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!normalizedName || !normalizedAge || !normalizedSchool || !uuidPattern.test(String(imageAssetId)) || (altImageAssetId && !uuidPattern.test(String(altImageAssetId)))) {
+    if (!normalizedName || !isValidYouthBirthYear(normalizedAge) || !isYouthSchoolOption(normalizedSchool) || !uuidPattern.test(String(imageAssetId)) || (altImageAssetId && !uuidPattern.test(String(altImageAssetId)))) {
       return res.status(400).json({ error: "Thông tin đăng ký không hợp lệ." });
     }
+    const assetIds = altImageAssetId ? [imageAssetId, altImageAssetId] : [imageAssetId];
+    const placeholders = assetIds.map(() => "?").join(", ");
+    const [assetRows] = await pool.query(
+      `SELECT id FROM media_assets WHERE id IN (${placeholders}) AND uploaded_by IS NULL AND deleted_at IS NULL`,
+      assetIds,
+    );
+    if (assetRows.length !== assetIds.length) return res.status(400).json({ error: "Ảnh đăng ký không hợp lệ hoặc không còn tồn tại." });
     const [result] = await pool.execute(
       "INSERT INTO submissions (name, age, school, image_asset_id, alt_image_asset_id) VALUES (?, ?, ?, ?, ?)",
       [normalizedName, normalizedAge, normalizedSchool, imageAssetId, altImageAssetId],
@@ -502,17 +512,82 @@ app.get("/api/submissions", requireUser, requireRole("admin", "editor"), async (
 
 app.post("/api/submissions/:id/reject", requireUser, requireCsrf, requireRole("admin", "editor"), async (req, res, next) => {
   try {
-    await pool.execute("UPDATE submissions SET status = 'rejected', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, review_note = ? WHERE id = ? AND status = 'pending'", [req.user.id, req.body?.reviewNote || "", req.params.id]);
+    const [result] = await pool.execute("UPDATE submissions SET status = 'rejected', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, review_note = ? WHERE id = ? AND status = 'pending'", [req.user.id, String(req.body?.reviewNote || "").slice(0, 1000), req.params.id]);
+    if (!result.affectedRows) return res.status(409).json({ error: "Yêu cầu này đã được xử lý trước đó." });
     await writeAuditLog({ req, userId: req.user.id, action: "submission.rejected", entityType: "submission", entityId: req.params.id });
     return res.json({ data: { id: req.params.id, status: "rejected" } });
   } catch (error) { return next(error); }
 });
 
-app.post("/api/submissions/:id/approve", requireUser, requireCsrf, requireRole("admin", "editor"), async (req, res, next) => {
+app.post("/api/submissions/:id/approve", requireUser, requireCsrf, requireRole("admin"), async (req, res, next) => {
   try {
-    await pool.execute("UPDATE submissions SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, approved_card = ? WHERE id = ? AND status = 'pending'", [req.user.id, JSON.stringify(req.body?.card || {}), req.params.id]);
-    await writeAuditLog({ req, userId: req.user.id, action: "submission.approved", entityType: "submission", entityId: req.params.id });
-    return res.json({ data: { id: req.params.id, status: "approved" } });
+    const submissionId = Number(req.params.id);
+    if (!Number.isSafeInteger(submissionId) || submissionId < 1) return res.status(400).json({ error: "Mã đăng ký không hợp lệ." });
+    const result = await withTransaction(async (connection) => {
+      const [submissionRows] = await connection.execute(
+        `SELECT s.id, s.name, s.age, s.school, s.status, s.image_asset_id, s.alt_image_asset_id,
+                m.storage_provider AS image_provider, m.storage_path,
+                am.storage_provider AS alt_image_provider, am.storage_path AS alt_storage_path
+         FROM submissions s
+         JOIN media_assets m ON m.id = s.image_asset_id AND m.deleted_at IS NULL
+         LEFT JOIN media_assets am ON am.id = s.alt_image_asset_id AND am.deleted_at IS NULL
+         WHERE s.id = ? FOR UPDATE`,
+        [submissionId],
+      );
+      const submission = submissionRows[0];
+      if (!submission) {
+        const error = new Error("Không tìm thấy yêu cầu đăng ký hoặc ảnh đã bị xóa.");
+        error.statusCode = 404;
+        throw error;
+      }
+      if (submission.status !== "pending") {
+        const error = new Error("Yêu cầu này đã được xử lý trước đó.");
+        error.statusCode = 409;
+        throw error;
+      }
+      submission.image_src = submission.image_provider === "imagekit"
+        ? submission.storage_path
+        : `${publicApiBaseUrl}/api/media/${submission.image_asset_id}`;
+      submission.alt_image_src = submission.alt_image_asset_id && submission.alt_image_provider
+        ? (submission.alt_image_provider === "imagekit" ? submission.alt_storage_path : `${publicApiBaseUrl}/api/media/${submission.alt_image_asset_id}`)
+        : "";
+      if (!submission.alt_image_src) submission.alt_image_asset_id = null;
+
+      const [contentRows] = await connection.execute("SELECT content, version FROM site_content WHERE site_key = ? FOR UPDATE", [siteKey]);
+      if (!contentRows[0]) {
+        const error = new Error("Nội dung trang chủ chưa được khởi tạo.");
+        error.statusCode = 409;
+        throw error;
+      }
+      const currentContent = typeof contentRows[0].content === "string" ? JSON.parse(contentRows[0].content) : contentRows[0].content;
+      const card = buildApprovedSubmissionCard(submission);
+      const nextContent = appendApprovedSubmissionCard(currentContent, card);
+      validateContentPayload(nextContent);
+      const nextVersion = Number(contentRows[0].version || 0) + 1;
+
+      await connection.execute(
+        "UPDATE site_content SET content = ?, version = ?, updated_by = ? WHERE site_key = ?",
+        [JSON.stringify(nextContent), nextVersion, req.user.id, siteKey],
+      );
+      await connection.execute(
+        "INSERT INTO site_content_revisions (site_key, version, content, published_by) VALUES (?, ?, ?, ?)",
+        [siteKey, nextVersion, JSON.stringify(nextContent), req.user.id],
+      );
+      await connection.execute(
+        "UPDATE submissions SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, approved_card = ? WHERE id = ? AND status = 'pending'",
+        [req.user.id, JSON.stringify(card), submissionId],
+      );
+      await writeAuditLog({
+        req,
+        userId: req.user.id,
+        action: "submission.approved",
+        entityType: "submission",
+        entityId: submissionId,
+        details: { cardId: card.id, contentVersion: nextVersion },
+      }, connection);
+      return { id: submissionId, status: "approved", card, content: nextContent, version: nextVersion };
+    });
+    return res.json({ data: result });
   } catch (error) { return next(error); }
 });
 

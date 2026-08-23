@@ -4,7 +4,7 @@ import multer from "multer";
 import sharp from "sharp";
 import { pool } from "./db.mjs";
 import { requireCsrf, requireUser, requireRole } from "./auth.mjs";
-import { writeAuditLog } from "./security.mjs";
+import { consumeIpLimit, writeAuditLog } from "./security.mjs";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const formatMimeTypes = { jpeg: "image/jpeg", png: "image/png", webp: "image/webp", avif: "image/avif" };
@@ -23,6 +23,11 @@ const maxMediaBytes = imageKitConfigured
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: maxMediaBytes },
+  fileFilter: (_req, file, callback) => callback(null, allowedTypes.has(file.mimetype)),
+});
+const submissionUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 },
   fileFilter: (_req, file, callback) => callback(null, allowedTypes.has(file.mimetype)),
 });
 
@@ -84,6 +89,44 @@ async function deleteImageKitFile(fileId) {
   await parseImageKitResponse(response, "Không thể xóa ảnh trên ImageKit.");
 }
 
+async function storeMediaAsset(file, uploadedBy = null) {
+  const imageInfo = await validateImage(file);
+  file.mimetype = imageInfo.mimeType;
+  const assetId = crypto.randomUUID();
+  const imageKitAsset = imageKitConfigured ? await uploadToImageKit(file) : null;
+  const storagePath = imageKitAsset?.url || `site/default/${assetId}`;
+  try {
+    await pool.execute(
+      `INSERT INTO media_assets (id, storage_path, storage_provider, provider_file_id, original_name, mime_type, size_bytes, uploaded_by, content_data)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        assetId,
+        storagePath,
+        imageKitAsset ? "imagekit" : "tidb",
+        imageKitAsset?.fileId || null,
+        file.originalname,
+        file.mimetype,
+        imageKitAsset?.size || file.size,
+        uploadedBy,
+        imageKitAsset ? null : file.buffer,
+      ],
+    );
+  } catch (error) {
+    if (imageKitAsset?.fileId) await deleteImageKitFile(imageKitAsset.fileId).catch(() => {});
+    throw error;
+  }
+  return {
+    asset: {
+      id: assetId,
+      storage_path: imageKitAsset?.url || `/api/media/${assetId}`,
+      original_name: file.originalname,
+      mime_type: file.mimetype,
+      size_bytes: imageKitAsset?.size || file.size,
+    },
+    imageInfo,
+  };
+}
+
 router.get("/", requireUser, requireRole("admin", "editor"), async (req, res, next) => {
   try {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
@@ -110,52 +153,42 @@ router.get("/", requireUser, requireRole("admin", "editor"), async (req, res, ne
 router.post("/", requireUser, requireCsrf, requireRole("admin", "editor"), upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Chỉ nhận tệp ảnh JPG, PNG, WebP hoặc AVIF." });
-    const imageInfo = await validateImage(req.file);
-    req.file.mimetype = imageInfo.mimeType;
-    const assetId = crypto.randomUUID();
-    const imageKitAsset = imageKitConfigured ? await uploadToImageKit(req.file) : null;
-    const storagePath = imageKitAsset?.url || `site/default/${assetId}`;
-    try {
-      await pool.execute(
-        `INSERT INTO media_assets (id, storage_path, storage_provider, provider_file_id, original_name, mime_type, size_bytes, uploaded_by, content_data)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          assetId,
-          storagePath,
-          imageKitAsset ? "imagekit" : "tidb",
-          imageKitAsset?.fileId || null,
-          req.file.originalname,
-          req.file.mimetype,
-          imageKitAsset?.size || req.file.size,
-          req.user.id,
-          imageKitAsset ? null : req.file.buffer,
-        ],
-      );
-    } catch (error) {
-      if (imageKitAsset?.fileId) await deleteImageKitFile(imageKitAsset.fileId).catch(() => {});
-      throw error;
-    }
+    const { asset, imageInfo } = await storeMediaAsset(req.file, req.user.id);
     await writeAuditLog({
       req,
       userId: req.user.id,
       action: "media.uploaded",
       entityType: "media",
-      entityId: assetId,
+      entityId: asset.id,
       details: { mimeType: imageInfo.mimeType, sizeBytes: req.file.size, width: imageInfo.width, height: imageInfo.height },
     });
-    return res.status(201).json({
-      data: {
-        id: assetId,
-        storage_path: imageKitAsset?.url || `/api/media/${assetId}`,
-        original_name: req.file.originalname,
-        mime_type: req.file.mimetype,
-        size_bytes: imageKitAsset?.size || req.file.size,
-      },
-    });
+    return res.status(201).json({ data: asset });
   } catch (error) {
     return next(error);
   }
 });
+
+router.post(
+  "/submission",
+  async (req, _res, next) => {
+    try {
+      await consumeIpLimit(req, "submission-media-upload", 20);
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  },
+  submissionUpload.single("file"),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "Chỉ nhận tệp ảnh JPG, PNG, WebP hoặc AVIF." });
+      const { asset } = await storeMediaAsset(req.file);
+      return res.status(201).json({ data: asset });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
 
 router.get("/:id", async (req, res, next) => {
   try {

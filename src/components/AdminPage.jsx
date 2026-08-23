@@ -3,6 +3,7 @@ import "../styles-admin.css";
 import {
   ArrowLeft,
   ArrowUpRight,
+  Bell,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -888,37 +889,42 @@ function VisitEditor({ draft, update }) {
   );
 }
 
-function PendingYouthUnionApproval({ draft, update }) {
-  const [pendingList, setPendingList] = useState([]);
+function formatSubmissionDate(value) {
+  if (!value) return "Chưa rõ";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
+}
 
-  useEffect(() => {
-    let active = true;
-    listPendingSubmissions()
-      .then((items) => active && setPendingList(items))
-      .catch(() => active && setPendingList([]));
-    return () => { active = false; };
-  }, []);
+function PendingYouthUnionApproval({ pendingList, onApprove, onReject }) {
+  const [busyId, setBusyId] = useState(null);
+  const [actionError, setActionError] = useState("");
 
   const handleApprove = async (item) => {
-    const newCard = {
-      colorVariant: "archive-default",
-      id: `member-${Date.now()}`,
-      label: item.name,
-      year: `${item.age} • ${item.school}`,
-      imageAlt: `Đoàn viên ${item.name}`,
-      imagePosition: "center 30%",
-      imageSrc: item.imageSrc || item.image_src || "",
-      altImageSrc: item.altImageSrc || item.alt_image_src || "",
-      size: "medium",
-    };
-    update("villageArchive.cards", [...draft.villageArchive.cards, newCard]);
-    await approveSubmission(item.id, newCard);
-    setPendingList((current) => current.filter((entry) => entry.id !== item.id));
+    setBusyId(item.id);
+    setActionError("");
+    try {
+      const result = await approveSubmission(item.id);
+      onApprove(result, item.id);
+    } catch (error) {
+      setActionError(error?.message || "Không thể duyệt đăng ký này.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const handleReject = async (id) => {
-    await rejectSubmission(id);
-    setPendingList((current) => current.filter((item) => item.id !== id));
+    setBusyId(id);
+    setActionError("");
+    try {
+      await rejectSubmission(id);
+      onReject(id);
+    } catch (error) {
+      setActionError(error?.message || "Không thể từ chối đăng ký này.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   if (!pendingList.length) return null;
@@ -928,8 +934,10 @@ function PendingYouthUnionApproval({ draft, update }) {
       <div className="admin-pending-header">
         <span className="admin-pending-badge">{pendingList.length} YÊU CẦU ĐANG CHỜ DUYỆT</span>
         <h4>Duyệt thẻ Đoàn viên đăng ký mới</h4>
-        <p>Đoàn viên vừa gửi đăng ký từ website. Bấm <strong>[✓ Đồng ý]</strong> để thẻ lập tức được thêm vào trang chủ.</p>
+        <p>Kiểm tra ảnh và thông tin trước khi duyệt. Thẻ được xuất bản ngay vào Gương mặt tuổi trẻ sau khi xác nhận.</p>
       </div>
+
+      {actionError && <p className="admin-pending-error" role="alert">{actionError}</p>}
 
       <div className="admin-pending-list">
         {pendingList.map((item) => (
@@ -953,9 +961,10 @@ function PendingYouthUnionApproval({ draft, update }) {
 
             <div className="admin-pending-info">
               <h5>{item.name}</h5>
-              <p><strong>Tuổi:</strong> {item.age}</p>
-              <p><strong>Trường học / Đơn vị:</strong> {item.school}</p>
-              <span className="admin-pending-date">Ngày đăng ký: {item.submittedAt}</span>
+              <p><strong>Năm sinh:</strong> {item.age}</p>
+              <p><strong>Trường học:</strong> {item.school}</p>
+              <p><strong>Vai trò:</strong> Đoàn viên</p>
+              <span className="admin-pending-date">Ngày đăng ký: {formatSubmissionDate(item.submitted_at || item.submittedAt)}</span>
             </div>
 
             <div className="admin-pending-actions">
@@ -963,15 +972,19 @@ function PendingYouthUnionApproval({ draft, update }) {
                 className="admin-btn-approve"
                 type="button"
                 onClick={() => handleApprove(item)}
+                disabled={busyId !== null}
               >
-                ✓ ĐỒNG Ý PHÊ DUYỆT
+                <Check aria-hidden="true" />
+                <span>{busyId === item.id ? "ĐANG DUYỆT..." : "ĐỒNG Ý PHÊ DUYỆT"}</span>
               </button>
               <button
                 className="admin-btn-reject"
                 type="button"
                 onClick={() => handleReject(item.id)}
+                disabled={busyId !== null}
               >
-                ✕ TỪ CHỐI
+                <X aria-hidden="true" />
+                <span>{busyId === item.id ? "ĐANG XỬ LÝ..." : "TỪ CHỐI"}</span>
               </button>
             </div>
           </div>
@@ -1147,11 +1160,11 @@ function ArchiveBulkUploader({ cards, onChange }) {
   );
 }
 
-function ArchiveEditor({ draft, update }) {
+function ArchiveEditor({ draft, update, pendingList, onSubmissionApproved, onSubmissionRejected }) {
   const archive = draft.villageArchive;
   return (
     <AdminPanel eyebrow="07 / KHO ẢNH" title="Kho ảnh tự động" description="Tải nhiều ảnh một lần; lưới tự giữ tỷ lệ và lấp khoảng trống theo kích thước từng ảnh." cardCount={archive.cards.length}>
-      <PendingYouthUnionApproval draft={draft} update={update} />
+      <PendingYouthUnionApproval pendingList={pendingList} onApprove={onSubmissionApproved} onReject={onSubmissionRejected} />
       <ArchiveBulkUploader cards={archive.cards} onChange={(cards) => update("villageArchive.cards", cards)} />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={archive.eyebrow} onChange={(value) => update("villageArchive.eyebrow", value)} />
@@ -1403,6 +1416,8 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
   const [sectionQuery, setSectionQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [pendingList, setPendingList] = useState([]);
+  const [pendingLoadError, setPendingLoadError] = useState("");
   const [draftSaveState, setDraftSaveState] = useState("idle");
   const [publishing, setPublishing] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(() => (
@@ -1455,6 +1470,27 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
       .catch((error) => active && setSaveError(error?.message || "Không thể tải bản nháp từ máy chủ."))
       .finally(() => active && setServerDraftLoading(false));
     return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!isBackendConfigured) return undefined;
+    let active = true;
+    const loadPending = () => listPendingSubmissions()
+      .then((items) => {
+        if (!active) return;
+        setPendingList(items);
+        setPendingLoadError("");
+      })
+      .catch((error) => {
+        if (!active) return;
+        setPendingLoadError(error?.message || "Không thể tải danh sách đăng ký đang chờ duyệt.");
+      });
+    loadPending();
+    const refreshTimer = window.setInterval(loadPending, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -1636,6 +1672,36 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
     setSaveError("");
   };
 
+  const handleSubmissionApproved = (result, submissionId) => {
+    if (!result?.content || !result?.card) {
+      setPendingLoadError("Máy chủ đã duyệt nhưng không trả về nội dung thẻ mới. Hãy tải lại trang quản trị.");
+      return;
+    }
+    const nextPublished = normalizeSiteContent(result.content);
+    const previousPublishedSnapshot = publishedSnapshotRef.current;
+    const nextPublishedSnapshot = JSON.stringify(nextPublished);
+    const draftWasClean = draftSnapshot === previousPublishedSnapshot;
+
+    replaceContent(nextPublished);
+    setDraft((current) => {
+      if (JSON.stringify(current) === previousPublishedSnapshot) return clone(nextPublished);
+      if (current.villageArchive.cards.some((card) => card.id === result.card.id)) return current;
+      return setAtPath(current, "villageArchive.cards", [...current.villageArchive.cards, result.card]);
+    });
+    publishedSnapshotRef.current = nextPublishedSnapshot;
+    lastDraftSnapshotRef.current = draftWasClean ? nextPublishedSnapshot : "";
+    setPendingList((current) => current.filter((item) => item.id !== submissionId));
+    setPendingLoadError("");
+    setNotice(`Đã duyệt và xuất bản thẻ ${result.card.label} lên Gương mặt tuổi trẻ.`);
+    setSaveError("");
+  };
+
+  const handleSubmissionRejected = (submissionId) => {
+    setPendingList((current) => current.filter((item) => item.id !== submissionId));
+    setPendingLoadError("");
+    setNotice("Đã từ chối yêu cầu đăng ký thẻ.");
+  };
+
   const renderEditor = () => {
     switch (activeSection) {
       case "settings": return <SettingsEditor draft={draft} update={update} />;
@@ -1644,7 +1710,7 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
       case "statement": return <StatementEditor draft={draft} update={update} />;
       case "seasons": return <SeasonsEditor draft={draft} update={update} />;
       case "visit": return <VisitEditor draft={draft} update={update} />;
-      case "archive": return <ArchiveEditor draft={draft} update={update} />;
+      case "archive": return <ArchiveEditor draft={draft} update={update} pendingList={pendingList} onSubmissionApproved={handleSubmissionApproved} onSubmissionRejected={handleSubmissionRejected} />;
       case "community": return <CommunityEditor draft={draft} update={update} />;
       case "updates": return <UpdatesEditor draft={draft} update={update} />;
       case "closing": return <ClosingEditor draft={draft} update={update} />;
@@ -1718,7 +1784,7 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
           <nav className="admin-section-nav" id="admin-section-navigation" ref={sectionNavRef}>
             {visibleNavItems.map((section) => (
               <button className={activeSection === section.id ? "is-active" : ""} type="button" key={section.id} onClick={() => selectSection(section.id)} aria-current={activeSection === section.id ? "page" : undefined}>
-                <span className="admin-nav-label"><span className="admin-nav-index">{section.index}</span>{section.label}</span>
+                <span className="admin-nav-label"><span className="admin-nav-index">{section.index}</span>{section.label}{section.id === "archive" && pendingList.length > 0 && <span className="admin-nav-notification" aria-label={`${pendingList.length} đăng ký chờ duyệt`}>{pendingList.length}</span>}</span>
                 <small>{section.description}</small>
               </button>
             ))}
@@ -1754,6 +1820,14 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
             </div>
           </div>
 
+          {pendingList.length > 0 && (
+            <button className="admin-submission-alert" type="button" onClick={() => selectSection("archive")}>
+              <Bell aria-hidden="true" />
+              <span><strong>{pendingList.length} đăng ký thẻ đang chờ duyệt</strong><small>Mở Kho ảnh để kiểm tra ảnh và thông tin đoàn viên.</small></span>
+              <ChevronRight aria-hidden="true" />
+            </button>
+          )}
+
           <nav className="admin-section-stepper" aria-label="Chuyển nhanh giữa các nhóm nội dung">
             <button type="button" disabled={!previousSection} onClick={() => previousSection && selectSection(previousSection.id)} title={previousSection ? `Về ${previousSection.label}` : "Đây là mục đầu tiên"}>
               <ChevronLeft aria-hidden="true" />
@@ -1770,6 +1844,7 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
 
           {notice && <p className="admin-notice" role="status" aria-live="polite"><Check aria-hidden="true" /> {notice}</p>}
           {saveError && <p className="admin-error" role="alert">{saveError}</p>}
+          {pendingLoadError && <p className="admin-error" role="alert">{pendingLoadError}</p>}
           <div className={`admin-content-stage${previewVisible ? "" : " is-preview-hidden"}`} key={activeSection}>
             <div className="admin-editor-stage" ref={editorRef}>
               {renderEditor()}

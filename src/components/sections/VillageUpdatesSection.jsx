@@ -112,8 +112,8 @@ export default memo(function VillageUpdatesSection({ reducedMotion }) {
                     alt={card.imageAlt}
                     colorVariant={`update-${card.tone}`}
                     imagePosition={card.imagePosition}
-                    imageVariant="small"
-                    sizes="(max-width: 680px) 30vw, 16vw"
+                    imageVariant="large"
+                    sizes="(max-width: 680px) 86vw, 32vw"
                   />
                   <div className="village-update-card-copy">
                     <RevealLine direction={index % 2 === 0 ? "right" : "left"}>{card.label}</RevealLine>

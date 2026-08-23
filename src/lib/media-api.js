@@ -1,8 +1,8 @@
 import { apiRequest, apiUrl, getCsrfToken, isBackendConfigured } from "./backend-api.js";
 
 const SITE_MEDIA_BUCKET = "site-media";
-const SUBMISSION_MEDIA_BUCKET = "submission-media";
 export const MAX_MEDIA_BYTES = 25 * 1024 * 1024;
+export const MAX_SUBMISSION_MEDIA_BYTES = 4 * 1024 * 1024;
 export const MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
 
 function parseUploadPayload(text, status) {
@@ -56,6 +56,16 @@ export async function uploadMedia(file, { onProgress, signal } = {}) {
   });
 }
 
+export async function uploadSubmissionMedia(file) {
+  if (!isBackendConfigured) throw new Error("Backend chưa được cấu hình.");
+  if (!(file instanceof File)) throw new Error("Tệp ảnh không hợp lệ.");
+  if (!MEDIA_ACCEPT.split(",").includes(file.type)) throw new Error("Chỉ nhận ảnh JPG, PNG, WebP hoặc AVIF.");
+  if (file.size > MAX_SUBMISSION_MEDIA_BYTES) throw new Error("Ảnh cần có dung lượng tối đa 4 MB.");
+  const form = new FormData();
+  form.append("file", file);
+  return (await apiRequest("/api/media/submission", { method: "POST", body: form })).data;
+}
+
 export async function listMediaAssets({ limit = 200 } = {}) {
   if (!isBackendConfigured) throw new Error("Backend chưa được cấu hình.");
   const query = new URLSearchParams({ limit: String(Math.min(Math.max(Number(limit) || 1, 1), 500)) });
@@ -83,4 +93,4 @@ export async function restoreMedia(asset) {
   return (await apiRequest(`/api/media/${asset.id}/restore`, { method: "POST" })).data;
 }
 
-export { SITE_MEDIA_BUCKET, SUBMISSION_MEDIA_BUCKET };
+export { SITE_MEDIA_BUCKET };
