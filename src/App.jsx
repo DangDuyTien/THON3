@@ -310,6 +310,7 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
   }, []);
 
   useEffect(() => {
+    document.documentElement.classList.toggle("non-public-route", route.type === "admin" || route.type === "coming-soon");
     document.title = route.type === "admin"
       ? `Quản trị nội dung | ${content.settings.siteName}`
       : route.type === "coming-soon"

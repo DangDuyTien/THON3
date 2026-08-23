@@ -5,15 +5,19 @@ import {
   ArrowUpRight,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   PanelTopClose,
   PanelTopOpen,
   Download,
   Eye,
+  EyeOff,
   FileJson,
   FolderOpen,
   ImagePlus,
   KeyRound,
   LogOut,
+  MoreHorizontal,
   RotateCcw,
   Save,
   Search,
@@ -452,6 +456,7 @@ function AdminCard({ title, index, children, openByDefault = index === 0 }) {
 
 function SettingsEditor({ draft, update }) {
   const appearance = draft.settings.appearance;
+  const menuImages = draft.settings.menuImages || [];
   return (
     <AdminPanel eyebrow="01 / HỆ THỐNG" title="Nhận diện & giao diện" description="Từ chữ, màu, nền đến nhịp chuyển động của trang chủ đều có thể điều chỉnh ở đây.">
       <div className="admin-settings-section">
@@ -475,6 +480,46 @@ function SettingsEditor({ draft, update }) {
         <div className="admin-settings-section-heading">
           <span>02</span>
           <div>
+            <h3>Ảnh menu & đăng nhập</h3>
+            <p>Thay bốn ảnh trong menu và ảnh hiển thị ở màn hình đăng nhập admin.</p>
+          </div>
+        </div>
+        <AdminSectionImageUploader
+          title="Tự điền ảnh menu"
+          description="Ảnh được xếp theo thứ tự từ trái sang phải"
+          targets={menuImages.map((_, index) => ({ imagePath: `settings.menuImages[${index}]` }))}
+          update={update}
+        />
+        <div className="admin-form-grid admin-form-grid-wide">
+          {menuImages.map((image, index) => (
+            <AdminImageField
+              key={`menu-image-${index}`}
+              label={`Ảnh menu ${index + 1}`}
+              value={image || ""}
+              onChange={(value) => update(`settings.menuImages[${index}]`, value)}
+              target={`menu-image-${index}`}
+              fit="cover"
+              aspectRatio="1 / 1"
+            />
+          ))}
+          <AdminImageField
+            label="Ảnh màn hình đăng nhập admin"
+            value={draft.settings.adminLoginImage || ""}
+            onChange={(value) => update("settings.adminLoginImage", value)}
+            alt={draft.settings.adminLoginImageAlt}
+            onAltChange={(value) => update("settings.adminLoginImageAlt", value)}
+            target="admin-login-image"
+            fit="cover"
+            aspectRatio="1 / 1"
+            hint="Ảnh này được dùng cho bốn ô ảnh bên trái màn hình đăng nhập."
+          />
+        </div>
+      </div>
+
+      <div className="admin-settings-section">
+        <div className="admin-settings-section-heading">
+          <span>03</span>
+          <div>
             <h3>Phông chữ</h3>
             <p>Chọn riêng chữ tiêu đề, chữ nội dung và nhãn kỹ thuật.</p>
           </div>
@@ -488,7 +533,7 @@ function SettingsEditor({ draft, update }) {
 
       <div className="admin-settings-section">
         <div className="admin-settings-section-heading">
-          <span>03</span>
+          <span>04</span>
           <div>
             <h3>Màu sắc & nền</h3>
             <p>Nhập mã HEX hoặc bấm vào ô màu để chọn trực tiếp.</p>
@@ -507,7 +552,7 @@ function SettingsEditor({ draft, update }) {
 
       <div className="admin-settings-section">
         <div className="admin-settings-section-heading">
-          <span>04</span>
+          <span>05</span>
           <div>
             <h3>Bố cục</h3>
             <p>Điều chỉnh độ thoáng, độ rộng khung và cảm giác bo góc.</p>
@@ -522,7 +567,7 @@ function SettingsEditor({ draft, update }) {
 
       <div className="admin-settings-section">
         <div className="admin-settings-section-heading">
-          <span>05</span>
+          <span>06</span>
           <div>
             <h3>Hiệu ứng</h3>
             <p>Chọn mức chuyển động, xử lý ảnh và tương tác khi rê chuột.</p>
@@ -1243,17 +1288,47 @@ function UpdatesEditor({ draft, update }) {
 
 function AdminOverview({ draft, onSelect }) {
   const counts = [
-    ["Khung cảnh", draft.storyFrames.length],
-    ["Ảnh theo mùa", draft.seasonalGallery.photos.length],
-    ["Kho ảnh", draft.villageArchive.cards.length],
-    ["Hoạt động", draft.villageUpdates.cards.length],
+    ["Khung cảnh", draft.storyFrames.length, "hero"],
+    ["Ảnh theo mùa", draft.seasonalGallery.photos.length, "seasons"],
+    ["Kho ảnh", draft.villageArchive.cards.length, "archive"],
+    ["Hoạt động", draft.villageUpdates.cards.length, "updates"],
+  ];
+
+  const quickActions = [
+    ["hero", "Đổi ảnh mở đầu", "Khung đầu tiên người xem nhìn thấy"],
+    ["updates", "Cập nhật hoạt động", "Sửa nội dung đang diễn ra hôm nay"],
+    ["archive", "Tải nhiều ảnh", "Chọn cả thư mục và tự xếp ảnh"],
+    ["closing", "Sửa liên hệ", "Cập nhật liên kết và kênh theo dõi"],
   ];
 
   return (
     <AdminPanel eyebrow="TỔNG QUAN" title="Nội dung trang chủ" description="Chọn một nhóm nội dung để chỉnh sửa. Mọi thay đổi chỉ xuất hiện trên trang chủ sau khi bạn bấm lưu.">
       <div className="admin-stat-grid">
-        {counts.map(([label, count]) => <div className="admin-stat" key={label}><strong>{count}</strong><span>{label}</span></div>)}
+        {counts.map(([label, count, section]) => (
+          <button className="admin-stat" type="button" key={label} onClick={() => onSelect(section)}>
+            <strong>{count}</strong>
+            <span>{label}</span>
+            <small>Mở để chỉnh <ArrowUpRight aria-hidden="true" /></small>
+          </button>
+        ))}
       </div>
+      <section className="admin-quick-actions" aria-labelledby="admin-quick-actions-title">
+        <div className="admin-quick-actions-heading">
+          <div>
+            <p className="admin-panel-eyebrow">LỐI TẮT THƯỜNG DÙNG</p>
+            <h3 id="admin-quick-actions-title">Bạn muốn làm gì?</h3>
+          </div>
+          <span>Mở thẳng đúng khu vực cần chỉnh</span>
+        </div>
+        <div className="admin-quick-actions-grid">
+          {quickActions.map(([section, label, description]) => (
+            <button type="button" key={section} onClick={() => onSelect(section)}>
+              <span><strong>{label}</strong><small>{description}</small></span>
+              <ArrowUpRight aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      </section>
       <button className="admin-overview-bulk-entry" type="button" onClick={() => onSelect("archive")}>
         <span className="admin-overview-bulk-icon"><FolderOpen aria-hidden="true" /></span>
         <span className="admin-overview-bulk-copy">
@@ -1292,14 +1367,23 @@ export default function AdminPage({ onLogout }) {
   const [sectionQuery, setSectionQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [draftSaveState, setDraftSaveState] = useState("idle");
+  const [publishing, setPublishing] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(() => (
+    typeof window === "undefined" || window.matchMedia("(min-width: 841px)").matches
+  ));
   const [cardCommandState, setCardCommandState] = useState({ action: "", version: 0 });
   const [previewFocusTarget, setPreviewFocusTarget] = useState("");
   const [mediaLibraryRequest, setMediaLibraryRequest] = useState(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const editorRef = useRef(null);
+  const sectionSearchRef = useRef(null);
   const contentSnapshot = useMemo(() => JSON.stringify(content), [content]);
   const draftSnapshot = useMemo(() => JSON.stringify(draft), [draft]);
   const dirty = draftSnapshot !== contentSnapshot;
+  const activeSectionIndex = ADMIN_NAV_ITEMS.findIndex((section) => section.id === activeSection);
+  const previousSection = ADMIN_NAV_ITEMS[activeSectionIndex - 1] || null;
+  const nextSection = ADMIN_NAV_ITEMS[activeSectionIndex + 1] || null;
   const publishedSnapshotRef = useRef(contentSnapshot);
   const lastDraftSnapshotRef = useRef("");
   const adminCardCommand = useMemo(() => ({
@@ -1346,10 +1430,12 @@ export default function AdminPage({ onLogout }) {
   useEffect(() => {
     if (!dirty) {
       lastDraftSnapshotRef.current = draftSnapshot;
+      setDraftSaveState("idle");
       return undefined;
     }
     if (lastDraftSnapshotRef.current === draftSnapshot || serverDraftLoading) return undefined;
 
+    setDraftSaveState("saving");
     const persistTimer = window.setTimeout(async () => {
       try {
         const session = await getSession();
@@ -1357,7 +1443,9 @@ export default function AdminPage({ onLogout }) {
         const result = await saveDraftContent(draft, session.user.id, serverDraft?.version ?? null);
         setServerDraft(result);
         lastDraftSnapshotRef.current = draftSnapshot;
+        setDraftSaveState("saved");
       } catch (error) {
+        setDraftSaveState("error");
         setSaveError(error?.message || "Không thể lưu bản nháp trên máy chủ.");
       }
     }, 450);
@@ -1382,6 +1470,7 @@ export default function AdminPage({ onLogout }) {
     setPreviewFocusTarget("");
     setSectionQuery("");
     window.history.replaceState(null, "", getAdminHash(section));
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
 
   const jumpToEditor = () => {
@@ -1389,6 +1478,8 @@ export default function AdminPage({ onLogout }) {
   };
 
   const handleSave = async () => {
+    if (!dirty || publishing) return;
+    setPublishing(true);
     try {
       const normalizedContent = await saveContent(draft);
       publishedSnapshotRef.current = JSON.stringify(normalizedContent);
@@ -1397,8 +1488,44 @@ export default function AdminPage({ onLogout }) {
       setSaveError("");
     } catch (error) {
       setSaveError(error?.message || "Không thể lưu nội dung.");
+    } finally {
+      setPublishing(false);
     }
   };
+
+  useEffect(() => {
+    const handleKeyboardShortcut = (event) => {
+      const target = event.target;
+      const isTyping = target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || target?.isContentEditable;
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        handleSave();
+        return;
+      }
+
+      if (event.key === "/" && !isTyping && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        sectionSearchRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcut);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcut);
+  }, [dirty, publishing, draft]);
+
+  const draftStatusLabel = publishing
+    ? "Đang xuất bản..."
+    : !dirty
+      ? "Đã đồng bộ"
+      : draftSaveState === "saving"
+        ? "Đang lưu nháp..."
+        : draftSaveState === "error"
+          ? "Lỗi lưu nháp"
+          : "Đã lưu bản nháp";
 
   const handleReset = () => {
     if (!window.confirm("Tạo bản nháp từ nội dung mặc định? Trang chủ hiện tại vẫn giữ nguyên cho đến khi bạn bấm Lưu thay đổi.")) return;
@@ -1472,27 +1599,32 @@ export default function AdminPage({ onLogout }) {
         <div className="admin-topbar-title">
           <Settings aria-hidden="true" />
           <strong>Quản trị nội dung</strong>
-          <span className={`admin-save-state${dirty ? " is-dirty" : ""}`}>{dirty ? "Bản nháp máy chủ" : "Đã đồng bộ"}</span>
+          <span className={`admin-save-state${dirty ? " is-dirty" : ""}${draftSaveState === "error" ? " is-error" : ""}`}>{draftStatusLabel}</span>
         </div>
         <div className="admin-topbar-actions">
           <a className="admin-secondary-button admin-icon-text-button" href={getPublicHomeHref(typeof window === "undefined" ? "/" : window.location.pathname, getAdminPublicTarget("overview"))} target="_blank" rel="noreferrer" aria-label="Xem trang chủ">
             <Eye aria-hidden="true" />
             <span>Xem trang</span>
           </a>
-          <button className="admin-secondary-button admin-icon-text-button" type="button" onClick={() => setPasswordDialogOpen(true)}>
-            <KeyRound aria-hidden="true" />
-            <span>Bảo mật</span>
-          </button>
-          <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={!dirty} aria-label="Lưu thay đổi">
+          <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={!dirty || publishing} aria-label="Lưu và xuất bản thay đổi">
             <Save aria-hidden="true" />
-            <span>Lưu thay đổi</span>
+            <span>{publishing ? "Đang lưu..." : "Lưu thay đổi"}</span>
           </button>
-          {onLogout && (
-            <button className="admin-secondary-button admin-icon-text-button admin-logout-btn" type="button" onClick={onLogout} title="Đăng xuất khỏi trang quản trị">
-              <LogOut aria-hidden="true" />
-              <span>Đăng xuất</span>
-            </button>
-          )}
+          <details className="admin-more-menu">
+            <summary className="admin-secondary-button" role="button" aria-label="Mở công cụ quản trị" title="Công cụ quản trị">
+              <MoreHorizontal aria-hidden="true" />
+              <span>Công cụ</span>
+            </summary>
+            <div className="admin-more-menu-popover" onClick={(event) => {
+              if (event.target.closest("button, label")) event.currentTarget.parentElement.removeAttribute("open");
+            }}>
+              <button type="button" onClick={() => setPasswordDialogOpen(true)}><KeyRound aria-hidden="true" /><span><strong>Đổi mật khẩu</strong><small>Bảo mật tài khoản quản trị</small></span></button>
+              <button type="button" onClick={handleExport}><Download aria-hidden="true" /><span><strong>Xuất bản sao JSON</strong><small>Tải nội dung hiện tại về máy</small></span></button>
+              <label><FileJson aria-hidden="true" /><span><strong>Nạp bản sao JSON</strong><small>Khôi phục nội dung từ tệp</small></span><input className="sr-only" type="file" accept="application/json,.json" onChange={handleImport} /></label>
+              <button type="button" onClick={handleReset}><RotateCcw aria-hidden="true" /><span><strong>Tạo bản nháp mặc định</strong><small>Không xuất bản cho tới khi bấm lưu</small></span></button>
+              {onLogout && <button className="is-danger" type="button" onClick={onLogout}><LogOut aria-hidden="true" /><span><strong>Đăng xuất</strong><small>Thoát khỏi trang quản trị</small></span></button>}
+            </div>
+          </details>
         </div>
       </header>
 
@@ -1504,6 +1636,7 @@ export default function AdminPage({ onLogout }) {
             <div className="admin-sidebar-search">
               <Search aria-hidden="true" />
               <input
+                ref={sectionSearchRef}
                 type="search"
                 value={sectionQuery}
                 onChange={(event) => setSectionQuery(event.target.value)}
@@ -1528,10 +1661,10 @@ export default function AdminPage({ onLogout }) {
             {normalizedSectionQuery && visibleNavItems.length === 0 && <p className="admin-nav-empty">Không tìm thấy nhóm phù hợp.</p>}
           </nav>
           <div className="admin-sidebar-footer">
-            <p>Bản nháp được tự lưu trên trình duyệt này; chỉ khi bấm Lưu thay đổi mới xuất bản.</p>
-            <button className="admin-text-button" type="button" onClick={handleReset}>
-              <RotateCcw aria-hidden="true" />
-              <span>Tạo bản nháp mặc định</span>
+            <p>Bản nháp tự lưu trên máy chủ. Nhấn <kbd>⌘/Ctrl S</kbd> để xuất bản.</p>
+            <button className="admin-text-button" type="button" onClick={() => sectionSearchRef.current?.focus()}>
+              <Search aria-hidden="true" />
+              <span>Tìm nhanh bằng phím /</span>
             </button>
           </div>
         </aside>
@@ -1550,25 +1683,35 @@ export default function AdminPage({ onLogout }) {
                 <ImagePlus aria-hidden="true" />
                 <span>Thư viện ảnh</span>
               </button>
-              <button className="admin-secondary-button admin-icon-text-button" type="button" onClick={handleExport}>
-                <Download aria-hidden="true" />
-                <span>Xuất JSON</span>
+              <button className={`admin-secondary-button admin-icon-text-button${previewVisible ? " is-active" : ""}`} type="button" onClick={() => setPreviewVisible((current) => !current)} aria-pressed={previewVisible}>
+                {previewVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                <span>{previewVisible ? "Ẩn xem trước" : "Xem trước"}</span>
               </button>
-              <label className="admin-secondary-button admin-icon-text-button" title="Nạp tệp JSON">
-                <FileJson aria-hidden="true" />
-                <span>Nạp JSON</span>
-                <input className="sr-only" type="file" accept="application/json,.json" onChange={handleImport} />
-              </label>
             </div>
           </div>
 
+          <nav className="admin-section-stepper" aria-label="Chuyển nhanh giữa các nhóm nội dung">
+            <button type="button" disabled={!previousSection} onClick={() => previousSection && selectSection(previousSection.id)} title={previousSection ? `Về ${previousSection.label}` : "Đây là mục đầu tiên"}>
+              <ChevronLeft aria-hidden="true" />
+              <span>{previousSection?.label || "Mục trước"}</span>
+            </button>
+            <div>
+              <strong>{String(activeSectionIndex + 1).padStart(2, "0")} / {String(ADMIN_NAV_ITEMS.length).padStart(2, "0")}</strong>
+              <small>Dùng menu trái hoặc hai nút này để chuyển mục</small>
+            </div>
+            <button type="button" disabled={!nextSection} onClick={() => nextSection && selectSection(nextSection.id)} title={nextSection ? `Tới ${nextSection.label}` : "Đây là mục cuối cùng"}>
+              <span>{nextSection?.label || "Mục sau"}</span>
+              <ChevronRight aria-hidden="true" />
+            </button>
+          </nav>
+
           {notice && <p className="admin-notice" role="status" aria-live="polite"><Check aria-hidden="true" /> {notice}</p>}
           {saveError && <p className="admin-error" role="alert">{saveError}</p>}
-          <div className="admin-content-stage" key={activeSection}>
+          <div className={`admin-content-stage${previewVisible ? "" : " is-preview-hidden"}`} key={activeSection}>
             <div className="admin-editor-stage" ref={editorRef}>
               {renderEditor()}
             </div>
-            <AdminLivePreview draft={draft} activeSection={activeSection} dirty={dirty} focusTarget={previewFocusTarget} />
+            {previewVisible && <AdminLivePreview draft={draft} activeSection={activeSection} dirty={dirty} focusTarget={previewFocusTarget} />}
           </div>
           {dirty && (
             <div className="admin-save-dock" role="status">
@@ -1577,9 +1720,9 @@ export default function AdminPage({ onLogout }) {
                 <span>Chỉ “Lưu thay đổi” mới cập nhật trang chủ.</span>
               </div>
               <button className="admin-save-dock-discard" type="button" onClick={handleDiscardDraft}>Bỏ bản nháp</button>
-              <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} aria-label="Lưu bản nháp">
+              <button className="admin-primary-button admin-icon-text-button" type="button" onClick={handleSave} disabled={publishing} aria-label="Lưu và xuất bản bản nháp">
                 <Save aria-hidden="true" />
-                <span>Lưu</span>
+                <span>{publishing ? "Đang lưu..." : "Xuất bản"}</span>
               </button>
             </div>
           )}

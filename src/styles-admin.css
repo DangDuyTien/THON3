@@ -238,6 +238,15 @@
   animation: admin-status-pulse 1.8s ease-in-out infinite;
 }
 
+.admin-save-state.is-error {
+  color: #ff9c8f;
+}
+
+.admin-save-state.is-error::before {
+  animation: none;
+  background: #ff6f61;
+}
+
 .admin-local-badge {
   border: 1px solid currentColor;
   border-radius: 999px;
@@ -254,6 +263,101 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.admin-more-menu {
+  position: relative;
+}
+
+.admin-more-menu > summary {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  list-style: none;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.admin-more-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-more-menu > summary svg {
+  height: 16px;
+  width: 16px;
+}
+
+.admin-more-menu[open] > summary {
+  background: rgba(245, 246, 239, 0.12);
+  border-color: rgba(245, 246, 239, 0.66);
+}
+
+.admin-more-menu-popover {
+  background: #f8faf5;
+  border: 1px solid rgba(21, 39, 31, 0.2);
+  box-shadow: 10px 12px 0 rgba(21, 39, 31, 0.14);
+  color: var(--ink);
+  display: grid;
+  min-width: 310px;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 50;
+}
+
+.admin-more-menu-popover button,
+.admin-more-menu-popover label {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 11px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.admin-more-menu-popover button:hover,
+.admin-more-menu-popover label:hover {
+  background: #e9eee3;
+}
+
+.admin-more-menu-popover > * + * {
+  border-top: 1px solid rgba(21, 39, 31, 0.1);
+}
+
+.admin-more-menu-popover svg {
+  height: 17px;
+  justify-self: center;
+  width: 17px;
+}
+
+.admin-more-menu-popover span,
+.admin-more-menu-popover strong,
+.admin-more-menu-popover small {
+  display: block;
+  min-width: 0;
+}
+
+.admin-more-menu-popover strong {
+  font-size: 11px;
+}
+
+.admin-more-menu-popover small {
+  color: #6b796e;
+  font-size: 9px;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+.admin-more-menu-popover .is-danger {
+  color: #a0372a;
 }
 
 .admin-primary-button,
@@ -330,7 +434,8 @@
   border-right: 1px solid rgba(21, 39, 31, 0.14);
   display: flex;
   flex-direction: column;
-  min-height: calc(100svh - 74px);
+  height: calc(100svh - 74px);
+  min-height: 0;
   padding: 34px 18px 22px;
   position: sticky;
   top: 74px;
@@ -444,7 +549,9 @@
 
 .admin-section-nav {
   display: grid;
+  flex: 1 1 auto;
   gap: 2px;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -535,6 +642,15 @@
   margin: 0 0 14px;
 }
 
+.admin-sidebar-footer kbd {
+  background: rgba(245, 246, 239, 0.72);
+  border: 1px solid rgba(21, 39, 31, 0.16);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 8px;
+  padding: 2px 4px;
+}
+
 .admin-text-button {
   background: transparent;
   color: var(--ink);
@@ -561,7 +677,7 @@
   display: flex;
   gap: 24px;
   justify-content: space-between;
-  margin-bottom: 26px;
+  margin-bottom: 14px;
   padding-bottom: 22px;
 }
 
@@ -583,6 +699,77 @@
 
 .admin-data-actions {
   flex: 0 0 auto;
+}
+
+.admin-data-actions .admin-secondary-button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.admin-section-stepper {
+  align-items: center;
+  border-bottom: 1px solid rgba(21, 39, 31, 0.14);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  margin-bottom: 26px;
+  padding-bottom: 14px;
+}
+
+.admin-section-stepper button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 800;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 0;
+}
+
+.admin-section-stepper button:last-child {
+  justify-self: end;
+}
+
+.admin-section-stepper button:hover:not(:disabled) {
+  color: #657c08;
+}
+
+.admin-section-stepper button:disabled {
+  color: #96a097;
+  cursor: not-allowed;
+}
+
+.admin-section-stepper button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-section-stepper button svg {
+  flex: 0 0 auto;
+  height: 15px;
+  width: 15px;
+}
+
+.admin-section-stepper > div {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  text-align: center;
+}
+
+.admin-section-stepper strong {
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.admin-section-stepper small {
+  color: #758177;
+  font-size: 9px;
 }
 
 .admin-notice,
@@ -610,6 +797,14 @@
   gap: clamp(20px, 2.4vw, 36px);
   grid-template-columns: minmax(360px, 0.92fr) minmax(420px, 1.08fr);
   min-width: 0;
+}
+
+.admin-content-stage.is-preview-hidden {
+  display: block;
+}
+
+.admin-content-stage.is-preview-hidden .admin-editor-stage {
+  max-width: 1180px;
 }
 
 .admin-editor-stage {
@@ -2202,6 +2397,13 @@
   gap: 4px;
   min-height: 108px;
   padding: 16px;
+  text-align: left;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.admin-stat:hover {
+  background: #20382d;
+  transform: translateY(-2px);
 }
 
 .admin-stat strong {
@@ -2216,6 +2418,96 @@
   color: rgba(245, 246, 239, 0.72);
   font-family: var(--mono);
   font-size: 9px;
+}
+
+.admin-stat small {
+  align-items: center;
+  color: rgba(245, 246, 239, 0.58);
+  display: flex;
+  font-family: var(--mono);
+  font-size: 8px;
+  gap: 5px;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.admin-stat small svg {
+  height: 13px;
+  width: 13px;
+}
+
+.admin-quick-actions {
+  border-bottom: 1px solid rgba(21, 39, 31, 0.16);
+  border-top: 1px solid rgba(21, 39, 31, 0.16);
+  margin-bottom: 24px;
+  padding: 20px 0;
+}
+
+.admin-quick-actions-heading {
+  align-items: end;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.admin-quick-actions-heading h3 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.admin-quick-actions-heading > span {
+  color: #6b796e;
+  font-size: 10px;
+}
+
+.admin-quick-actions-grid {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-quick-actions-grid button {
+  align-items: center;
+  background: rgba(245, 246, 239, 0.6);
+  border: 1px solid rgba(21, 39, 31, 0.14);
+  color: var(--ink);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 12px 14px;
+  text-align: left;
+  transition: background-color 160ms ease, padding 160ms ease;
+}
+
+.admin-quick-actions-grid button:hover {
+  background: rgba(210, 255, 0, 0.18);
+  padding-left: 18px;
+}
+
+.admin-quick-actions-grid button > span,
+.admin-quick-actions-grid strong,
+.admin-quick-actions-grid small {
+  display: block;
+  min-width: 0;
+}
+
+.admin-quick-actions-grid strong {
+  font-size: 11px;
+}
+
+.admin-quick-actions-grid small {
+  color: #6b796e;
+  font-size: 9px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.admin-quick-actions-grid svg {
+  flex: 0 0 auto;
+  height: 16px;
+  width: 16px;
 }
 
 .admin-overview-bulk-entry {
@@ -2426,6 +2718,10 @@
     grid-template-columns: 224px minmax(0, 1fr);
   }
 
+  .admin-more-menu > summary span {
+    display: none;
+  }
+
   .admin-main {
     padding-left: 28px;
     padding-right: 28px;
@@ -2472,11 +2768,21 @@
     display: none;
   }
 
+  .admin-more-menu-popover span {
+    display: block;
+  }
+
+  .admin-more-menu-popover {
+    max-width: calc(100vw - 28px);
+    min-width: min(310px, calc(100vw - 28px));
+  }
+
   .admin-layout {
     display: block;
   }
 
   .admin-sidebar {
+    height: auto;
     min-height: 0;
     padding: 22px 14px 12px;
     position: static;
@@ -2588,7 +2894,53 @@
   }
 
   .admin-data-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: start;
+    width: 100%;
+  }
+
+  .admin-data-actions .admin-secondary-button {
+    justify-content: center;
+  }
+
+  .admin-section-stepper {
+    gap: 9px;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .admin-section-stepper button {
+    min-height: 38px;
+  }
+
+  .admin-section-stepper button span {
+    display: none;
+  }
+
+  .admin-section-stepper > div small {
+    display: none;
+  }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-stat {
+    min-height: 98px;
+  }
+
+  .admin-quick-actions-heading {
+    align-items: start;
+    display: grid;
+    gap: 5px;
+  }
+
+  .admin-quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-quick-actions-grid button {
+    min-height: 62px;
   }
 
   .admin-live-preview {

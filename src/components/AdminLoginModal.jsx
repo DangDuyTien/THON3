@@ -31,7 +31,7 @@ function IconRoll() {
 export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
   const { content } = useSiteContent();
   const { login } = useAuth();
-  const { siteName, tagline } = content.settings;
+  const { siteName, tagline, adminLoginImage } = content.settings;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
@@ -265,7 +265,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
             >
               {leftColumnPhotos.map((photo) => (
                 <div className="curtain-photo-card" key={photo.id}>
-                  <AdaptiveImage src={photo.src} alt="" />
+                  <AdaptiveImage src={adminLoginImage || photo.src} alt="" />
                 </div>
               ))}
             </div>
@@ -276,7 +276,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
             >
               {rightColumnPhotos.map((photo) => (
                 <div className="curtain-photo-card" key={photo.id}>
-                  <AdaptiveImage src={photo.src} alt="" />
+                  <AdaptiveImage src={adminLoginImage || photo.src} alt="" />
                 </div>
               ))}
             </div>

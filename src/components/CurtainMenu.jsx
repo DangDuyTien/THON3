@@ -32,7 +32,7 @@ function IconRoll({ isOpen }) {
 
 export default function CurtainMenu({ isOpen, onClose }) {
   const { content } = useSiteContent();
-  const { siteName, tagline } = content.settings;
+  const { siteName, tagline, menuImages = [] } = content.settings;
   const [animating, setAnimating] = useState(false);
   const [visible, setVisible] = useState(false);
   const [mouseY, setMouseY] = useState(0);
@@ -128,13 +128,13 @@ export default function CurtainMenu({ isOpen, onClose }) {
   ];
 
   const leftColumnPhotos = [
-    { id: "1", src: "/assets/village-hero.jpg" },
-    { id: "3", src: "/assets/village-hero.jpg" },
+    { id: "1", src: menuImages[0] || "/assets/village-hero.jpg" },
+    { id: "3", src: menuImages[2] || "/assets/village-hero.jpg" },
   ];
 
   const rightColumnPhotos = [
-    { id: "2", src: "/assets/village-hero.jpg" },
-    { id: "4", src: "/assets/village-hero.jpg" },
+    { id: "2", src: menuImages[1] || "/assets/village-hero.jpg" },
+    { id: "4", src: menuImages[3] || "/assets/village-hero.jpg" },
   ];
 
   return (
