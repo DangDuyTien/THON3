@@ -33,7 +33,7 @@ export function useMomentumScroll(reducedMotion) {
     const lenis = new Lenis({
       anchors: true,
       autoRaf: true,
-      duration: 1.6,
+      duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       overscroll: false,
       smoothWheel: true,

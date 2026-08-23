@@ -73,6 +73,10 @@ export default memo(function SeasonsSection({ reducedMotion }) {
   }, [reducedMotion]);
 
   useEffect(() => {
+    prewarmGalleryWindow();
+  }, [prewarmGalleryWindow]);
+
+  useEffect(() => {
     if (mediaReady) prewarmGalleryWindow(galleryFocus);
   }, [galleryFocus, mediaReady, prewarmGalleryWindow]);
 

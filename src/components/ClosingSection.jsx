@@ -111,7 +111,7 @@ export default function ClosingSection({ reducedMotion }) {
       : new IntersectionObserver(([entry]) => {
         if (entry.isIntersecting) startFrameLoop();
         else stopFrameLoop();
-      }, { rootMargin: "80% 0px 80% 0px" });
+      }, { rootMargin: "20% 0px 20% 0px" });
 
     if (intersectionObserver) intersectionObserver.observe(section);
     else startFrameLoop();

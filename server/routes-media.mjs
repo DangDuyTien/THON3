@@ -5,13 +5,33 @@ import { pool } from "./db.mjs";
 import { requireUser, requireRole } from "./auth.mjs";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg+xml"]);
+const configuredMaxMediaBytes = Number(process.env.MAX_MEDIA_BYTES);
+const maxMediaBytes = Number.isFinite(configuredMaxMediaBytes) && configuredMaxMediaBytes > 0
+  ? configuredMaxMediaBytes
+  : 100 * 1024 * 1024;
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: Number(process.env.MAX_MEDIA_BYTES || 50 * 1024 * 1024) },
+  limits: { fileSize: maxMediaBytes },
   fileFilter: (_req, file, callback) => callback(null, allowedTypes.has(file.mimetype)),
 });
 
 const router = Router();
+
+router.get("/", requireUser, requireRole("admin", "editor"), async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
+    const [rows] = await pool.execute(
+      `SELECT id, storage_path, original_name, mime_type, size_bytes, created_at
+       FROM media_assets
+       WHERE deleted_at IS NULL
+       ORDER BY created_at DESC
+       LIMIT ${limit}`,
+    );
+    return res.json({ data: rows });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.post("/", requireUser, requireRole("admin", "editor"), upload.single("file"), async (req, res, next) => {
   try {

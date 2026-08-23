@@ -3,6 +3,7 @@ import { markMotionScene, recordMotionSceneUpdate } from "./perf-hooks.js";
 import { getPerformanceProfile, PERFORMANCE_PROFILE } from "./perf-profile.js";
 
 const contourMounts = new WeakMap();
+const MIN_CONTOUR_FRAME_INTERVAL = 10;
 
 function getContourQuality() {
   return getPerformanceProfile() === PERFORMANCE_PROFILE.LOW ? "low" : "standard";
@@ -27,8 +28,8 @@ function getTheme() {
 }
 
 /**
- * Canvas duoc ve o moi display frame qua scheduler chung. rAF tu dong dong bo
- * 60/120 Hz theo man hinh thay vi bi khoa o mot timer co dinh.
+ * Canvas duoc lap lich theo display frame chung; renderer bo qua cac frame qua
+ * sat nhau de khong tranh tai nguyen voi scroll tren man hinh tan so cao.
  */
 function createSharedContourLoop({
   canvas,
@@ -47,12 +48,12 @@ function createSharedContourLoop({
   let theme = getTheme();
   let themeObserver = null;
   let canvasVisible = true;
-  const profile = getPerformanceProfile();
-  let frameNumber = 0;
+  let lastDrawTime = Number.NEGATIVE_INFINITY;
 
   let unsubscribeAnimationFrame = subscribeAnimationFrame((time) => {
-    frameNumber += 1;
     if (stopped || document.hidden || !canvasVisible) return;
+    if (time - lastDrawTime < MIN_CONTOUR_FRAME_INTERVAL) return;
+    lastDrawTime = time;
     onDraw(time, theme);
   });
 
@@ -173,7 +174,6 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
   const offscreen = canvas.transferControlToOffscreen();
   const pixelRatioCap = getPixelRatioCap(quality, true);
   const initialSize = getCanvasSize(canvas, pixelRatioCap);
-  const profile = getPerformanceProfile();
   let workerOwnsFrameLoop = false;
   const workerTheme = getTheme();
   let stopLoop = null;
@@ -197,7 +197,7 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
     width: initialSize.width,
     x: currentPointerX,
     y: currentPointerY,
-    cadence: 1,
+    minimumFrameInterval: MIN_CONTOUR_FRAME_INTERVAL,
   }, [offscreen]);
 
   worker.addEventListener("message", (event) => {

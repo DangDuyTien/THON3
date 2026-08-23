@@ -10,7 +10,11 @@ createRoot(document.getElementById("root")).render(
   </StrictMode>,
 );
 
-if (typeof window !== "undefined") {
+const rumEndpoint = import.meta.env.VITE_RUM_ENDPOINT;
+const shouldMonitorPerformance = import.meta.env.DEV
+  || (typeof rumEndpoint === "string" && rumEndpoint.trim().length > 0);
+
+if (typeof window !== "undefined" && shouldMonitorPerformance) {
   window.setTimeout(() => {
     import("./perf.js").then(({ initPerfMonitor }) => initPerfMonitor()).catch(() => undefined);
   }, 3500);
@@ -23,16 +27,12 @@ if (typeof window !== "undefined") {
     if (loaded) return;
     loaded = true;
     loadExtendedFonts();
-    window.removeEventListener("scroll", loadOnce);
-    window.removeEventListener("pointerdown", loadOnce);
-    window.removeEventListener("keydown", loadOnce);
   };
   if (document.documentElement.classList.contains("non-public-route")) {
     loadOnce();
+  } else if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(loadOnce, { timeout: 1200 });
   } else {
-    window.addEventListener("scroll", loadOnce, { passive: true, once: true });
-    window.addEventListener("pointerdown", loadOnce, { once: true });
-    window.addEventListener("keydown", loadOnce, { once: true });
-    window.setTimeout(loadOnce, 3500);
+    window.setTimeout(loadOnce, 600);
   }
 }

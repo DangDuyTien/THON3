@@ -55,13 +55,14 @@ function DeferredSection({ Component, fallbackClassName, sectionId, eager = fals
     }
 
     const placeholder = placeholderRef.current;
+    const preloadDistance = Math.max(window.innerHeight * 3, window.innerWidth * 2);
     const observer = typeof IntersectionObserver === "undefined" || !placeholder
       ? null
       : new IntersectionObserver(([entry]) => {
         if (!entry.isIntersecting) return;
         setReady(true);
         observer.disconnect();
-      }, { rootMargin: "100% 0px" });
+      }, { rootMargin: `${Math.round(preloadDistance)}px 0px` });
 
     observer?.observe(placeholder);
     window.addEventListener("hashchange", activateForHash);

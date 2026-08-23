@@ -1643,6 +1643,14 @@ img {
   animation: story-title-loop-left 18s linear infinite;
 }
 
+.story-message-title-line .story-message-title-track {
+  animation-play-state: paused;
+}
+
+.story-message-stage.story-motion-active .story-message-title-track {
+  animation-play-state: running;
+}
+
 .story-message-signature {
   height: clamp(112px, 16vw, 244px);
   left: 50%;

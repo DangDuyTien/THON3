@@ -391,7 +391,8 @@ function createRenderer(canvas, quality = "standard") {
 let renderer = null;
 let paused = false;
 let animationFrame = null;
-let animationCadence = 1;
+let lastDrawTime = Number.NEGATIVE_INFINITY;
+let minimumFrameInterval = 10;
 const hasAnimationFrame = typeof self.requestAnimationFrame === "function";
 
 function stopAnimation() {
@@ -403,7 +404,10 @@ function stopAnimation() {
 function drawContinuously(time) {
   animationFrame = null;
   if (paused || !renderer) return;
-  renderer.draw(time);
+  if (time - lastDrawTime >= minimumFrameInterval) {
+    lastDrawTime = time;
+    renderer.draw(time);
+  }
   startAnimation();
 }
 
@@ -416,7 +420,8 @@ self.onmessage = (event) => {
   const message = event.data;
   if (message.type === "init") {
     renderer = createRenderer(message.canvas, message.quality);
-    animationCadence = 1;
+    minimumFrameInterval = Math.max(Number(message.minimumFrameInterval) || 10, 0);
+    lastDrawTime = Number.NEGATIVE_INFINITY;
     renderer.resize(message.width, message.height, message.ratio);
     renderer.setTheme(message.theme || "light");
     if (message.x !== undefined && message.y !== undefined) renderer.setPointer(message.x, message.y);
@@ -434,6 +439,7 @@ self.onmessage = (event) => {
   }
   if (message.type === "resume") {
     paused = false;
+    lastDrawTime = Number.NEGATIVE_INFINITY;
     startAnimation();
   }
   if (message.type === "draw" && !paused && !hasAnimationFrame) {

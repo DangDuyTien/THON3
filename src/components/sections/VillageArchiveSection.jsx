@@ -65,6 +65,10 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     });
   }, [villageArchive.cards, villageArchive.imageSrc]);
 
+  useEffect(() => {
+    prewarmArchiveMedia();
+  }, [prewarmArchiveMedia]);
+
   useSectionProgress(sectionRef, reducedMotion, (progress) => {
     sectionRef.current?.style.setProperty("--reveal-progress", `${progress}`);
     

@@ -23,10 +23,10 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     }
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || entry.intersectionRatio < 0.1) return;
+      if (!entry.isIntersecting) return;
       setPhotoReady(true);
       observer.disconnect();
-    }, { rootMargin: "0px", threshold: 0.1 });
+    }, { rootMargin: "100% 0px", threshold: 0 });
     observer.observe(photo);
     return () => observer.disconnect();
   }, []);
@@ -62,7 +62,10 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     const contourCanvas = contourCanvasRef.current;
     if (contourCanvas) contourCanvas.style.opacity = `${smoothStep(progress / 0.62)}`;
   }, 1, {
+    activate: () => stageRef.current?.classList.add("story-motion-active"),
+    deactivate: () => stageRef.current?.classList.remove("story-motion-active"),
     name: "story-message",
+    sleep: () => stageRef.current?.classList.remove("story-motion-active"),
     willChange: "transform, opacity",
     willChangeTargets: () => {
       const photo = stageRef.current?.querySelector(".story-message-photo");

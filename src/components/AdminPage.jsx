@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import "../styles-admin.css";
 import {
   ArrowLeft,
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import AdminLivePreview from "./admin/AdminLivePreview.jsx";
 import AdminImageEditor from "./admin/AdminImageEditor.jsx";
+import AdminMediaLibrary from "./admin/AdminMediaLibrary.jsx";
 import {
   cloneDefaultSiteContent,
   normalizeSiteContent,
@@ -31,7 +32,7 @@ import {
 import { getDraftContent, saveDraftContent } from "../lib/content-api.js";
 import { isBackendConfigured } from "../lib/backend-api.js";
 import { getSession } from "../lib/auth-api.js";
-import { uploadMedia } from "../lib/media-api.js";
+import { MAX_MEDIA_BYTES, MEDIA_ACCEPT, uploadMedia } from "../lib/media-api.js";
 import { useSiteContent } from "../content/SiteContentProvider.jsx";
 import { listPendingSubmissions, rejectSubmission, approveSubmission } from "../lib/submission-api.js";
 import {
@@ -49,6 +50,7 @@ import {
 
 const AdminCardCommandContext = createContext(null);
 const AdminImageTargetContext = createContext(null);
+const AdminMediaLibraryContext = createContext(null);
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -82,7 +84,6 @@ function normalizeSearchText(value) {
 }
 
 const ARCHIVE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg+xml"]);
-const MAX_ARCHIVE_IMAGE_BYTES = 50 * 1024 * 1024;
 
 function getArchiveImageLabel(filename) {
   return filename
@@ -194,6 +195,7 @@ function AdminColorField({ label, value, onChange, hint, fallback = "#15271f" })
 
 function AdminImageField({ label, value, onChange, hint, alt, onAltChange, position, onPositionChange, fallbackSrc, fit, aspectRatio, target, onDimensionsChange }) {
   const onTarget = useContext(AdminImageTargetContext);
+  const mediaLibrary = useContext(AdminMediaLibraryContext);
   return (
     <AdminImageEditor
       label={label}
@@ -209,6 +211,15 @@ function AdminImageField({ label, value, onChange, hint, alt, onAltChange, posit
       aspectRatio={aspectRatio}
       target={target}
       onTarget={onTarget}
+      onOpenLibrary={mediaLibrary ? () => mediaLibrary.open({
+        title: label,
+        onSelect: (asset) => {
+          const imageSrc = asset?.storage_path || asset?.url;
+          if (!imageSrc) return;
+          onChange(imageSrc);
+          onTarget?.(target);
+        },
+      }) : undefined}
       onDimensionsChange={onDimensionsChange}
     />
   );
@@ -237,7 +248,7 @@ function AdminSectionImageUploader({ title, description, targets, update }) {
     }
 
     const validFiles = files
-      .filter((file) => ARCHIVE_IMAGE_TYPES.has(file.type) && file.size <= MAX_ARCHIVE_IMAGE_BYTES)
+      .filter((file) => ARCHIVE_IMAGE_TYPES.has(file.type) && file.size <= MAX_MEDIA_BYTES)
       .sort((first, second) => (first.webkitRelativePath || first.name).localeCompare(
         second.webkitRelativePath || second.name,
         "vi",
@@ -248,7 +259,7 @@ function AdminSectionImageUploader({ title, description, targets, update }) {
     const skippedCount = validFiles.length - selectedFiles.length;
 
     if (!selectedFiles.length) {
-      setResult({ type: "error", message: "Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa 50 MB mỗi ảnh." });
+      setResult({ type: "error", message: `Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)} MB mỗi ảnh.` });
       return;
     }
 
@@ -335,7 +346,7 @@ function AdminSectionImageUploader({ title, description, targets, update }) {
         ref={filesInputRef}
         className="sr-only"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        accept={MEDIA_ACCEPT}
         multiple
         onChange={(event) => {
           uploadFiles(event.target.files);
@@ -346,7 +357,7 @@ function AdminSectionImageUploader({ title, description, targets, update }) {
         ref={folderInputRef}
         className="sr-only"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        accept={MEDIA_ACCEPT}
         multiple
         webkitdirectory=""
         directory=""
@@ -906,7 +917,7 @@ function ArchiveBulkUploader({ cards, onChange }) {
     }
 
     const validFiles = files
-      .filter((file) => ARCHIVE_IMAGE_TYPES.has(file.type) && file.size <= MAX_ARCHIVE_IMAGE_BYTES)
+      .filter((file) => ARCHIVE_IMAGE_TYPES.has(file.type) && file.size <= MAX_MEDIA_BYTES)
       .sort((first, second) => (first.webkitRelativePath || first.name).localeCompare(
         second.webkitRelativePath || second.name,
         "vi",
@@ -916,7 +927,7 @@ function ArchiveBulkUploader({ cards, onChange }) {
     const rejectedCount = files.length - validFiles.length;
     const skippedCount = validFiles.length - acceptedFiles.length;
     if (!acceptedFiles.length) {
-      setResult({ type: "error", message: "Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa 50 MB mỗi ảnh." });
+      setResult({ type: "error", message: `Không có ảnh hợp lệ. Chỉ nhận JPG, PNG, WebP, AVIF hoặc SVG, tối đa ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)} MB mỗi ảnh.` });
       return;
     }
 
@@ -986,7 +997,7 @@ function ArchiveBulkUploader({ cards, onChange }) {
         <span className="admin-archive-bulk-icon"><ImagePlus aria-hidden="true" /></span>
         <div>
           <strong>Tải cả kho ảnh</strong>
-          <span>JPG, PNG, WebP, AVIF hoặc SVG · tối đa 50 MB mỗi ảnh</span>
+          <span>JPG, PNG, WebP, AVIF hoặc SVG · tối đa {Math.round(MAX_MEDIA_BYTES / 1024 / 1024)} MB mỗi ảnh</span>
         </div>
       </div>
       <div className="admin-section-auto-settings">
@@ -1022,7 +1033,7 @@ function ArchiveBulkUploader({ cards, onChange }) {
         ref={filesInputRef}
         className="sr-only"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        accept={MEDIA_ACCEPT}
         multiple
         onChange={(event) => {
           uploadFiles(event.target.files);
@@ -1033,7 +1044,7 @@ function ArchiveBulkUploader({ cards, onChange }) {
         ref={folderInputRef}
         className="sr-only"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        accept={MEDIA_ACCEPT}
         multiple
         webkitdirectory=""
         directory=""
@@ -1281,6 +1292,7 @@ export default function AdminPage({ onLogout }) {
   const [saveError, setSaveError] = useState("");
   const [cardCommandState, setCardCommandState] = useState({ action: "", version: 0 });
   const [previewFocusTarget, setPreviewFocusTarget] = useState("");
+  const [mediaLibraryRequest, setMediaLibraryRequest] = useState(null);
   const editorRef = useRef(null);
   const contentSnapshot = useMemo(() => JSON.stringify(content), [content]);
   const draftSnapshot = useMemo(() => JSON.stringify(draft), [draft]);
@@ -1291,6 +1303,10 @@ export default function AdminPage({ onLogout }) {
     ...cardCommandState,
     issue: (action) => setCardCommandState((current) => ({ action, version: current.version + 1 })),
   }), [cardCommandState]);
+  const openMediaLibrary = useCallback((request = {}) => {
+    setMediaLibraryRequest(() => request);
+  }, []);
+  const mediaLibrary = useMemo(() => ({ open: openMediaLibrary }), [openMediaLibrary]);
   const normalizedSectionQuery = normalizeSearchText(sectionQuery.trim());
   const visibleNavItems = useMemo(() => {
     if (!normalizedSectionQuery) return ADMIN_NAV_ITEMS;
@@ -1515,6 +1531,7 @@ export default function AdminPage({ onLogout }) {
 
         <AdminCardCommandContext.Provider value={adminCardCommand}>
           <AdminImageTargetContext.Provider value={setPreviewFocusTarget}>
+          <AdminMediaLibraryContext.Provider value={mediaLibrary}>
           <main className="admin-main">
           <div className="admin-main-heading">
             <div>
@@ -1522,6 +1539,10 @@ export default function AdminPage({ onLogout }) {
               <h2><span key={activeSection} className="admin-heading-transition">{activeSection === "overview" ? "Chỉnh sửa trang giới thiệu" : ADMIN_SECTIONS.find((section) => section.id === activeSection)?.label}</span></h2>
             </div>
             <div className="admin-data-actions">
+              <button className="admin-secondary-button admin-icon-text-button" type="button" onClick={() => openMediaLibrary()}>
+                <ImagePlus aria-hidden="true" />
+                <span>Thư viện ảnh</span>
+              </button>
               <button className="admin-secondary-button admin-icon-text-button" type="button" onClick={handleExport}>
                 <Download aria-hidden="true" />
                 <span>Xuất JSON</span>
@@ -1556,6 +1577,8 @@ export default function AdminPage({ onLogout }) {
             </div>
           )}
           </main>
+          <AdminMediaLibrary request={mediaLibraryRequest} onClose={() => setMediaLibraryRequest(null)} />
+          </AdminMediaLibraryContext.Provider>
           </AdminImageTargetContext.Provider>
         </AdminCardCommandContext.Provider>
       </div>

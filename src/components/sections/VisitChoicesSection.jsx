@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import { ArrowDownRight } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
@@ -29,6 +29,10 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     prewarmCmsImage(gate.imageSrc, "full", "(max-width: 680px) min(100vw, 600px), min(88vw, 1240px, 127svh)");
     prewarmCmsImage(fullBleedArrival.imageSrc, "full", "100vw");
   }, [fullBleedArrival.imageSrc, gate.imageSrc]);
+
+  useEffect(() => {
+    prewarmVisitMedia();
+  }, [prewarmVisitMedia]);
 
   const applyProgress = useCallback((viewport) => {
     const stageProgress = stageProgressRef.current;

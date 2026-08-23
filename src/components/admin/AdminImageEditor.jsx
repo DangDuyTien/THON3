@@ -1,11 +1,9 @@
-import { ImagePlus, Link, LocateFixed, RotateCcw, Trash2, Upload } from "lucide-react";
+import { FolderOpen, ImagePlus, Link, LocateFixed, RotateCcw, Trash2, Upload } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
-import { uploadMedia } from "../../lib/media-api.js";
+import { MAX_MEDIA_BYTES, MEDIA_ACCEPT, uploadMedia } from "../../lib/media-api.js";
 import { getSession } from "../../lib/auth-api.js";
 import { isBackendConfigured } from "../../lib/backend-api.js";
-
-const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 
 function axisToPercent(value, axis) {
   if (typeof value !== "string") return 50;
@@ -58,6 +56,7 @@ export default function AdminImageEditor({
   hint,
   target,
   onTarget,
+  onOpenLibrary,
   onDimensionsChange,
 }) {
   const generatedId = useId().replace(/:/g, "");
@@ -95,8 +94,8 @@ export default function AdminImageEditor({
       setError("Chỉ nhận tệp hình ảnh JPG, PNG, WebP, AVIF hoặc SVG.");
       return;
     }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setError("Ảnh cần nhỏ hơn 50 MB.");
+    if (file.size > MAX_MEDIA_BYTES) {
+      setError(`Ảnh cần nhỏ hơn ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)} MB.`);
       return;
     }
 
@@ -208,12 +207,17 @@ export default function AdminImageEditor({
         <button className="admin-secondary-button admin-image-upload-button" type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
           <Upload aria-hidden="true" /><span>{uploading ? "Đang tải..." : "Tải ảnh"}</span>
         </button>
+        {onOpenLibrary && (
+          <button className="admin-secondary-button admin-image-library-button" type="button" disabled={uploading} onClick={onOpenLibrary}>
+            <FolderOpen aria-hidden="true" /><span>Chọn từ thư viện</span>
+          </button>
+        )}
         {value && (
           <button className="admin-quiet-button admin-image-remove-button" type="button" onClick={() => { onChange(""); setUrlValue(""); }} aria-label={`Xóa ${label.toLowerCase()}`} title={fallbackSrc ? "Bỏ ảnh riêng và dùng ảnh mặc định" : "Xóa ảnh"}>
             <Trash2 aria-hidden="true" />
           </button>
         )}
-        <input ref={fileInputRef} className="sr-only" type="file" accept="image/*" onChange={handleFile} />
+        <input ref={fileInputRef} className="sr-only" type="file" accept={MEDIA_ACCEPT} onChange={handleFile} />
       </div>
 
       {fit === "cover" && onPositionChange && effectiveSrc && (
@@ -245,7 +249,7 @@ export default function AdminImageEditor({
         {value?.startsWith("data:") && <span>Ảnh cũ trong bản nháp trình duyệt</span>}
       </div>
       {hint && <p className="admin-field-hint">{hint}</p>}
-      {uploadedBytes > MAX_IMAGE_BYTES * 0.75 && <p className="admin-image-warning">Ảnh này chiếm nhiều bộ nhớ. Nên nén ảnh trước khi thêm ảnh khác.</p>}
+      {uploadedBytes > MAX_MEDIA_BYTES * 0.75 && <p className="admin-image-warning">Ảnh này chiếm nhiều bộ nhớ. Nên nén ảnh trước khi thêm ảnh khác.</p>}
       {error && <p className="admin-field-error" role="alert">{error}</p>}
     </section>
   );
