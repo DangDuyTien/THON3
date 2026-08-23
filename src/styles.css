@@ -2014,13 +2014,19 @@ img {
 
 .season-gallery-photo-frame {
   background: #132644;
+  line-height: 0;
   overflow: hidden;
 }
 
+.season-gallery-photo-frame picture {
+  display: block;
+}
+
 .season-gallery-photo img {
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.045);
+  display: block;
+  height: auto;
+  object-fit: contain;
+  transform: none;
   width: 100%;
 }
 
@@ -2030,18 +2036,10 @@ img {
   width: 12.5vw;
 }
 
-.season-gallery-photo-lane .season-gallery-photo-frame {
-  height: 32svh;
-}
-
 .season-gallery-photo-market {
   left: 16vw;
   top: 63svh;
   width: 15.5vw;
-}
-
-.season-gallery-photo-market .season-gallery-photo-frame {
-  height: 29svh;
 }
 
 .season-gallery-photo-feature {
@@ -2051,18 +2049,10 @@ img {
   z-index: 2;
 }
 
-.season-gallery-photo-feature .season-gallery-photo-frame {
-  height: 54svh;
-}
-
 .season-gallery-photo-water {
   left: 75vw;
   top: 15svh;
   width: 12vw;
-}
-
-.season-gallery-photo-water .season-gallery-photo-frame {
-  height: 23svh;
 }
 
 .season-gallery-photo-field {
@@ -2071,18 +2061,10 @@ img {
   width: 15vw;
 }
 
-.season-gallery-photo-field .season-gallery-photo-frame {
-  height: 27svh;
-}
-
 .season-gallery-photo-rice {
   left: 119vw;
   top: 19svh;
   width: 15vw;
-}
-
-.season-gallery-photo-rice .season-gallery-photo-frame {
-  height: 33svh;
 }
 
 .season-gallery-photo-harvest {
@@ -2091,18 +2073,10 @@ img {
   width: 30vw;
 }
 
-.season-gallery-photo-harvest .season-gallery-photo-frame {
-  height: 52svh;
-}
-
 .season-gallery-photo-festival {
   left: 179vw;
   top: 16svh;
   width: 13vw;
-}
-
-.season-gallery-photo-festival .season-gallery-photo-frame {
-  height: 27svh;
 }
 
 .season-gallery-next {
@@ -3096,7 +3070,7 @@ img {
 .village-update-card img {
   height: 100%;
   object-fit: cover;
-  transform: scale(1.055) translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   transition: transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
   width: 100%;
 }
@@ -3118,7 +3092,7 @@ img {
 
   .village-update-card:hover img,
   .village-update-card:focus-within img {
-    transform: scale(1.1) translate3d(0, -1%, 0);
+    transform: scale(1.035) translate3d(0, -1%, 0);
   }
 }
 
@@ -3574,18 +3548,10 @@ img {
     width: 31vw;
   }
 
-  .season-gallery-photo-lane .season-gallery-photo-frame {
-    height: 188px;
-  }
-
   .season-gallery-photo-market {
     left: 7vw;
     top: 449px;
     width: 35vw;
-  }
-
-  .season-gallery-photo-market .season-gallery-photo-frame {
-    height: 146px;
   }
 
   .season-gallery-photo-feature {
@@ -3594,18 +3560,10 @@ img {
     width: 58vw;
   }
 
-  .season-gallery-photo-feature .season-gallery-photo-frame {
-    height: 262px;
-  }
-
   .season-gallery-photo-water {
     left: 112vw;
     top: 148px;
     width: 34vw;
-  }
-
-  .season-gallery-photo-water .season-gallery-photo-frame {
-    height: 158px;
   }
 
   .season-gallery-photo-field {
@@ -3614,18 +3572,10 @@ img {
     width: 42vw;
   }
 
-  .season-gallery-photo-field .season-gallery-photo-frame {
-    height: 161px;
-  }
-
   .season-gallery-photo-rice {
     left: 166vw;
     top: 139px;
     width: 36vw;
-  }
-
-  .season-gallery-photo-rice .season-gallery-photo-frame {
-    height: 200px;
   }
 
   .season-gallery-photo-harvest {
@@ -3634,18 +3584,10 @@ img {
     width: 64vw;
   }
 
-  .season-gallery-photo-harvest .season-gallery-photo-frame {
-    height: 242px;
-  }
-
   .season-gallery-photo-festival {
     left: 222vw;
     top: 136px;
     width: 31vw;
-  }
-
-  .season-gallery-photo-festival .season-gallery-photo-frame {
-    height: 156px;
   }
 
   .season-gallery-next {
