@@ -30,7 +30,6 @@ export function useMomentumScroll(reducedMotion) {
     }
 
     const compactOrTouch = window.matchMedia("(pointer: coarse), (max-width: 680px)").matches;
-    const maximumTargetLead = window.innerHeight * 0.72;
     const maximumWheelDelta = compactOrTouch ? 120 : 240;
     let lenis;
     lenis = new Lenis({
@@ -50,11 +49,6 @@ export function useMomentumScroll(reducedMotion) {
         const maximumDelta = isTouch ? 112 : maximumWheelDelta;
         data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumDelta);
         data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumDelta);
-        const targetLead = lenis.targetScroll - lenis.animatedScroll;
-        if (!isTouch && Math.sign(targetLead) === Math.sign(data.deltaY)) {
-          const remainingLead = Math.max(maximumTargetLead - Math.abs(targetLead), 0);
-          data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), remainingLead);
-        }
         return true;
       },
       wheelMultiplier: 0.55,

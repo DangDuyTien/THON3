@@ -35,7 +35,11 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
 
   const applyProgress = useCallback((viewport) => {
     const stageProgress = stageProgressRef.current;
-    const coverProgress = smoothStep(Math.min(Math.max((stageProgress - 0.76) / 0.24, 0), 1));
+    const coverStartProgress = viewport.isCompact ? 0.32 : 0.52;
+    const coverProgress = Math.min(Math.max(
+      (stageProgress - coverStartProgress) / (1 - coverStartProgress),
+      0,
+    ), 1);
     const gateEntryProgress = smoothStep(Math.min(entryProgressRef.current * 1.2, 1));
     const baseRevealProgress = Math.min(entryProgressRef.current, 1 - coverProgress);
     const choiceOpenProgress = reducedMotion
