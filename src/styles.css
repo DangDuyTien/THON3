@@ -526,6 +526,10 @@ body.menu-open {
   overflow: hidden;
 }
 
+body.site-loading {
+  overflow: hidden;
+}
+
 .site-loader {
   --loader-draw-duration: 1800ms;
   align-items: center;
@@ -647,6 +651,67 @@ body.menu-open {
 
 .site-loader-caption {
   opacity: 0.9;
+}
+
+.site-loader-wait {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 78px;
+  text-align: center;
+}
+
+.site-loader-wait-label,
+.site-loader-wait p {
+  color: rgba(11, 26, 48, 0.68);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.site-loader-countdown {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.site-loader-retry {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(11, 26, 48, 0.4);
+  border-radius: 4px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 15px;
+}
+
+.site-loader-retry:hover,
+.site-loader-retry:focus-visible {
+  background: var(--ink);
+  color: var(--page-background);
+}
+
+.site-loader-retry:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.site-loader-retry svg {
+  height: 15px;
+  width: 15px;
 }
 
 .site-loader-label {
