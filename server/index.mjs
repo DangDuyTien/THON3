@@ -13,6 +13,11 @@ const siteKey = "default";
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 8;
 const loginAttempts = new Map();
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://thon3-1.onrender.com",
+  ...String(process.env.CORS_ORIGIN || "").split(",").map((origin) => origin.trim()).filter(Boolean),
+]);
 
 function getAttemptKey(req, email, kind = "login") {
   return `${kind}:${req.ip || req.socket.remoteAddress || "unknown"}:${email}`;
@@ -46,7 +51,13 @@ await pool.query("SELECT 1").catch((error) => {
   console.warn(`MySQL chưa kết nối: ${error.message}`);
 });
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173", credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use(express.json({ limit: process.env.JSON_LIMIT || "10mb" }));
 
