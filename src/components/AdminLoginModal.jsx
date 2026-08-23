@@ -316,7 +316,7 @@ export default function AdminLoginModal({ onLoginSuccess, onCancel, onReady }) {
                 </div>
 
                 <div className="admin-login-hint-strip">
-                  <span>💡 Mặc định: <strong>admin</strong> / <strong>admin</strong></span>
+                  <span>Đăng nhập bằng tài khoản quản trị riêng đã được cấp.</span>
                 </div>
 
                 <div className="admin-login-actions-group">
