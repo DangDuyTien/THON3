@@ -1778,10 +1778,10 @@ img {
 
 .story-message-stage.story-motion-active .story-message-title-track {
   animation-play-state: running;
+  will-change: transform;
 }
 
 @media (pointer: coarse) {
-  html.native-scroll-active .story-message-stage.story-motion-active .story-message-title-track,
   html.native-scroll-active .reveal-line.is-revealed::after {
     animation-play-state: paused;
   }
