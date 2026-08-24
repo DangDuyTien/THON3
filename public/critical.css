@@ -233,6 +233,7 @@ a {
   padding-bottom: 8px;
 }
 
+.react-hero-ready .critical-hero-image,
 .react-hero-ready .critical-hero-copy {
   display: none;
 }

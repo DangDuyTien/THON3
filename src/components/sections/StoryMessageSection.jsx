@@ -46,7 +46,6 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
 
     stage.style.setProperty("--story-backdrop-reveal", `${backdropReveal}`);
     stage.style.setProperty("--story-content-reveal", `${contentReveal}`);
-    stage.style.setProperty("--reveal-progress", `${reducedMotion ? 1 : contentReveal}`);
     stage.style.setProperty("--story-content-y", `${(1 - contentReveal) * 34}px`);
     stage.style.setProperty("--story-photo-shrink", `${reducedMotion ? 0 : photoShrink}`);
     stage.style.setProperty("--story-photo-inset-x", `${photoInsetX}%`);
@@ -62,7 +61,11 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     const contourCanvas = contourCanvasRef.current;
     if (contourCanvas) contourCanvas.style.opacity = `${smoothStep(progress / 0.62)}`;
   }, 1, {
-    activate: () => stageRef.current?.classList.add("story-motion-active"),
+    activate: () => {
+      stageRef.current?.classList.add("story-motion-active");
+      const photo = stageRef.current?.querySelector(".story-message-photo");
+      if (photo) photo.style.willChange = "clip-path, transform";
+    },
     deactivate: () => stageRef.current?.classList.remove("story-motion-active"),
     name: "story-message",
     sleep: () => stageRef.current?.classList.remove("story-motion-active"),

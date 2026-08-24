@@ -29,14 +29,11 @@ export function useMomentumScroll(reducedMotion) {
       return () => destroyMotionRuntime();
     }
 
-    // Safari can keep touch scrolling on its compositor only when JavaScript
-    // does not cancel touchmove. Native momentum is also tuned for the device.
-    if (window.matchMedia("(pointer: coarse)").matches) {
-      return () => destroyMotionRuntime();
-    }
-
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const compactViewport = window.matchMedia("(max-width: 680px)").matches;
     const maximumWheelDelta = compactViewport ? 120 : 240;
+    const root = document.documentElement;
+    let scrollEndTimer = null;
     let lenis;
     lenis = new Lenis({
       allowNestedScroll: false,
@@ -46,7 +43,10 @@ export function useMomentumScroll(reducedMotion) {
       easing: (t) => 1 - Math.pow(1 - t, 3),
       overscroll: false,
       smoothWheel: true,
-      syncTouch: false,
+      syncTouch: coarsePointer,
+      syncTouchLerp: 0.09,
+      touchInertiaExponent: 1.3,
+      touchMultiplier: coarsePointer ? 0.7 : 1,
       virtualScroll: (data) => {
         data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumWheelDelta);
         data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumWheelDelta);
@@ -77,6 +77,14 @@ export function useMomentumScroll(reducedMotion) {
     };
 
     const onLenisScroll = () => {
+      if (coarsePointer) {
+        root.classList.add("native-scroll-active");
+        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
+        scrollEndTimer = window.setTimeout(() => {
+          scrollEndTimer = null;
+          root.classList.remove("native-scroll-active");
+        }, 120);
+      }
       queueMotionFrame("scroll");
       if (lenis.isScrolling === "smooth") startAnimation();
     };
@@ -87,12 +95,14 @@ export function useMomentumScroll(reducedMotion) {
     document.addEventListener("click", startAnimation, true);
 
     return () => {
+      if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
       stopAnimation();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("click", startAnimation, true);
       unsubscribeScroll();
       unsubscribeVirtualScroll();
       lenis.destroy();
+      root.classList.remove("native-scroll-active");
       destroyMotionRuntime();
     };
   }, [reducedMotion]);

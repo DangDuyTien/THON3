@@ -103,14 +103,6 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   }, [altImageSrc]);
 
   useSectionProgress(sectionRef, reducedMotion, (progress) => {
-    sectionRef.current?.style.setProperty("--reveal-progress", `${progress}`);
-    
-    // Tạo hiệu ứng lướt tới đâu tách tới đó: 0 ở 2 đầu, 1 ở giữa
-    // Nhân progress với 1.3 để hiệu ứng kết thúc sớm hơn (khi progress ~ 0.75) thay vì sát mép cuối
-    const mappedProgress = Math.min(progress * 1.3, 1);
-    const staggerFactor = Math.max(0, Math.min(1, Math.sin(mappedProgress * Math.PI) * 1.6));
-    sectionRef.current?.style.setProperty("--archive-stagger-factor", `${staggerFactor}`);
-
     villageArchive.cards.forEach((_, index) => {
       const entryProgress = Math.min(progress * 2.5, 1);
       const reveal = Math.min(Math.max((entryProgress - index * 0.065) / 0.5, 0), 1);

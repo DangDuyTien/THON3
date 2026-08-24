@@ -16,7 +16,6 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     imageSrc: "/assets/camp-gate-thon3.png",
   };
   const sectionRef = useRef(null);
-  const baseRef = useRef(null);
   const gateMediaMotionRef = useRef(null);
   const choiceMotionRefs = useRef([]);
   const pushUpMediaRef = useRef(null);
@@ -50,8 +49,6 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
     const sideOpacity = viewport.isCompact ? 0.06 + sideReveal * 0.94 : sideReveal;
     const arrivalImageScale = 1.04 + coverProgress * 0.06;
     const gateOpacity = 0.03 + gateEntryProgress * 0.97;
-
-    baseRef.current?.style.setProperty("--reveal-progress", `${sideReveal}`);
 
     if (gateMediaMotionRef.current) {
       gateMediaMotionRef.current.style.opacity = `${gateOpacity}`;
@@ -106,7 +103,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
       aria-labelledby="visit-title"
     >
       <div className="visit-choices-stage">
-        <div className="visit-choices-base" ref={baseRef}>
+        <div className="visit-choices-base">
           <figure className="visit-gate-media" role="img" aria-label={gate.imageAlt} data-preview-target="visit-gate">
             <div className="visit-gate-media-motion" ref={gateMediaMotionRef}>
               <div className="visit-gate-portal" aria-hidden="true">

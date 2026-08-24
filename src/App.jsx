@@ -35,10 +35,7 @@ function isPreviewRoute() {
 function DeferredSection({ Component, fallbackClassName, sectionId, eager = false, ...componentProps }) {
   const placeholderRef = useRef(null);
   const [ready, setReady] = useState(() => (
-    eager || (typeof window !== "undefined" && (
-      window.location.hash === `#${sectionId}`
-      || window.matchMedia("(max-width: 680px)").matches
-    ))
+    eager || (typeof window !== "undefined" && window.location.hash === `#${sectionId}`)
   ));
   const [isHashTarget, setIsHashTarget] = useState(() => (
     typeof window !== "undefined" && window.location.hash === `#${sectionId}`
@@ -58,7 +55,8 @@ function DeferredSection({ Component, fallbackClassName, sectionId, eager = fals
     }
 
     const placeholder = placeholderRef.current;
-    const preloadDistance = Math.max(window.innerHeight * 3, window.innerWidth * 2);
+    const preloadViewports = window.matchMedia("(max-width: 680px)").matches ? 5 : 3;
+    const preloadDistance = Math.max(window.innerHeight * preloadViewports, window.innerWidth * 2);
     const observer = typeof IntersectionObserver === "undefined" || !placeholder
       ? null
       : new IntersectionObserver(([entry]) => {

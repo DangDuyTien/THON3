@@ -305,7 +305,7 @@ body {
   color: var(--paper);
   font-family: var(--sans);
   font-size: clamp(52px, 7.6vw, 126px);
-  font-weight: 900;
+  font-weight: 800;
   left: 50%;
   line-height: 0.86;
   margin: 0;
@@ -324,20 +324,22 @@ body {
 
 .closing-stage h2 em {
   color: var(--lime);
-  font-family: var(--display);
-  font-style: italic;
-  font-weight: 500;
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: 800;
 }
 
 .closing-portrait {
-  bottom: 42px;
-  height: min(60svh, 590px);
+  aspect-ratio: 8 / 5;
+  bottom: auto;
+  height: auto;
   left: 50%;
   margin: 0;
   overflow: hidden;
   position: absolute;
+  top: clamp(290px, 34svh, 330px);
   transform: translateX(-50%);
-  width: min(35vw, 500px);
+  width: min(52vw, 680px);
   z-index: 2;
 }
 
@@ -1297,7 +1299,7 @@ img {
   justify-content: center;
   background: var(--lime);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--ink);
   display: inline-flex;
   font-size: 12px;
   font-weight: 800;
@@ -1776,6 +1778,18 @@ img {
 
 .story-message-stage.story-motion-active .story-message-title-track {
   animation-play-state: running;
+}
+
+@media (pointer: coarse) {
+  html.native-scroll-active .story-message-stage.story-motion-active .story-message-title-track,
+  html.native-scroll-active .reveal-line.is-revealed::after {
+    animation-play-state: paused;
+  }
+
+  html.native-scroll-active .season-gallery-next,
+  html.native-scroll-active .village-archive-card {
+    transition: none;
+  }
 }
 
 .story-message-signature {
@@ -2333,9 +2347,9 @@ img {
 
 .visit-choice h2 span {
   display: block;
-  font-family: var(--display);
+  font-family: var(--sans);
   font-size: clamp(40px, 3.6vw, 52px);
-  font-weight: 500;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
@@ -3171,7 +3185,7 @@ img {
 }
 
 .village-updates-heading h2 strong {
-  font-family: var(--display);
+  font-family: var(--sans);
   font-size: 0.98em;
   font-style: normal;
   font-weight: 800;

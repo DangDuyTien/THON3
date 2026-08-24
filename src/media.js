@@ -168,6 +168,7 @@ export function prewarmCmsImage(mediaOrSource, sizeVariant = "full", sizes = "10
   }
 
   image.decoding = "async";
+  image.fetchPriority = "low";
   image.sizes = sizes;
   if (attributes?.srcSet) image.srcset = attributes.srcSet;
   picture.appendChild(image);

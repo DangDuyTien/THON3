@@ -9,7 +9,6 @@ export default memo(function VillageUpdatesSection({ reducedMotion }) {
   const { content } = useSiteContent();
   const { settings, villageUpdates } = content;
   const sectionRef = useRef(null);
-  const stageRef = useRef(null);
   const cardRefs = useRef([]);
   const middleIndex = (villageUpdates.cards.length - 1) / 2;
   const layoutRef = useRef({ cardWidth: 200, cardSpacing: 120, compact: false });
@@ -49,7 +48,6 @@ export default memo(function VillageUpdatesSection({ reducedMotion }) {
     const fanProgress = reducedMotion
       ? 1
       : smoothStep(Math.min(Math.max((progress - 0.18) / 0.62, 0), 1));
-    stageRef.current?.style.setProperty("--reveal-progress", `${fanProgress}`);
     const { cardSpacing, compact } = layoutRef.current;
     const stackLift = (1 - stackEntry) * (compact ? 88 : 132);
     const stackRotationScale = 1 - fanProgress;
@@ -85,7 +83,7 @@ export default memo(function VillageUpdatesSection({ reducedMotion }) {
       ref={sectionRef}
       aria-labelledby="updates-title"
     >
-      <div className="village-updates-stage" ref={stageRef}>
+      <div className="village-updates-stage">
         <div className="village-updates-heading">
           <p className="village-updates-eyebrow"><span /> <RevealLine>{villageUpdates.eyebrow}</RevealLine></p>
           <h2 id="updates-title">

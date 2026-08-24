@@ -97,9 +97,7 @@ export default memo(function SeasonsSection({ reducedMotion }) {
     if (stageRef.current) {
       stageRef.current.style.backgroundColor = `rgb(${stageBackground.join(", ")})`;
     }
-    const revealProgress = reducedMotion ? 1 : smoothStep(motion.entryProgress);
     if (boardRef.current) {
-      boardRef.current.style.setProperty("--reveal-progress", `${revealProgress}`);
       boardRef.current.style.setProperty("--season-next-color", `rgb(${nextTextColor.join(", ")})`);
       boardRef.current.style.transform = `translate3d(${horizontalOffset}vw, 0, 0)`;
     }

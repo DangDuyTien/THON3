@@ -33,9 +33,18 @@ export default memo(function Hero({ reducedMotion }) {
   });
 
   useEffect(() => {
-    document.documentElement.classList.add("react-hero-ready");
-    return () => document.documentElement.classList.remove("react-hero-ready");
-  }, []);
+    const image = imageRef.current;
+    if (!image) return undefined;
+
+    const markReady = () => document.documentElement.classList.add("react-hero-ready");
+    if (image.complete && image.naturalWidth) markReady();
+    else image.addEventListener("load", markReady, { once: true });
+
+    return () => {
+      image.removeEventListener("load", markReady);
+      document.documentElement.classList.remove("react-hero-ready");
+    };
+  }, [frame.imageSrc]);
 
   useEffect(() => {
     const section = sectionRef.current;
