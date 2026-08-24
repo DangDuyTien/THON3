@@ -147,7 +147,7 @@ export default function CurtainMenu({ isOpen, onClose }) {
         </defs>
       </svg>
 
-      <div className="curtain-menu-content" style={{ clipPath: "url(#curtain-clip-path)" }}>
+      <div className="curtain-menu-content" data-lenis-prevent style={{ clipPath: "url(#curtain-clip-path)" }}>
         {/* Organic Background Contour Waves inside Menu */}
         <svg className="curtain-contour-bg" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <path d="M-100 140 Q 300 380, 700 180 T 1540 320" stroke="rgba(0, 240, 255, 0.16)" strokeWidth="1.8" />

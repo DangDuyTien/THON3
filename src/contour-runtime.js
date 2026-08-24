@@ -37,19 +37,22 @@ function createSharedContourLoop({
   onResize,
   onResume,
   onThemeChange,
+  pauseDuringScroll = false,
   pixelRatioCap = 1.5,
   queueFrame,
   sceneName = "page-contour",
   subscribeAnimationFrame,
 }) {
   let resizeObserver = null;
+  let scrollResumeTimer = null;
+  let scrolling = false;
   let stopped = false;
   let theme = getTheme();
   let themeObserver = null;
   let canvasVisible = true;
 
   let unsubscribeAnimationFrame = subscribeAnimationFrame((time) => {
-    if (stopped || document.hidden || !canvasVisible) return;
+    if (stopped || document.hidden || !canvasVisible || scrolling) return;
     onDraw(time, theme);
   });
 
@@ -62,6 +65,25 @@ function createSharedContourLoop({
 
   const resize = () => {
     onResize(getCanvasSize(canvas, pixelRatioCap));
+  };
+
+  const resumeIfActive = (reason) => {
+    if (stopped || document.hidden || !canvasVisible || scrolling) return;
+    onResume?.();
+    queueFrame(reason);
+  };
+
+  const onScroll = () => {
+    if (!scrolling) {
+      scrolling = true;
+      onPause?.();
+    }
+    if (scrollResumeTimer !== null) window.clearTimeout(scrollResumeTimer);
+    scrollResumeTimer = window.setTimeout(() => {
+      scrollResumeTimer = null;
+      scrolling = false;
+      resumeIfActive("contour-scroll-end");
+    }, 120);
   };
 
   if (typeof ResizeObserver !== "undefined") {
@@ -87,8 +109,7 @@ function createSharedContourLoop({
     : new IntersectionObserver(([entry]) => {
       canvasVisible = entry.isIntersecting;
       if (canvasVisible) {
-        onResume?.();
-        queueFrame("contour-visible");
+        resumeIfActive("contour-visible");
       } else {
         onPause?.();
       }
@@ -100,20 +121,22 @@ function createSharedContourLoop({
       onPause?.();
       return;
     }
-    onResume?.();
-    queueFrame("contour-resume");
+    resumeIfActive("contour-resume");
   };
 
   document.addEventListener("visibilitychange", onVisibilityChange);
+  if (pauseDuringScroll) window.addEventListener("scroll", onScroll, { passive: true });
   resize();
 
   const cleanup = () => {
     stopped = true;
+    if (scrollResumeTimer !== null) window.clearTimeout(scrollResumeTimer);
     stopSharedAnimationFrame();
     visibilityObserver?.disconnect();
     resizeObserver?.disconnect();
     themeObserver?.disconnect();
     window.removeEventListener("resize", resize);
+    window.removeEventListener("scroll", onScroll);
     document.removeEventListener("visibilitychange", onVisibilityChange);
   };
 
@@ -147,6 +170,7 @@ function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
       }
     },
     onResize: ({ height, ratio, width }) => renderer.resize(width, height, ratio),
+    pauseDuringScroll: quality === "mobile",
     queueFrame: scheduler.queueFrame,
     pixelRatioCap: getPixelRatioCap(quality, false),
     sceneName,
@@ -220,6 +244,7 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
     onResize: ({ height, ratio, width }) => worker.postMessage({ height, ratio, type: "resize", width }),
     onResume: () => worker.postMessage({ type: "resume" }),
     onThemeChange: (theme) => worker.postMessage({ theme, type: "theme" }),
+    pauseDuringScroll: quality === "mobile",
     queueFrame: scheduler.queueFrame,
     pixelRatioCap,
     sceneName,

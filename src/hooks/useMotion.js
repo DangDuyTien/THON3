@@ -29,29 +29,30 @@ export function useMomentumScroll(reducedMotion) {
       return () => destroyMotionRuntime();
     }
 
-    const compactOrTouch = window.matchMedia("(pointer: coarse), (max-width: 680px)").matches;
-    const maximumWheelDelta = compactOrTouch ? 120 : 240;
+    // Safari can keep touch scrolling on its compositor only when JavaScript
+    // does not cancel touchmove. Native momentum is also tuned for the device.
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      return () => destroyMotionRuntime();
+    }
+
+    const compactViewport = window.matchMedia("(max-width: 680px)").matches;
+    const maximumWheelDelta = compactViewport ? 120 : 240;
     let lenis;
     lenis = new Lenis({
-      allowNestedScroll: true,
+      allowNestedScroll: false,
       anchors: true,
       autoRaf: false,
-      duration: compactOrTouch ? 1.2 : 1.1,
+      duration: compactViewport ? 1.1 : 1.05,
       easing: (t) => 1 - Math.pow(1 - t, 3),
       overscroll: false,
       smoothWheel: true,
-      syncTouch: compactOrTouch,
-      syncTouchLerp: 0.09,
-      touchInertiaExponent: 1.22,
-      touchMultiplier: 0.74,
+      syncTouch: false,
       virtualScroll: (data) => {
-        const isTouch = data.event.type.includes("touch");
-        const maximumDelta = isTouch ? 112 : maximumWheelDelta;
-        data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumDelta);
-        data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumDelta);
+        data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumWheelDelta);
+        data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumWheelDelta);
         return true;
       },
-      wheelMultiplier: 0.55,
+      wheelMultiplier: compactViewport ? 0.6 : 0.58,
     });
     let unsubscribeAnimationFrame = null;
 

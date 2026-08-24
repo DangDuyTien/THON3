@@ -160,8 +160,12 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
   }, [previewMode, replaceContent]);
 
   useEffect(() => {
+    document.documentElement.classList.toggle("menu-open", menuOpen);
     document.body.classList.toggle("menu-open", menuOpen);
-    return () => document.body.classList.remove("menu-open");
+    return () => {
+      document.documentElement.classList.remove("menu-open");
+      document.body.classList.remove("menu-open");
+    };
   }, [menuOpen]);
 
   return (
@@ -360,7 +364,7 @@ function AppRouter({ heroRevealReady = false, onRouteReady }) {
 
 function AppContent() {
   // Keep route entrance motion behind the loader from competing for the same frames.
-  const { error, loading, retryLoad } = useSiteContent();
+  const { connectionStatus, error, loading, retryLoad } = useSiteContent();
   const [heroRevealReady, setHeroRevealReady] = useState(false);
   const reducedMotion = useReducedMotion();
   const [currentRouteKey, setCurrentRouteKey] = useState(() => getRouteKeyFromSnapshot(getRouteSnapshot()));
@@ -374,6 +378,7 @@ function AppContent() {
       </Suspense>
       <Suspense fallback={null}>
         <PageLoader
+          connectionStatus={connectionStatus}
           contentError={error}
           contentReady={!loading && !error}
           onExitComplete={handleLoaderExit}

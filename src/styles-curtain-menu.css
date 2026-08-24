@@ -25,6 +25,7 @@
   inset: 0;
   justify-content: space-between;
   overflow: hidden;
+  overscroll-behavior: contain;
   padding: clamp(20px, 3.5vw, 36px) clamp(24px, 5vw, 64px);
   position: absolute;
   will-change: clip-path;

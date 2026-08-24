@@ -3,10 +3,6 @@ import { Waves } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
 import RevealLine from "../RevealLine.jsx";
 import RevealLines from "../RevealLines.jsx";
-import {
-  getSeasonalGalleryFocus,
-  getSeasonalGalleryMediaIds,
-} from "../../content/site-content.js";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useSectionProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
@@ -53,13 +49,10 @@ export default memo(function SeasonsSection({ reducedMotion }) {
   const boardRef = useRef(null);
   const entryTrackRef = useRef(null);
   const progressLineRef = useRef(null);
-  const galleryFocusRef = useRef(2);
-  const [galleryFocus, setGalleryFocus] = useState(2);
   const [mediaReady, setMediaReady] = useState(reducedMotion);
 
-  const prewarmGalleryWindow = useCallback((focus = galleryFocusRef.current) => {
-    seasonalGallery.photos.forEach((photo, index) => {
-      if (index < focus - 2 || index > focus + 3) return;
+  const prewarmGalleryMedia = useCallback(() => {
+    seasonalGallery.photos.forEach((photo) => {
       prewarmCmsImage(photo.imageSrc, "large", "(max-width: 680px) 72vw, 32vw", photo.colorVariant);
     });
   }, [seasonalGallery.photos]);
@@ -73,12 +66,8 @@ export default memo(function SeasonsSection({ reducedMotion }) {
   }, [reducedMotion]);
 
   useEffect(() => {
-    prewarmGalleryWindow();
-  }, [prewarmGalleryWindow]);
-
-  useEffect(() => {
-    if (mediaReady) prewarmGalleryWindow(galleryFocus);
-  }, [galleryFocus, mediaReady, prewarmGalleryWindow]);
+    prewarmGalleryMedia();
+  }, [prewarmGalleryMedia]);
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport, motion) => {
     const compactViewport = viewport.isCompact;
@@ -104,18 +93,6 @@ export default memo(function SeasonsSection({ reducedMotion }) {
     const photoEntryOffset = reducedMotion
       ? 0
       : 61 * (1 - photoEntryProgress);
-    const nextFocus = getSeasonalGalleryFocus(
-      progress,
-      horizontalTravel,
-      seasonalGallery.photos.length,
-      compactViewport,
-    );
-
-    if (nextFocus !== galleryFocusRef.current) {
-      galleryFocusRef.current = nextFocus;
-      setGalleryFocus(nextFocus);
-    }
-
     const nextTextColor = mixRgb([244, 248, 252], [5, 28, 56], nextSectionRevealProgress);
     if (stageRef.current) {
       stageRef.current.style.backgroundColor = `rgb(${stageBackground.join(", ")})`;
@@ -134,17 +111,17 @@ export default memo(function SeasonsSection({ reducedMotion }) {
     activate: () => setMediaReady(true),
     name: "season-gallery",
     prewarm: () => {
-      prewarmGalleryWindow();
+      prewarmGalleryMedia();
       setMediaReady(true);
     },
     sleep: () => setMediaReady(false),
     updateWhilePrewarmed: true,
     willChange: "transform",
-    willChangeTargets: () => [boardRef.current, entryTrackRef.current, stageRef.current],
+    willChangeTargets: () => [boardRef.current, entryTrackRef.current],
   });
 
   const mountedPhotoIds = mediaReady
-    ? getSeasonalGalleryMediaIds(galleryFocus, reducedMotion, seasonalGallery.photos)
+    ? new Set(seasonalGallery.photos.map((photo) => photo.id))
     : new Set();
 
   return (

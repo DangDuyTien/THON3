@@ -140,6 +140,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   useEffect(() => {
     if (!isModalOpen) return undefined;
     const previousActive = document.activeElement;
+    document.documentElement.classList.add("youth-modal-open");
     document.body.classList.add("youth-modal-open");
     const focusDialog = () => dialogRef.current?.querySelector(FOCUSABLE_SELECTOR)?.focus();
     const handleKeyDown = (event) => {
@@ -166,6 +167,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener("keydown", handleKeyDown);
+      document.documentElement.classList.remove("youth-modal-open");
       document.body.classList.remove("youth-modal-open");
       if (previousActive?.focus) previousActive.focus();
     };
@@ -343,10 +345,12 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
       {isModalOpen && (
         <div
           className="youth-modal-backdrop"
+          data-lenis-prevent
           onMouseDown={(event) => event.target === event.currentTarget && closeModal()}
         >
           <div
             className="youth-modal-card"
+            data-lenis-prevent
             ref={dialogRef}
             role="dialog"
             aria-modal="true"

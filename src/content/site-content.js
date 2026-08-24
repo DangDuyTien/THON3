@@ -86,43 +86,6 @@ export const seasonalGallery = {
   ],
 };
 
-const seasonalGalleryTrackCenters = [15.25, 23.75, 56, 81, 93.5, 126.5, 156, 185.5];
-const seasonalGalleryCompactTrackCenters = [23.5, 24.5, 76, 129, 134, 184, 216, 237.5];
-
-export function getSeasonalGalleryFocus(
-  progress,
-  horizontalTravel,
-  photoCount = seasonalGallery.photos.length,
-  compactViewport = false,
-) {
-  const defaultTrackCenters = compactViewport
-    ? seasonalGalleryCompactTrackCenters
-    : seasonalGalleryTrackCenters;
-  const trackCenters = photoCount === defaultTrackCenters.length
-    ? defaultTrackCenters
-    : Array.from({ length: photoCount }, (_, index) => (
-      defaultTrackCenters[0]
-      + (index * (defaultTrackCenters[defaultTrackCenters.length - 1] - defaultTrackCenters[0])) / Math.max(photoCount - 1, 1)
-    ));
-  const viewportCenter = progress * horizontalTravel + 50;
-  return trackCenters.reduce(
-    (closestIndex, center, index) => (
-      Math.abs(center - viewportCenter) < Math.abs(trackCenters[closestIndex] - viewportCenter)
-        ? index
-        : closestIndex
-    ),
-    0,
-  );
-}
-
-export function getSeasonalGalleryMediaIds(focus, reducedMotion = false, photos = seasonalGallery.photos) {
-  return new Set(
-    photos
-      .filter((_, index) => reducedMotion || (index >= focus - 2 && index <= focus + 3))
-      .map((photo) => photo.id),
-  );
-}
-
 export const visitChoices = {
   gate: {
     imageAlt: "Cổng trại Chi đội Thôn 3 Hạ Lôi.",
