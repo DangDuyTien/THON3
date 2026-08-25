@@ -56,6 +56,8 @@ async function fileFromImageSource(source, selectedFile, fallbackName) {
 export default memo(function VillageArchiveSection({ reducedMotion }) {
   const { content } = useSiteContent();
   const { villageArchive } = content;
+  const canHover = typeof window !== "undefined"
+    && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const sectionRef = useRef(null);
   const cardRefs = useRef([]);
   const dialogRef = useRef(null);
@@ -78,17 +80,18 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   const [altImageFile, setAltImageFile] = useState(null);
 
   const prewarmArchiveMedia = useCallback(() => {
-    villageArchive.cards.forEach((card, index) => {
+    const visibleCardCount = window.matchMedia("(max-width: 680px)").matches ? 4 : 6;
+    villageArchive.cards.slice(0, visibleCardCount).forEach((card, index) => {
       if (!card.imageSrc) return;
       const alternateCard = villageArchive.cards[(index + 1) % villageArchive.cards.length] || card;
       const imageSize = getArchiveImageSize(card);
       const imageSizes = getArchiveImageSizes(card);
       prewarmCmsImage(card.imageSrc, imageSize, imageSizes, card.colorVariant);
-      if (alternateCard.imageSrc) {
+      if (canHover && alternateCard.imageSrc) {
         prewarmCmsImage(alternateCard.imageSrc, imageSize, imageSizes, alternateCard.colorVariant);
       }
     });
-  }, [villageArchive.cards, villageArchive.imageSrc]);
+  }, [canHover, villageArchive.cards]);
 
   useEffect(() => {
     prewarmArchiveMedia();
@@ -289,9 +292,11 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
               <div className="village-archive-media">
                 {imageSrc ? (
                   <>
-                    <div className="village-archive-media-layer village-archive-media-layer-alt" aria-hidden="true">
-                      <AdaptiveImage src={altImage} alt="" colorVariant={alternateCard.colorVariant} loading="lazy" imagePosition={alternateCard.imagePosition || card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
-                    </div>
+                    {canHover && (
+                      <div className="village-archive-media-layer village-archive-media-layer-alt" aria-hidden="true">
+                        <AdaptiveImage src={altImage} alt="" colorVariant={alternateCard.colorVariant} loading="lazy" imagePosition={alternateCard.imagePosition || card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
+                      </div>
+                    )}
                     <div className="village-archive-media-layer village-archive-media-layer-front">
                       <AdaptiveImage src={imageSrc} alt={card.imageAlt} colorVariant={card.colorVariant} loading="lazy" imagePosition={card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
                     </div>

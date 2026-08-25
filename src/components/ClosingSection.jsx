@@ -49,6 +49,8 @@ export default function ClosingSection({ reducedMotion }) {
   const closing = content.closing || {};
   const nameLines = settings.siteName.split(" ");
   const organizations = communityPartners.organizations;
+  const marqueeGroupCount = typeof window !== "undefined"
+    && window.matchMedia("(max-width: 680px)").matches ? 2 : 3;
   const socialItems = Array.isArray(closing.socialItems) && closing.socialItems.length ? closing.socialItems : DEFAULT_SOCIAL_ITEMS;
   const navItems = Array.isArray(closing.navItems) && closing.navItems.length ? closing.navItems : DEFAULT_NAV_ITEMS;
   const networkItems = Array.isArray(closing.networkItems) && closing.networkItems.length ? closing.networkItems : DEFAULT_NETWORK_ITEMS;
@@ -219,10 +221,15 @@ export default function ClosingSection({ reducedMotion }) {
             {/* Continuous Infinite Marquee Logo Strip at Bottom */}
             <div className="closing-partners-marquee-container" aria-label="Các đơn vị đồng hành">
               <div className="closing-partners-marquee-track" ref={marqueeRef}>
-                <div className="closing-partners-group">{renderPartnerGroup(false)}</div>
-                <div className="closing-partners-group" aria-hidden="true">{renderPartnerGroup(true)}</div>
-                <div className="closing-partners-group" aria-hidden="true">{renderPartnerGroup(true)}</div>
-                <div className="closing-partners-group" aria-hidden="true">{renderPartnerGroup(true)}</div>
+                {Array.from({ length: marqueeGroupCount }, (_, index) => (
+                  <div
+                    className="closing-partners-group"
+                    aria-hidden={index > 0 || undefined}
+                    key={`closing-partner-group-${index}`}
+                  >
+                    {renderPartnerGroup(index > 0)}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

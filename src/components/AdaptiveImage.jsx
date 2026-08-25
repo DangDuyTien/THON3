@@ -28,7 +28,7 @@ const AdaptiveImage = forwardRef(function AdaptiveImage(
       {...imageProps}
       ref={ref}
       alt={alt ?? cmsImage?.alt ?? ""}
-      decoding={priority ? "sync" : "async"}
+      decoding="async"
       fetchPriority={priority ? "high" : undefined}
       height={attributes?.height}
       loading={priority ? "eager" : loading ?? "lazy"}

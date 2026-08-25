@@ -33,7 +33,7 @@ export function useMomentumScroll(reducedMotion) {
     const compactViewport = window.matchMedia("(max-width: 680px)").matches;
     const maximumWheelDelta = compactViewport ? 120 : 240;
     const root = document.documentElement;
-    let scrollEndTimer = null;
+    let coarseScrollActive = false;
     let lenis;
     lenis = new Lenis({
       allowNestedScroll: false,
@@ -43,10 +43,8 @@ export function useMomentumScroll(reducedMotion) {
       easing: (t) => 1 - Math.pow(1 - t, 3),
       overscroll: false,
       smoothWheel: true,
-      syncTouch: coarsePointer,
-      syncTouchLerp: 0.09,
-      touchInertiaExponent: 1.3,
-      touchMultiplier: coarsePointer ? 0.7 : 1,
+      // Giu cuon cam ung native de iOS tu xu ly momentum tren compositor.
+      syncTouch: false,
       virtualScroll: (data) => {
         data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumWheelDelta);
         data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumWheelDelta);
@@ -56,9 +54,16 @@ export function useMomentumScroll(reducedMotion) {
     });
     let unsubscribeAnimationFrame = null;
 
+    const setCoarseScrollActive = (active) => {
+      if (!coarsePointer || coarseScrollActive === active) return;
+      coarseScrollActive = active;
+      root.classList.toggle("native-scroll-active", active);
+    };
+
     const stopAnimation = () => {
       unsubscribeAnimationFrame?.();
       unsubscribeAnimationFrame = null;
+      setCoarseScrollActive(false);
     };
 
     const animate = (time) => {
@@ -77,32 +82,27 @@ export function useMomentumScroll(reducedMotion) {
     };
 
     const onLenisScroll = () => {
-      if (coarsePointer) {
-        root.classList.add("native-scroll-active");
-        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
-        scrollEndTimer = window.setTimeout(() => {
-          scrollEndTimer = null;
-          root.classList.remove("native-scroll-active");
-        }, 120);
-      }
+      const smoothScrolling = lenis.isScrolling === "smooth";
+      setCoarseScrollActive(smoothScrolling);
       queueMotionFrame("scroll");
-      if (lenis.isScrolling === "smooth") startAnimation();
+      if (smoothScrolling) startAnimation();
     };
 
     const unsubscribeScroll = lenis.on("scroll", onLenisScroll);
-    const unsubscribeVirtualScroll = lenis.on("virtual-scroll", startAnimation);
+    const unsubscribeVirtualScroll = lenis.on("virtual-scroll", ({ event }) => {
+      if (coarsePointer && event?.type?.includes("touch")) return;
+      startAnimation();
+    });
     document.addEventListener("visibilitychange", onVisibilityChange);
     document.addEventListener("click", startAnimation, true);
 
     return () => {
-      if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
       stopAnimation();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("click", startAnimation, true);
       unsubscribeScroll();
       unsubscribeVirtualScroll();
       lenis.destroy();
-      root.classList.remove("native-scroll-active");
       destroyMotionRuntime();
     };
   }, [reducedMotion]);

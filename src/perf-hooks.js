@@ -5,6 +5,9 @@ const motionMetrics = {
 };
 
 const isDev = import.meta.env.DEV;
+const rumEndpoint = import.meta.env.VITE_RUM_ENDPOINT;
+export const shouldRecordMotionPerformance = isDev
+  || (typeof rumEndpoint === "string" && rumEndpoint.trim().length > 0);
 
 function getPerformanceBudget() {
   const compact = window.matchMedia?.("(max-width: 680px)").matches;
@@ -15,13 +18,13 @@ function getPerformanceBudget() {
 }
 
 export function markMotionScene(sceneName, phase) {
-  if (!sceneName || typeof performance === "undefined") return;
+  if (!shouldRecordMotionPerformance || !sceneName || typeof performance === "undefined") return;
 
   performance.mark?.(`motion:${sceneName}:${phase}`);
 }
 
 export function recordMotionSceneUpdate(sceneName, duration) {
-  if (!sceneName || !Number.isFinite(duration)) return;
+  if (!shouldRecordMotionPerformance || !sceneName || !Number.isFinite(duration)) return;
 
   const summary = motionMetrics.sceneUpdates[sceneName] || {
     calls: 0,
@@ -39,6 +42,7 @@ export function recordMotionSceneUpdate(sceneName, duration) {
 }
 
 export function recordActiveMotionLayers(count) {
+  if (!shouldRecordMotionPerformance) return;
   motionMetrics.dynamicLayerCount = count;
   motionMetrics.dynamicLayerPeak = Math.max(motionMetrics.dynamicLayerPeak, count);
 

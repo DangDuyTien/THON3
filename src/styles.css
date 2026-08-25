@@ -577,6 +577,7 @@ body.site-loading {
 
 .site-loader.is-waiting .site-loader-center {
   pointer-events: auto;
+  transform: translateY(clamp(-130px, -16svh, -90px));
 }
 
 .route-state-loading {
@@ -665,8 +666,12 @@ body.site-loading {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  left: 50%;
   min-height: 180px;
+  position: absolute;
   text-align: center;
+  top: calc(100% + 18px);
+  transform: translateX(-50%);
   width: min(88vw, 520px);
 }
 
@@ -1782,10 +1787,6 @@ img {
 }
 
 @media (pointer: coarse) {
-  html.native-scroll-active .reveal-line.is-revealed::after {
-    animation-play-state: paused;
-  }
-
   html.native-scroll-active .season-gallery-next,
   html.native-scroll-active .village-archive-card {
     transition: none;
@@ -2839,8 +2840,9 @@ img {
   pointer-events: none;
   position: absolute;
   top: 0;
-  transform: none;
-  width: 0%;
+  transform: translate3d(0, 0, 0) scaleX(0);
+  transform-origin: left center;
+  width: 105%;
   z-index: 3;
   border-radius: 2px;
 }
@@ -2857,7 +2859,7 @@ img {
   background: currentColor;
   left: auto;
   right: 0;
-  transform: none;
+  transform-origin: right center;
 }
 
 .reveal-line[data-reveal-direction="left"] .reveal-line-copy {
@@ -2868,9 +2870,11 @@ img {
 .reveal-line.is-revealed::after {
   animation: paper-sheet-wipe-right 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   animation-delay: var(--wipe-stagger-delay, 0ms);
+  will-change: opacity, transform;
 }
 
 .reveal-line.is-revealed[data-reveal-direction="left"]::after {
+  animation-name: paper-sheet-wipe-left;
   animation-delay: var(--wipe-stagger-delay, 0ms);
 }
 
@@ -2900,37 +2904,31 @@ img {
 
 @keyframes paper-sheet-wipe-right {
   0% {
-    left: 0%;
-    width: 0%;
     opacity: 1;
+    transform: translate3d(0, 0, 0) scaleX(0);
   }
   42% {
-    left: 0%;
-    width: 105%;
     opacity: 1;
+    transform: translate3d(0, 0, 0) scaleX(1);
   }
   100% {
-    left: 105%;
-    width: 0%;
     opacity: 0;
+    transform: translate3d(100%, 0, 0) scaleX(0);
   }
 }
 
 @keyframes paper-sheet-wipe-left {
   0% {
-    right: 0%;
-    width: 0%;
     opacity: 1;
+    transform: translate3d(0, 0, 0) scaleX(0);
   }
   42% {
-    right: 0%;
-    width: 105%;
     opacity: 1;
+    transform: translate3d(0, 0, 0) scaleX(1);
   }
   100% {
-    right: 105%;
-    width: 0%;
     opacity: 0;
+    transform: translate3d(-100%, 0, 0) scaleX(0);
   }
 }
 

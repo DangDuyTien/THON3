@@ -6,7 +6,12 @@
  * luc cuon binh thuong.
  */
 
-import { markMotionScene, recordActiveMotionLayers, recordMotionSceneUpdate } from "./perf-hooks.js";
+import {
+  markMotionScene,
+  recordActiveMotionLayers,
+  recordMotionSceneUpdate,
+  shouldRecordMotionPerformance,
+} from "./perf-hooks.js";
 
 export const MOTION_SCENE_STATE = Object.freeze({
   ACTIVE: "active",
@@ -324,11 +329,13 @@ export function updateAllScenes() {
 
     scene.lastProgress = progress;
     scene.lastEntryProgress = entryProgress;
-    const startedAt = performance.now();
+    const startedAt = shouldRecordMotionPerformance ? performance.now() : 0;
     scene.onProgress(progress, velocity, viewport, {
       entryProgress,
     });
-    recordMotionSceneUpdate(scene.name, performance.now() - startedAt);
+    if (shouldRecordMotionPerformance) {
+      recordMotionSceneUpdate(scene.name, performance.now() - startedAt);
+    }
   }
 
 }

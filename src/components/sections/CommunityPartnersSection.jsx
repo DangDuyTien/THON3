@@ -92,6 +92,8 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
   }, [reducedMotion]);
 
   const organizations = communityPartners.organizations;
+  const marqueeGroupCount = typeof window !== "undefined"
+    && window.matchMedia("(max-width: 680px)").matches ? 2 : 3;
 
   const renderOrganizationGroup = (ariaHidden = false) =>
     organizations.map((organization, index) => (
@@ -130,10 +132,16 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       <div className="community-partners-list" role="list" aria-label="Các đơn vị đồng hành">
         <div className="community-partners-marquee" ref={marqueeRef}>
           <div className="community-partners-track" ref={trackRef}>
-            <div className="community-partners-group" role="presentation">{renderOrganizationGroup(false)}</div>
-            <div className="community-partners-group" role="presentation" aria-hidden="true">{renderOrganizationGroup(true)}</div>
-            <div className="community-partners-group" role="presentation" aria-hidden="true">{renderOrganizationGroup(true)}</div>
-            <div className="community-partners-group" role="presentation" aria-hidden="true">{renderOrganizationGroup(true)}</div>
+            {Array.from({ length: marqueeGroupCount }, (_, index) => (
+              <div
+                className="community-partners-group"
+                role="presentation"
+                aria-hidden={index > 0 || undefined}
+                key={`community-group-${index}`}
+              >
+                {renderOrganizationGroup(index > 0)}
+              </div>
+            ))}
           </div>
         </div>
       </div>

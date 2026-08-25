@@ -1,5 +1,9 @@
 import { createContourRenderer } from "./contour-draw.js";
-import { markMotionScene, recordMotionSceneUpdate } from "./perf-hooks.js";
+import {
+  markMotionScene,
+  recordMotionSceneUpdate,
+  shouldRecordMotionPerformance,
+} from "./perf-hooks.js";
 import { getPerformanceProfile, PERFORMANCE_PROFILE } from "./perf-profile.js";
 
 const contourMounts = new WeakMap();
@@ -47,6 +51,7 @@ function createSharedContourLoop({
   let scrollResumeTimer = null;
   let scrolling = false;
   let stopped = false;
+  const supportsScrollEnd = "onscrollend" in window;
   let theme = getTheme();
   let themeObserver = null;
   let canvasVisible = true;
@@ -73,17 +78,22 @@ function createSharedContourLoop({
     queueFrame(reason);
   };
 
+  const finishScrolling = () => {
+    if (scrollResumeTimer !== null) window.clearTimeout(scrollResumeTimer);
+    scrollResumeTimer = null;
+    if (!scrolling) return;
+    scrolling = false;
+    resumeIfActive("contour-scroll-end");
+  };
+
   const onScroll = () => {
     if (!scrolling) {
       scrolling = true;
       onPause?.();
     }
+    if (supportsScrollEnd) return;
     if (scrollResumeTimer !== null) window.clearTimeout(scrollResumeTimer);
-    scrollResumeTimer = window.setTimeout(() => {
-      scrollResumeTimer = null;
-      scrolling = false;
-      resumeIfActive("contour-scroll-end");
-    }, 120);
+    scrollResumeTimer = window.setTimeout(finishScrolling, 120);
   };
 
   if (typeof ResizeObserver !== "undefined") {
@@ -125,7 +135,10 @@ function createSharedContourLoop({
   };
 
   document.addEventListener("visibilitychange", onVisibilityChange);
-  if (pauseDuringScroll) window.addEventListener("scroll", onScroll, { passive: true });
+  if (pauseDuringScroll) {
+    window.addEventListener("scroll", onScroll, { passive: true });
+    if (supportsScrollEnd) window.addEventListener("scrollend", finishScrolling, { passive: true });
+  }
   resize();
 
   const cleanup = () => {
@@ -137,6 +150,7 @@ function createSharedContourLoop({
     themeObserver?.disconnect();
     window.removeEventListener("resize", resize);
     window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("scrollend", finishScrolling);
     document.removeEventListener("visibilitychange", onVisibilityChange);
   };
 
@@ -164,9 +178,11 @@ function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
     onDraw: (time, theme) => {
       renderer.setTheme(theme);
       renderer.setPointer(currentPointerX, currentPointerY);
-      const startedAt = performance.now();
+      const startedAt = shouldRecordMotionPerformance ? performance.now() : 0;
       if (renderer.draw(time)) {
-        recordMotionSceneUpdate(sceneName, performance.now() - startedAt);
+        if (shouldRecordMotionPerformance) {
+          recordMotionSceneUpdate(sceneName, performance.now() - startedAt);
+        }
       }
     },
     onResize: ({ height, ratio, width }) => renderer.resize(width, height, ratio),

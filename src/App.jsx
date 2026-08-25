@@ -11,8 +11,10 @@ import { useMomentumScroll, useReducedMotion } from "./hooks/useMotion.js";
 import { getRouteKeyFromSnapshot } from "./route-transition.js";
 
 const AdminRoute = lazy(() => import("./components/AdminRoute.jsx"));
-const CommunityPartnersSection = lazy(() => import("./components/sections/CommunityPartnersSection.jsx"));
-const ClosingSection = lazy(() => import("./components/ClosingSection.jsx"));
+const loadCommunityPartnersSection = () => import("./components/sections/CommunityPartnersSection.jsx");
+const loadClosingSection = () => import("./components/ClosingSection.jsx");
+const CommunityPartnersSection = lazy(loadCommunityPartnersSection);
+const ClosingSection = lazy(loadClosingSection);
 const PageContour = lazy(() => import("./components/PageContour.jsx"));
 const PageTransition = lazy(() => import("./components/PageTransition.jsx"));
 const SeasonsSection = lazy(() => import("./components/sections/SeasonsSection.jsx"));
@@ -117,6 +119,8 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
   const { content, replaceContent } = useSiteContent();
   const [menuOpen, setMenuOpen] = useState(false);
   const contourCanvasRef = useRef(null);
+  const compactViewport = typeof window !== "undefined"
+    && window.matchMedia("(max-width: 680px)").matches;
   const systemReducedMotion = useReducedMotion();
   const appearance = content.settings.appearance;
   const reducedMotion = previewMode || systemReducedMotion || appearance.effects.motion !== "full";
@@ -124,6 +128,22 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   useMomentumScroll(reducedMotion);
+
+  useEffect(() => {
+    if (previewMode) return undefined;
+    const preloadMarquees = () => {
+      void loadCommunityPartnersSection();
+      void loadClosingSection();
+    };
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(preloadMarquees, { timeout: 2500 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(preloadMarquees, 1200);
+    return () => window.clearTimeout(timeoutId);
+  }, [previewMode]);
 
   useEffect(() => {
     if (!previewMode) return undefined;
@@ -203,7 +223,7 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
         />
         <DeferredSection
           Component={CommunityPartnersSection}
-          eager={previewMode}
+          eager={previewMode || compactViewport}
           fallbackClassName="community-partners-loading section-lazy-placeholder"
           reducedMotion={reducedMotion}
           sectionId="dong-hanh"
