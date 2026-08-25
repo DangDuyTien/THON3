@@ -52,7 +52,11 @@ export default memo(function SeasonsSection({ reducedMotion }) {
   const [mediaReady, setMediaReady] = useState(reducedMotion);
 
   const prewarmGalleryMedia = useCallback(() => {
-    seasonalGallery.photos.forEach((photo) => {
+    const photosToPrewarm = typeof window !== "undefined"
+      && window.matchMedia("(max-width: 680px)").matches
+      ? seasonalGallery.photos.slice(0, 3)
+      : seasonalGallery.photos;
+    photosToPrewarm.forEach((photo) => {
       prewarmCmsImage(photo.imageSrc, "large", "(max-width: 680px) 72vw, 32vw", photo.colorVariant);
     });
   }, [seasonalGallery.photos]);
@@ -66,7 +70,9 @@ export default memo(function SeasonsSection({ reducedMotion }) {
   }, [reducedMotion]);
 
   useEffect(() => {
+    if (window.matchMedia("(max-width: 680px)").matches) return undefined;
     prewarmGalleryMedia();
+    return undefined;
   }, [prewarmGalleryMedia]);
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport, motion) => {

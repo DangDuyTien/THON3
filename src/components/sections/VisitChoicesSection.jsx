@@ -29,7 +29,9 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
   }, [fullBleedArrival.imageSrc, gate.imageSrc]);
 
   useEffect(() => {
+    if (window.matchMedia("(max-width: 680px)").matches) return undefined;
     prewarmVisitMedia();
+    return undefined;
   }, [prewarmVisitMedia]);
 
   const applyProgress = useCallback((viewport) => {

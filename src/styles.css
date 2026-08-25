@@ -452,7 +452,6 @@ body {
   align-items: center;
   display: flex;
   min-width: max-content;
-  will-change: transform;
 }
 
 .closing-partners-group {
@@ -3029,7 +3028,6 @@ img {
 
 .community-partners-marquee {
   min-width: max-content;
-  will-change: transform;
   transform: translate3d(0, 0, 0);
 }
 

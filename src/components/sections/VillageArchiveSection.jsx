@@ -94,7 +94,9 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   }, [canHover, villageArchive.cards]);
 
   useEffect(() => {
+    if (window.matchMedia("(max-width: 680px)").matches) return undefined;
     prewarmArchiveMedia();
+    return undefined;
   }, [prewarmArchiveMedia]);
 
   useEffect(() => () => {
@@ -115,7 +117,9 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     name: "village-archive",
     prewarm: prewarmArchiveMedia,
     willChange: "opacity, transform",
-    willChangeTargets: () => cardRefs.current.slice(0, window.innerWidth <= 680 ? 4 : 6),
+    // Hai thẻ đầu là vùng nhìn thấy đầu tiên trên mobile; giữ ít layer GPU
+    // hơn để không tranh tài nguyên với section kế tiếp khi ranh giới chồng nhau.
+    willChangeTargets: () => cardRefs.current.slice(0, window.innerWidth <= 680 ? 2 : 6),
   });
 
   const closeModal = useCallback(() => {

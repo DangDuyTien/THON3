@@ -51,12 +51,14 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
     let unsubscribeFrame = null;
     const startFrameLoop = () => {
       if (unsubscribeFrame) return;
+      marqueeRef.current?.style.setProperty("will-change", "transform");
       lastTime = performance.now();
       unsubscribeFrame = subscribeContinuousFrame(onFrame);
     };
     const stopFrameLoop = () => {
       unsubscribeFrame?.();
       unsubscribeFrame = null;
+      marqueeRef.current?.style.removeProperty("will-change");
     };
 
     const intersectionObserver = typeof IntersectionObserver === "undefined"

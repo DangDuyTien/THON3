@@ -31,8 +31,38 @@ export function useMomentumScroll(reducedMotion) {
 
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const compactViewport = window.matchMedia("(max-width: 680px)").matches;
-    const maximumWheelDelta = compactViewport ? 120 : 240;
     const root = document.documentElement;
+
+    // Trên điện thoại, Safari đã có native momentum scroll chạy trên compositor.
+    // Không khởi động Lenis/RAF thứ hai cho touch để tránh tranh chấp với native scroll.
+    if (coarsePointer && compactViewport) {
+      let scrollEndTimer = null;
+      const supportsScrollEnd = "onscrollend" in window;
+      const finishNativeScroll = () => {
+        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
+        scrollEndTimer = null;
+        root.classList.remove("native-scroll-active");
+      };
+      const onNativeScroll = () => {
+        root.classList.add("native-scroll-active");
+        if (supportsScrollEnd) return;
+        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
+        scrollEndTimer = window.setTimeout(finishNativeScroll, 140);
+      };
+
+      window.addEventListener("scroll", onNativeScroll, { passive: true });
+      if (supportsScrollEnd) window.addEventListener("scrollend", finishNativeScroll, { passive: true });
+
+      return () => {
+        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
+        window.removeEventListener("scroll", onNativeScroll);
+        if (supportsScrollEnd) window.removeEventListener("scrollend", finishNativeScroll);
+        root.classList.remove("native-scroll-active");
+        destroyMotionRuntime();
+      };
+    }
+
+    const maximumWheelDelta = compactViewport ? 120 : 240;
     let coarseScrollActive = false;
     let lenis;
     lenis = new Lenis({
