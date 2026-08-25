@@ -31,36 +31,8 @@ export function useMomentumScroll(reducedMotion) {
 
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const compactViewport = window.matchMedia("(max-width: 680px)").matches;
+    const controlledTouch = coarsePointer && compactViewport;
     const root = document.documentElement;
-
-    // Trên điện thoại, Safari đã có native momentum scroll chạy trên compositor.
-    // Không khởi động Lenis/RAF thứ hai cho touch để tránh tranh chấp với native scroll.
-    if (coarsePointer && compactViewport) {
-      let scrollEndTimer = null;
-      const supportsScrollEnd = "onscrollend" in window;
-      const finishNativeScroll = () => {
-        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
-        scrollEndTimer = null;
-        root.classList.remove("native-scroll-active");
-      };
-      const onNativeScroll = () => {
-        root.classList.add("native-scroll-active");
-        if (supportsScrollEnd) return;
-        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
-        scrollEndTimer = window.setTimeout(finishNativeScroll, 140);
-      };
-
-      window.addEventListener("scroll", onNativeScroll, { passive: true });
-      if (supportsScrollEnd) window.addEventListener("scrollend", finishNativeScroll, { passive: true });
-
-      return () => {
-        if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
-        window.removeEventListener("scroll", onNativeScroll);
-        if (supportsScrollEnd) window.removeEventListener("scrollend", finishNativeScroll);
-        root.classList.remove("native-scroll-active");
-        destroyMotionRuntime();
-      };
-    }
 
     const maximumWheelDelta = compactViewport ? 120 : 240;
     let coarseScrollActive = false;
@@ -73,11 +45,16 @@ export function useMomentumScroll(reducedMotion) {
       easing: (t) => 1 - Math.pow(1 - t, 3),
       overscroll: false,
       smoothWheel: true,
-      // Giu cuon cam ung native de iOS tu xu ly momentum tren compositor.
-      syncTouch: false,
+      syncTouch: controlledTouch,
+      syncTouchLerp: controlledTouch ? 0.09 : 0.075,
+      touchInertiaExponent: controlledTouch ? 1.55 : 1.7,
+      touchMultiplier: controlledTouch ? 0.58 : 1,
       virtualScroll: (data) => {
-        data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumWheelDelta);
-        data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumWheelDelta);
+        const maximumDelta = controlledTouch && data.event?.type?.includes("touch")
+          ? 64
+          : maximumWheelDelta;
+        data.deltaX = Math.sign(data.deltaX) * Math.min(Math.abs(data.deltaX), maximumDelta);
+        data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumDelta);
         return true;
       },
       wheelMultiplier: compactViewport ? 0.6 : 0.58,
@@ -119,10 +96,7 @@ export function useMomentumScroll(reducedMotion) {
     };
 
     const unsubscribeScroll = lenis.on("scroll", onLenisScroll);
-    const unsubscribeVirtualScroll = lenis.on("virtual-scroll", ({ event }) => {
-      if (coarsePointer && event?.type?.includes("touch")) return;
-      startAnimation();
-    });
+    const unsubscribeVirtualScroll = lenis.on("virtual-scroll", startAnimation);
     document.addEventListener("visibilitychange", onVisibilityChange);
     document.addEventListener("click", startAnimation, true);
 
