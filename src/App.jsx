@@ -11,16 +11,28 @@ import { useMomentumScroll, useReducedMotion } from "./hooks/useMotion.js";
 import { getRouteKeyFromSnapshot } from "./route-transition.js";
 
 const AdminRoute = lazy(() => import("./components/AdminRoute.jsx"));
+const loadSeasonsSection = () => import("./components/sections/SeasonsSection.jsx");
+const loadVisitChoicesSection = () => import("./components/sections/VisitChoicesSection.jsx");
+const loadVillageArchiveSection = () => import("./components/sections/VillageArchiveSection.jsx");
 const loadCommunityPartnersSection = () => import("./components/sections/CommunityPartnersSection.jsx");
+const loadVillageUpdatesSection = () => import("./components/sections/VillageUpdatesSection.jsx");
 const loadClosingSection = () => import("./components/ClosingSection.jsx");
+const publicSectionLoaders = [
+  loadSeasonsSection,
+  loadVisitChoicesSection,
+  loadVillageArchiveSection,
+  loadCommunityPartnersSection,
+  loadVillageUpdatesSection,
+  loadClosingSection,
+];
 const CommunityPartnersSection = lazy(loadCommunityPartnersSection);
 const ClosingSection = lazy(loadClosingSection);
 const PageContour = lazy(() => import("./components/PageContour.jsx"));
 const PageTransition = lazy(() => import("./components/PageTransition.jsx"));
-const SeasonsSection = lazy(() => import("./components/sections/SeasonsSection.jsx"));
-const VisitChoicesSection = lazy(() => import("./components/sections/VisitChoicesSection.jsx"));
-const VillageArchiveSection = lazy(() => import("./components/sections/VillageArchiveSection.jsx"));
-const VillageUpdatesSection = lazy(() => import("./components/sections/VillageUpdatesSection.jsx"));
+const SeasonsSection = lazy(loadSeasonsSection);
+const VisitChoicesSection = lazy(loadVisitChoicesSection);
+const VillageArchiveSection = lazy(loadVillageArchiveSection);
+const VillageUpdatesSection = lazy(loadVillageUpdatesSection);
 
 function isAdminRoute() {
   if (typeof window === "undefined") return false;
@@ -131,18 +143,34 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
 
   useEffect(() => {
     if (previewMode) return undefined;
-    const preloadMarquees = () => {
-      void loadCommunityPartnersSection();
-      void loadClosingSection();
+    let cancelled = false;
+    let idleId = null;
+    let timeoutId = null;
+    let loaderIndex = 0;
+
+    const preloadNextSection = () => {
+      if (cancelled || loaderIndex >= publicSectionLoaders.length) return;
+      const loadSection = publicSectionLoaders[loaderIndex];
+      loaderIndex += 1;
+      void loadSection().catch(() => {}).finally(schedulePreload);
     };
 
-    if ("requestIdleCallback" in window) {
-      const idleId = window.requestIdleCallback(preloadMarquees, { timeout: 2500 });
-      return () => window.cancelIdleCallback(idleId);
+    function schedulePreload() {
+      if (cancelled || loaderIndex >= publicSectionLoaders.length) return;
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(preloadNextSection, { timeout: 2500 });
+      } else {
+        timeoutId = window.setTimeout(preloadNextSection, 500);
+      }
     }
 
-    const timeoutId = window.setTimeout(preloadMarquees, 1200);
-    return () => window.clearTimeout(timeoutId);
+    schedulePreload();
+
+    return () => {
+      cancelled = true;
+      if (idleId !== null) window.cancelIdleCallback(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
   }, [previewMode]);
 
   useEffect(() => {

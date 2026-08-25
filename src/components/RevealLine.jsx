@@ -1,14 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-
-function areAncestorsVisible(element) {
-  let parent = element.parentElement;
-  while (parent && parent !== document.body) {
-    const styles = window.getComputedStyle(parent);
-    if (styles.display === "none" || styles.visibility === "hidden" || Number(styles.opacity) === 0) return false;
-    parent = parent.parentElement;
-  }
-  return true;
-}
+import { observeRevealIntersection, waitForRevealVisibility } from "../reveal-observers.js";
 
 export default function RevealLine({ children, direction = "right", className = "", delay = 0, enabled = true }) {
   const lineRef = useRef(null);
@@ -20,37 +11,37 @@ export default function RevealLine({ children, direction = "right", className = 
     if (!el || !enabled) return undefined;
 
     let revealTimer = null;
-    let doneTimer = null;
-    let visibilityFrame = null;
-    let isIntersecting = false;
+    let stopWaitingForVisibility = null;
+    let stopObserving = null;
     let started = false;
 
-    const startReveal = () => {
-      if (started || !isIntersecting) return;
-      if (!areAncestorsVisible(el)) {
-        visibilityFrame = window.requestAnimationFrame(startReveal);
-        return;
-      }
-      started = true;
-      revealTimer = window.setTimeout(() => {
-        setIsRevealed(true);
-        doneTimer = window.setTimeout(() => setIsDone(true), 3350);
-      }, delay);
-      observer.unobserve(el);
+    const finishReveal = (event) => {
+      if (event.target !== el || event.pseudoElement !== "::after") return;
+      setIsDone(true);
+      el.classList.add("is-revealed-done");
     };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      isIntersecting = entry.isIntersecting;
-      if (isIntersecting) startReveal();
-    }, { threshold: 0.12 });
+    const reveal = () => {
+      if (started) return;
+      started = true;
+      stopObserving?.();
+      stopObserving = null;
+      if (delay > 0) revealTimer = window.setTimeout(() => setIsRevealed(true), delay);
+      else setIsRevealed(true);
+    };
 
-    observer.observe(el);
+    el.addEventListener("animationend", finishReveal);
+    stopObserving = observeRevealIntersection(el, (isIntersecting) => {
+      stopWaitingForVisibility?.();
+      stopWaitingForVisibility = null;
+      if (isIntersecting) stopWaitingForVisibility = waitForRevealVisibility(el, reveal);
+    });
 
     return () => {
-      observer.disconnect();
+      el.removeEventListener("animationend", finishReveal);
+      stopObserving?.();
+      stopWaitingForVisibility?.();
       if (revealTimer !== null) window.clearTimeout(revealTimer);
-      if (doneTimer !== null) window.clearTimeout(doneTimer);
-      if (visibilityFrame !== null) window.cancelAnimationFrame(visibilityFrame);
     };
   }, [delay, enabled]);
 

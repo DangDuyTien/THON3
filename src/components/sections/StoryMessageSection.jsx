@@ -16,19 +16,13 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
   const [photoReady, setPhotoReady] = useState(false);
 
   useEffect(() => {
-    const photo = photoRef.current;
-    if (!photo || !("IntersectionObserver" in window)) {
-      setPhotoReady(true);
-      return undefined;
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => setPhotoReady(true), { timeout: 1400 });
+      return () => window.cancelIdleCallback(idleId);
     }
 
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      setPhotoReady(true);
-      observer.disconnect();
-    }, { rootMargin: "100% 0px", threshold: 0 });
-    observer.observe(photo);
-    return () => observer.disconnect();
+    const timeoutId = window.setTimeout(() => setPhotoReady(true), 600);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useSectionProgress(sectionRef, reducedMotion, (progress, _velocity, viewport) => {

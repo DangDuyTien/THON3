@@ -2415,7 +2415,6 @@ img {
 }
 
 .visit-gate-media-motion {
-  filter: drop-shadow(0 28px 30px rgba(11, 26, 48, 0.2));
   opacity: 0.28;
   perspective: 1100px;
   perspective-origin: 50% 42%;
@@ -2424,7 +2423,9 @@ img {
 }
 
 .visit-gate-portal {
+  filter: drop-shadow(0 28px 30px rgba(11, 26, 48, 0.2));
   position: relative;
+  transform: translateZ(0);
   transform-style: preserve-3d;
 }
 
@@ -3821,8 +3822,12 @@ img {
     width: 100%;
   }
 
-  .visit-gate-media-motion {
+  .visit-gate-media-motion,
+  .visit-gate-portal {
     filter: none;
+  }
+
+  .visit-gate-media-motion {
     opacity: 0.28;
     perspective: none;
     transform-style: flat;

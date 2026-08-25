@@ -186,7 +186,7 @@ function mountMainThreadFallback(canvas, scheduler, quality, sceneName) {
       }
     },
     onResize: ({ height, ratio, width }) => renderer.resize(width, height, ratio),
-    pauseDuringScroll: quality === "mobile",
+    pauseDuringScroll: true,
     queueFrame: scheduler.queueFrame,
     pixelRatioCap: getPixelRatioCap(quality, false),
     sceneName,
@@ -260,7 +260,7 @@ function mountWorker(canvas, scheduler, quality, sceneName) {
     onResize: ({ height, ratio, width }) => worker.postMessage({ height, ratio, type: "resize", width }),
     onResume: () => worker.postMessage({ type: "resume" }),
     onThemeChange: (theme) => worker.postMessage({ theme, type: "theme" }),
-    pauseDuringScroll: quality === "mobile",
+    pauseDuringScroll: true,
     queueFrame: scheduler.queueFrame,
     pixelRatioCap,
     sceneName,
