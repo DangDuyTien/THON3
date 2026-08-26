@@ -1163,12 +1163,13 @@ function ArchiveBulkUploader({ cards, onChange }) {
 function ArchiveEditor({ draft, update, pendingList, onSubmissionApproved, onSubmissionRejected }) {
   const archive = draft.villageArchive;
   return (
-    <AdminPanel eyebrow="07 / KHO ẢNH" title="Kho ảnh tự động" description="Tải nhiều ảnh một lần; lưới tự giữ tỷ lệ và lấp khoảng trống theo kích thước từng ảnh." cardCount={archive.cards.length}>
+    <AdminPanel eyebrow="07 / ĐOÀN VIÊN" title="Gương mặt tuổi trẻ" description="Mỗi thẻ là một trang đôi trong cuốn sách; ba thẻ đầu dành cho Ban Chấp hành, các thẻ sau dành cho đoàn viên." cardCount={archive.cards.length}>
       <PendingYouthUnionApproval pendingList={pendingList} onApprove={onSubmissionApproved} onReject={onSubmissionRejected} />
       <ArchiveBulkUploader cards={archive.cards} onChange={(cards) => update("villageArchive.cards", cards)} />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={archive.eyebrow} onChange={(value) => update("villageArchive.eyebrow", value)} />
         <AdminField label="Tiêu đề" multiline value={archive.title} onChange={(value) => update("villageArchive.title", value)} hint="Dùng xuống dòng để tách hai dòng lớn." />
+        <AdminField label="Lời giới thiệu chung" multiline value={archive.intro} onChange={(value) => update("villageArchive.intro", value)} />
         <AdminImageField
           label="Ảnh mặc định"
           value={archive.imageSrc}
@@ -1187,12 +1188,19 @@ function ArchiveEditor({ draft, update, pendingList, onSubmissionApproved, onSub
       </div>
       <div className="admin-card-stack">
         {archive.cards.map((card, index) => (
-          <AdminCard key={card.id} index={index} title={card.label || `Tư liệu ${index + 1}`} summary={card.year} thumbnail={card.imageSrc || archive.imageSrc}>
+          <AdminCard key={card.id} index={index} title={card.label || `Đoàn viên ${index + 1}`} summary={card.year} thumbnail={card.imageSrc || archive.imageSrc}>
             <div className="admin-form-grid admin-form-grid-wide">
-              <AdminField label="Tên tư liệu" value={card.label} onChange={(value) => update(`villageArchive.cards[${index}].label`, value)} />
-              <AdminField label="Năm" value={card.year} onChange={(value) => update(`villageArchive.cards[${index}].year`, value)} />
+              <AdminField label="Họ và tên" value={card.label} onChange={(value) => update(`villageArchive.cards[${index}].label`, value)} />
+              <AdminField label="Chức vụ / thông tin ngắn" value={card.year} onChange={(value) => update(`villageArchive.cards[${index}].year`, value)} />
+              <AdminField
+                label={index < 3 ? `Giới thiệu ${index === 0 ? "Bí thư" : `Phó Bí thư ${index}`}` : "Giới thiệu đoàn viên"}
+                multiline
+                value={card.bio || ""}
+                onChange={(value) => update(`villageArchive.cards[${index}].bio`, value)}
+                hint="Nội dung này xuất hiện trên mặt chữ của spread tương ứng."
+              />
               <AdminImageField
-                label="Ảnh tư liệu"
+                label="Ảnh đoàn viên"
                 value={card.imageSrc || ""}
                 fallbackSrc={archive.imageSrc}
                 onChange={(value) => update(`villageArchive.cards[${index}].imageSrc`, value)}
@@ -1219,13 +1227,13 @@ function ArchiveEditor({ draft, update, pendingList, onSubmissionApproved, onSub
                 className="admin-danger-text-button"
                 type="button"
                 onClick={() => {
-                  if (window.confirm(`Xóa “${card.label || `Tư liệu ${index + 1}`}” khỏi lưới ảnh?`)) {
+                  if (window.confirm(`Xóa “${card.label || `Đoàn viên ${index + 1}`}” khỏi danh sách?`)) {
                     update("villageArchive.cards", archive.cards.filter((_, cardIndex) => cardIndex !== index));
                   }
                 }}
               >
                 <Trash2 aria-hidden="true" />
-                <span>Xóa khỏi lưới</span>
+                <span>Xóa khỏi cuốn sách</span>
               </button>
             </div>
           </AdminCard>

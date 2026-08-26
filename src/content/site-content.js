@@ -159,14 +159,15 @@ export const closing = {
 export const villageArchive = {
   eyebrow: "ĐOÀN THANH NIÊN / MÊ LINH",
   title: "GƯƠNG MẶT\nTUỔI TRẺ MÊ LINH",
+  intro: "Gặp những gương mặt đang kết nối sức trẻ, hoạt động cộng đồng và tinh thần đồng hành tại Mê Linh.",
   // Ảnh nền dự phòng cho thẻ mới chưa có ảnh riêng.
   imageHeight: 1080,
   imageSrc: "/assets/village-hero.jpg",
   imageWidth: 1440,
   cards: [
-    { colorVariant: "archive-default", id: "member1", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-default", id: "member2", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
-    { colorVariant: "archive-default", id: "member3", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member1", label: "", year: "", bio: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member2", label: "", year: "", bio: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
+    { colorVariant: "archive-default", id: "member3", label: "", year: "", bio: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
     { colorVariant: "archive-default", id: "member4", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
     { colorVariant: "archive-default", id: "member5", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },
     { colorVariant: "archive-default", id: "member6", label: "", year: "", imageAlt: "", imagePosition: "center 30%", size: "medium" },

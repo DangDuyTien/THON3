@@ -1,10 +1,9 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Plus, Upload, CheckCircle2, X, AlertCircle, Trash2, UserRound } from "lucide-react";
+import { ArrowDown, ArrowLeft, Plus, Upload, CheckCircle2, X, AlertCircle, Trash2, UserRound, Send } from "lucide-react";
 import AdaptiveImage from "../AdaptiveImage.jsx";
-import RevealLine from "../RevealLine.jsx";
 import YouthUnionPartyLogo from "../icons/YouthUnionPartyLogo.jsx";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
-import { useSectionProgress, useViewportEntryProgress } from "../../hooks/useMotion.js";
+import { observeRevealIntersection, waitForRevealVisibility } from "../../reveal-observers.js";
 import { prewarmCmsImage } from "../../media.js";
 import { createSubmission } from "../../lib/submission-api.js";
 import { MAX_SUBMISSION_MEDIA_BYTES, MEDIA_ACCEPT, uploadSubmissionMedia } from "../../lib/media-api.js";
@@ -17,6 +16,23 @@ import {
 } from "../../lib/submission-options.js";
 
 const FOCUSABLE_SELECTOR = "button:not([disabled]), input:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])";
+const LEADERSHIP_ROLE_FALLBACKS = ["Bí thư", "Phó Bí thư", "Phó Bí thư"];
+const STORY_TRANSITION_MS = 760;
+const STORY_PAGE_STAGGER_MS = Math.round(STORY_TRANSITION_MS * 0.2);
+const STORY_TRANSITION_TOTAL_MS = STORY_TRANSITION_MS + STORY_PAGE_STAGGER_MS;
+const STORY_TEXT_REVEAL_GAP_MS = 60;
+
+function StoryTextReveal({ children, className = "", delay = 0, direction = "right" }) {
+  return (
+    <span
+      className={`youth-team-text-reveal${className ? ` ${className}` : ""}`}
+      data-reveal-direction={direction}
+      style={{ "--story-text-delay": `${delay}ms` }}
+    >
+      <span className="youth-team-text-reveal-copy">{children}</span>
+    </span>
+  );
+}
 
 function getArchiveImageSize(card) {
   return card.size.includes("wide") || card.size.includes("feature") ? "medium" : "small";
@@ -26,9 +42,145 @@ function getArchiveImageSizes(card) {
   return card.size.includes("wide") ? "(max-width: 680px) 90vw, 50vw" : "(max-width: 680px) 44vw, 25vw";
 }
 
+function ArchiveStoryMedia({ card, fallbackLabel, priority = false }) {
+  const imageSrc = String(card?.imageSrc || "").trim();
+
+  if (!imageSrc) {
+    return (
+      <div className="youth-team-story-placeholder" aria-label={`Chưa có ảnh thẻ của ${fallbackLabel}`}>
+        <div className="youth-team-story-placeholder-portrait" aria-hidden="true">
+          <UserRound />
+        </div>
+        <strong>CHƯA CÓ ẢNH THẺ</strong>
+        <span>{fallbackLabel}</span>
+      </div>
+    );
+  }
+
+  return (
+    <AdaptiveImage
+      src={imageSrc}
+      alt={card.imageAlt || `${fallbackLabel} Đoàn Thanh niên Mê Linh`}
+      colorVariant={card?.colorVariant}
+      imagePosition={card?.imagePosition}
+      imageVariant="medium"
+      loading={priority ? "eager" : "lazy"}
+      priority={priority}
+      sizes="(max-width: 680px) 100vw, 50vw"
+    />
+  );
+}
+
+function ArchiveStorySlide({
+  archive,
+  direction,
+  storyCards,
+  onNext,
+  onPrevious,
+  revealDelayOffset = 0,
+  slideIndex,
+  state,
+}) {
+  const isIntro = slideIndex === 0;
+  const leaderIndex = slideIndex - 1;
+  const card = isIntro ? storyCards.find((item) => String(item?.imageSrc || "").trim()) : storyCards[leaderIndex];
+  const role = isIntro
+    ? ""
+    : String(card?.year || "").trim() || LEADERSHIP_ROLE_FALLBACKS[leaderIndex] || YOUTH_MEMBER_ROLE;
+  const name = isIntro ? "" : String(card?.label || "").trim() || "Đang cập nhật";
+  const bio = String(card?.bio || "").trim()
+    || (leaderIndex < 3
+      ? "Thông tin giới thiệu đang được Ban Chấp hành cập nhật."
+      : "Thông tin đoàn viên đang được cập nhật.");
+  const nextCard = storyCards[leaderIndex + 1];
+  const nextCardIndex = leaderIndex + 1;
+  const nextName = String(nextCard?.label || "").trim();
+  const nextRole = String(nextCard?.year || "").trim() || LEADERSHIP_ROLE_FALLBACKS[nextCardIndex] || YOUTH_MEMBER_ROLE;
+  const nextLabel = isIntro
+    ? (storyCards.length ? "Gặp Ban Chấp hành" : "")
+    : nextCard
+      ? nextCardIndex >= 3 ? `Gặp ${nextName || "đoàn viên tiếp theo"}` : `Gặp ${nextRole}`
+      : "";
+  const panelClassName = [
+    "youth-team-story-panel",
+    `is-${state}`,
+    `is-direction-${direction}`,
+    `youth-team-palette-${slideIndex % 4}`,
+    !isIntro && leaderIndex % 2 === 1 ? "is-reversed" : "",
+  ].filter(Boolean).join(" ");
+
+  return (
+    <article className={panelClassName} aria-hidden={state === "leaving" ? "true" : undefined} inert={state === "leaving" ? true : undefined}>
+      <div
+        className="youth-team-story-media"
+        data-preview-target={!isIntro && card?.id ? `archive-${card.id}` : undefined}
+      >
+        <ArchiveStoryMedia
+          card={card}
+          fallbackLabel={isIntro ? "Gương mặt tuổi trẻ Mê Linh" : name}
+          priority={slideIndex <= 1}
+        />
+        <span className="youth-team-story-media-index" aria-hidden="true">
+          {String(slideIndex + 1).padStart(2, "0")}
+        </span>
+      </div>
+
+      <div className="youth-team-story-copy">
+        {slideIndex > 0 && (
+          <button className="youth-team-story-back" type="button" onMouseDown={(event) => { event.preventDefault(); event.currentTarget.blur(); }} onClick={onPrevious} aria-label="Quay lại màn trước">
+            <ArrowLeft aria-hidden="true" />
+          </button>
+        )}
+
+        {isIntro ? (
+          <div className="youth-team-intro-copy">
+            <p className="youth-team-story-eyebrow">
+              <YouthUnionPartyLogo size={25} />
+              <StoryTextReveal delay={revealDelayOffset + 80}>{archive.eyebrow}</StoryTextReveal>
+            </p>
+            <h3 className="youth-team-intro-title">
+              {archive.title.split("\n").map((line, index) => (
+                <StoryTextReveal
+                  delay={revealDelayOffset + 140 + index * 140}
+                  direction={index % 2 === 0 ? "right" : "left"}
+                  key={`${line}-${index}`}
+                >
+                  {line}
+                </StoryTextReveal>
+              ))}
+            </h3>
+            <p className="youth-team-story-lead">
+              <StoryTextReveal delay={revealDelayOffset + 360}>{archive.intro}</StoryTextReveal>
+            </p>
+          </div>
+        ) : (
+          <div className="youth-team-leader-copy">
+            <p className="youth-team-story-role">
+              <StoryTextReveal delay={revealDelayOffset + 80}>{role}</StoryTextReveal>
+            </p>
+            <h3><StoryTextReveal delay={revealDelayOffset + 200} direction="left">{name}</StoryTextReveal></h3>
+            <span className="youth-team-story-divider" aria-hidden="true" />
+            <p className="youth-team-story-bio">
+              <StoryTextReveal delay={revealDelayOffset + 440}>{bio}</StoryTextReveal>
+            </p>
+          </div>
+        )}
+
+        {nextLabel && (
+          <button className="youth-team-story-next" type="button" onMouseDown={(event) => { event.preventDefault(); event.currentTarget.blur(); }} onClick={onNext}>
+            <StoryTextReveal delay={revealDelayOffset + 680} direction="left">{nextLabel}</StoryTextReveal>
+            <ArrowDown aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function isImageValue(value) {
   if (!value) return false;
   if (value.startsWith("data:image/")) return true;
+  if (value.startsWith("blob:")) return true;
   if (value.startsWith("/")) return true;
   try {
     const url = new URL(value);
@@ -59,7 +211,8 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   const canHover = typeof window !== "undefined"
     && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const sectionRef = useRef(null);
-  const cardRefs = useRef([]);
+  const storyPointerStartRef = useRef(null);
+  const storyTransitionTimerRef = useRef(null);
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
   const successTimerRef = useRef(null);
@@ -70,14 +223,20 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [imageErrors, setImageErrors] = useState({});
+  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+  const [leavingStoryIndex, setLeavingStoryIndex] = useState(null);
+  const [storyDirection, setStoryDirection] = useState("next");
+  const [storyTextDelayOffset, setStoryTextDelayOffset] = useState(0);
+  const [storyTextReady, setStoryTextReady] = useState(reducedMotion);
 
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [school, setSchool] = useState("");
   const [imageSrc, setImageSrc] = useState("");
-  const [altImageSrc, setAltImageSrc] = useState("");
   const [imageFile, setImageFile] = useState(null);
-  const [altImageFile, setAltImageFile] = useState(null);
+  // Mỗi thẻ, kể cả vị trí đang chờ cập nhật, là một spread trong cuốn sách.
+  const storyCards = villageArchive.cards;
+  const storySlideCount = storyCards.length + 1;
 
   const prewarmArchiveMedia = useCallback(() => {
     const visibleCardCount = window.matchMedia("(max-width: 680px)").matches ? 4 : 6;
@@ -99,28 +258,88 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     return undefined;
   }, [prewarmArchiveMedia]);
 
+  useEffect(() => {
+    if (reducedMotion) {
+      setStoryTextReady(true);
+      return undefined;
+    }
+
+    const story = sectionRef.current?.querySelector(".youth-team-story");
+    if (!story) return undefined;
+
+    let hasRevealed = false;
+    let stopWaitingForVisibility = null;
+    const stopObserving = observeRevealIntersection(story, (isIntersecting) => {
+      if (!isIntersecting || hasRevealed) return;
+      hasRevealed = true;
+      stopWaitingForVisibility = waitForRevealVisibility(story, () => setStoryTextReady(true));
+    });
+
+    return () => {
+      stopObserving();
+      stopWaitingForVisibility?.();
+    };
+  }, [reducedMotion]);
+
   useEffect(() => () => {
     if (imageSrc.startsWith("blob:")) URL.revokeObjectURL(imageSrc);
   }, [imageSrc]);
 
   useEffect(() => () => {
-    if (altImageSrc.startsWith("blob:")) URL.revokeObjectURL(altImageSrc);
-  }, [altImageSrc]);
+    if (storyTransitionTimerRef.current) window.clearTimeout(storyTransitionTimerRef.current);
+  }, []);
 
-  useSectionProgress(sectionRef, reducedMotion, (progress) => {
-    villageArchive.cards.forEach((_, index) => {
-      const entryProgress = Math.min(progress * 2.5, 1);
-      const reveal = Math.min(Math.max((entryProgress - index * 0.065) / 0.5, 0), 1);
-      cardRefs.current[index]?.style.setProperty("--archive-card-reveal", `${reveal}`);
+  useEffect(() => {
+    if (activeStoryIndex < storySlideCount) return;
+    setActiveStoryIndex(Math.max(storySlideCount - 1, 0));
+    setLeavingStoryIndex(null);
+  }, [activeStoryIndex, storySlideCount]);
+
+  const changeStorySlide = useCallback((nextIndex) => {
+    if (nextIndex === activeStoryIndex || nextIndex < 0 || nextIndex >= storySlideCount || leavingStoryIndex !== null) return;
+    const storyScrollTop = window.scrollY;
+    if (storyTransitionTimerRef.current) window.clearTimeout(storyTransitionTimerRef.current);
+    setStoryDirection(nextIndex > activeStoryIndex ? "next" : "previous");
+    if (!reducedMotion) setLeavingStoryIndex(activeStoryIndex);
+    setStoryTextDelayOffset(reducedMotion ? 0 : STORY_TRANSITION_TOTAL_MS + STORY_TEXT_REVEAL_GAP_MS);
+    setActiveStoryIndex(nextIndex);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: storyScrollTop, left: 0, behavior: "auto" });
     });
-  }, undefined, {
-    name: "village-archive",
-    prewarm: prewarmArchiveMedia,
-    willChange: "opacity, transform",
-    // Hai thẻ đầu là vùng nhìn thấy đầu tiên trên mobile; giữ ít layer GPU
-    // hơn để không tranh tài nguyên với section kế tiếp khi ranh giới chồng nhau.
-    willChangeTargets: () => cardRefs.current.slice(0, window.innerWidth <= 680 ? 2 : 6),
-  });
+    if (!reducedMotion) {
+      storyTransitionTimerRef.current = window.setTimeout(() => {
+        setLeavingStoryIndex(null);
+        storyTransitionTimerRef.current = null;
+      }, STORY_TRANSITION_TOTAL_MS);
+    }
+  }, [activeStoryIndex, leavingStoryIndex, reducedMotion, storySlideCount]);
+
+  const showNextStory = useCallback(() => {
+    if (activeStoryIndex < storySlideCount - 1) {
+      changeStorySlide(activeStoryIndex + 1);
+      return;
+    }
+  }, [activeStoryIndex, changeStorySlide, storySlideCount]);
+
+  const showPreviousStory = useCallback(() => {
+    changeStorySlide(activeStoryIndex - 1);
+  }, [activeStoryIndex, changeStorySlide]);
+
+  const handleStoryPointerDown = (event) => {
+    if (event.pointerType === "mouse") return;
+    storyPointerStartRef.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handleStoryPointerUp = (event) => {
+    const start = storyPointerStartRef.current;
+    storyPointerStartRef.current = null;
+    if (!start || event.pointerType === "mouse") return;
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
+    if (deltaX < 0) showNextStory();
+    else showPreviousStory();
+  };
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
@@ -219,8 +438,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     if (name.trim().length < 2 || name.trim().length > 80) next.name = "Họ tên cần từ 2–80 ký tự.";
     if (!isValidYouthBirthYear(age)) next.age = `Năm sinh phải gồm 4 chữ số, từ 1900 đến ${new Date().getFullYear()}.`;
     if (!isYouthSchoolOption(school)) next.school = "Vui lòng chọn một trong ba trường.";
-    if (!imageSrc || !isImageValue(imageSrc) || imageErrors.imageSrc) next.imageSrc = "Ảnh chính là thông tin bắt buộc và phải tải được.";
-    if (altImageSrc && (!isImageValue(altImageSrc) || imageErrors.altImageSrc)) next.altImageSrc = "Không thể sử dụng ảnh hover này.";
+    if (!imageSrc || !isImageValue(imageSrc) || imageErrors.imageSrc) next.imageSrc = "Ảnh thẻ là thông tin bắt buộc và phải tải được.";
     setErrors(next);
     return next;
   };
@@ -237,10 +455,8 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     try {
       if (isBackendConfigured) {
         const primaryFile = await fileFromImageSource(imageSrc, imageFile, "anh-the-chinh.jpg");
-        const alternateFile = altImageSrc ? await fileFromImageSource(altImageSrc, altImageFile, "anh-the-hover.jpg") : null;
         const primary = await uploadSubmissionMedia(primaryFile);
-        const alternate = alternateFile ? await uploadSubmissionMedia(alternateFile) : null;
-        await createSubmission({ name: name.trim(), age: age.trim(), school: school.trim(), imageAssetId: primary.id, altImageAssetId: alternate?.id });
+        await createSubmission({ name: name.trim(), age: age.trim(), school: school.trim(), imageAssetId: primary.id });
       } else {
         throw new Error("Backend MySQL chưa kết nối nên chưa thể gửi đăng ký.");
       }
@@ -252,9 +468,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
         setAge("");
         setSchool("");
         setImageSrc("");
-        setAltImageSrc("");
         setImageFile(null);
-        setAltImageFile(null);
         setImageErrors({});
       }, 2800);
     } catch (error) {
@@ -266,62 +480,43 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
 
   return (
     <section className="village-archive-section" id="tu-lieu" ref={sectionRef} aria-labelledby="archive-title">
-      <div className="village-archive-heading">
-        <p className="village-archive-eyebrow">
-          <YouthUnionPartyLogo size={24} />
-          <RevealLine>{villageArchive.eyebrow}</RevealLine>
-        </p>
-        <h2 id="archive-title">
-          {villageArchive.title.split("\n").map((line, index) => (
-            <RevealLine direction={index % 2 === 0 ? "right" : "left"} key={line}>{line}</RevealLine>
-          ))}
-        </h2>
-      </div>
+      <h2 className="sr-only" id="archive-title">{villageArchive.title.replace("\n", " ")}</h2>
 
-      <div className="village-archive-grid">
-        {villageArchive.cards.map((card, index) => {
-          const alternateCard = villageArchive.cards[(index + 1) % villageArchive.cards.length] || card;
-          const imageSrc = String(card.imageSrc || "").trim();
-          const altImage = card.altImageSrc || alternateCard.imageSrc || imageSrc;
-          const hasMemberDetails = Boolean(String(card.label || "").trim() || String(card.year || "").trim());
-          const imageSize = getArchiveImageSize(card);
-          const imageSizes = getArchiveImageSizes(card);
-          return (
-            <figure
-              className={`village-archive-card village-archive-card-${String(card.size || "medium").split("-")[0]} village-archive-card-shape-${index % 4}${imageSrc ? "" : " village-archive-card-empty"}`}
-              key={card.id}
-              data-preview-target={`archive-${card.id}`}
-              ref={(node) => { cardRefs.current[index] = node; }}
-            >
-              <div className="village-archive-media">
-                {imageSrc ? (
-                  <>
-                    {canHover && (
-                      <div className="village-archive-media-layer village-archive-media-layer-alt" aria-hidden="true">
-                        <AdaptiveImage src={altImage} alt="" colorVariant={alternateCard.colorVariant} loading="lazy" imagePosition={alternateCard.imagePosition || card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
-                      </div>
-                    )}
-                    <div className="village-archive-media-layer village-archive-media-layer-front">
-                      <AdaptiveImage src={imageSrc} alt={card.imageAlt} colorVariant={card.colorVariant} loading="lazy" imagePosition={card.imagePosition} imageVariant={imageSize} sizes={imageSizes} />
-                    </div>
-                  </>
-                ) : (
-                  <div className="village-archive-empty-avatar" aria-label="Chưa có ảnh đoàn viên">
-                    <UserRound aria-hidden="true" />
-                  </div>
-                )}
-              </div>
-
-              {hasMemberDetails && (
-                <figcaption>
-                  {card.label && <span className="archive-card-label"><RevealLine direction={index % 2 === 0 ? "left" : "right"}>{card.label}</RevealLine></span>}
-                  {card.year && <strong className="archive-card-meta"><RevealLine direction={index % 2 === 0 ? "right" : "left"}>{card.year}</RevealLine></strong>}
-                </figcaption>
-              )}
-            </figure>
-          );
-        })}
-
+      <div
+        className={`youth-team-story is-direction-${storyDirection}${storyTextReady ? " is-text-ready" : ""}`}
+        role="region"
+        aria-label="Gương mặt Đoàn Thanh niên Mê Linh"
+        onPointerDown={handleStoryPointerDown}
+        onPointerUp={handleStoryPointerUp}
+      >
+        {leavingStoryIndex !== null && (
+          <ArchiveStorySlide
+            archive={villageArchive}
+            direction={storyDirection}
+            key={`leaving-${leavingStoryIndex}`}
+            storyCards={storyCards}
+            onNext={showNextStory}
+            onPrevious={showPreviousStory}
+            slideIndex={leavingStoryIndex}
+            state="leaving"
+          />
+        )}
+        <ArchiveStorySlide
+          archive={villageArchive}
+          direction={storyDirection}
+          key={`active-${activeStoryIndex}`}
+          storyCards={storyCards}
+          onNext={showNextStory}
+          onPrevious={showPreviousStory}
+          revealDelayOffset={storyTextDelayOffset}
+          slideIndex={activeStoryIndex}
+          state="active"
+        />
+        <div className="youth-team-story-progress" aria-label={`Màn ${activeStoryIndex + 1} trên ${storySlideCount}`}>
+          <span>{String(activeStoryIndex + 1).padStart(2, "0")}</span>
+          <i aria-hidden="true" />
+          <span>{String(storySlideCount).padStart(2, "0")}</span>
+        </div>
       </div>
 
       {/* Minimal Right-Aligned Action Bar (No Frame) */}
@@ -371,86 +566,120 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="youth-modal-form" noValidate>
-                <div className="youth-modal-header">
-                  <div className="youth-modal-meta">
-                    <span>01 / ĐĂNG KÝ</span>
-                    <YouthUnionPartyLogo size={18} aria-hidden="true" />
+                <aside className="youth-member-preview" aria-label="Xem trước thẻ đoàn viên">
+                  <div className="youth-member-preview-head">
+                    <span>ĐOÀN THANH NIÊN / MÊ LINH</span>
+                    <span>THẺ ĐOÀN VIÊN</span>
                   </div>
-                  <h4 id="youth-modal-title">THÊM THẺ ĐOÀN VIÊN</h4>
-                  <p id="youth-modal-description">Gửi thông tin để Ban quản trị kiểm tra trước khi hiển thị trong danh sách.</p>
-                </div>
-
-                {Object.keys(errors).length > 0 && (
-                  <div className="youth-form-error-summary" role="alert">
-                    <AlertCircle aria-hidden="true" />
-                    <span>Vui lòng kiểm tra lại các mục được đánh dấu.</span>
+                  <div className="youth-member-preview-photo">
+                    {imageSrc && !imageErrors.imageSrc ? (
+                      <img
+                        src={imageSrc}
+                        alt="Xem trước ảnh thẻ đoàn viên"
+                        onError={() => setImageErrors((current) => ({ ...current, imageSrc: true }))}
+                      />
+                    ) : (
+                      <div className="youth-member-preview-empty">
+                        <UserRound aria-hidden="true" />
+                        <span>ẢNH THẺ</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                  <div className="youth-member-preview-identity">
+                    <span>{YOUTH_MEMBER_ROLE}</span>
+                    <strong>{name.trim() || "Họ và tên"}</strong>
+                    <p>{[age.trim(), school].filter(Boolean).join(" • ") || "Năm sinh • Trường học"}</p>
+                  </div>
+                  <p className="youth-member-preview-note">Ảnh và thông tin này sẽ xuất hiện trên một trang đôi sau khi được duyệt.</p>
+                </aside>
 
-                <div className="youth-modal-section">
-                  <p className="youth-modal-section-title">THÔNG TIN ĐOÀN VIÊN</p>
-                  <div className="youth-form-grid">
-                    <div className="youth-form-group">
-                      <label htmlFor="youth-name">Họ và tên đoàn viên <b>*</b></label>
-                      <input id="youth-name" ref={errors.name ? firstErrorRef : null} type="text" maxLength={80} autoComplete="name" placeholder="Ví dụ: Nguyễn Văn An" value={name} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? "youth-name-error" : undefined} onChange={updateField(setName, "name")} />
-                      {errors.name && <span className="youth-field-error" id="youth-name-error">{errors.name}</span>}
+                <div className="youth-modal-form-pane">
+                  <div className="youth-modal-header">
+                    <div className="youth-modal-meta">
+                      <span>01 / ĐĂNG KÝ</span>
+                      <YouthUnionPartyLogo size={18} aria-hidden="true" />
                     </div>
-                    <div className="youth-form-group">
-                      <label htmlFor="youth-age">Năm sinh <b>*</b></label>
-                      <input id="youth-age" ref={errors.age && !errors.name ? firstErrorRef : null} type="text" maxLength={4} inputMode="numeric" autoComplete="bday-year" placeholder="Ví dụ: 2008" value={age} aria-invalid={Boolean(errors.age)} aria-describedby={errors.age ? "youth-age-error" : undefined} onChange={updateField(setAge, "age")} />
-                      {errors.age && <span className="youth-field-error" id="youth-age-error">{errors.age}</span>}
+                    <h4 id="youth-modal-title">ĐĂNG KÝ THẺ ĐOÀN VIÊN</h4>
+                    <p id="youth-modal-description">Hoàn thiện hồ sơ và ảnh chân dung để xuất hiện trong cuốn sách Gương mặt tuổi trẻ.</p>
+                  </div>
+
+                  {Object.values(errors).some(Boolean) && (
+                    <div className="youth-form-error-summary" role="alert">
+                      <AlertCircle aria-hidden="true" />
+                      <span>Vui lòng kiểm tra lại các mục được đánh dấu.</span>
                     </div>
+                  )}
+
+                  <div className="youth-modal-section">
+                    <p className="youth-modal-section-title">THÔNG TIN HỒ SƠ</p>
+                    <div className="youth-form-grid">
+                      <div className="youth-form-group">
+                        <label htmlFor="youth-name">Họ và tên đoàn viên <b>*</b></label>
+                        <input id="youth-name" ref={errors.name ? firstErrorRef : null} type="text" maxLength={80} autoComplete="name" placeholder="Ví dụ: Nguyễn Văn An" value={name} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? "youth-name-error" : undefined} onChange={updateField(setName, "name")} />
+                        {errors.name && <span className="youth-field-error" id="youth-name-error">{errors.name}</span>}
+                      </div>
+                      <div className="youth-form-group">
+                        <label htmlFor="youth-age">Năm sinh <b>*</b></label>
+                        <input id="youth-age" ref={errors.age && !errors.name ? firstErrorRef : null} type="text" maxLength={4} inputMode="numeric" autoComplete="bday-year" placeholder="Ví dụ: 2008" value={age} aria-invalid={Boolean(errors.age)} aria-describedby={errors.age ? "youth-age-error" : undefined} onChange={updateField(setAge, "age")} />
+                        {errors.age && <span className="youth-field-error" id="youth-age-error">{errors.age}</span>}
+                      </div>
+                      <div className="youth-form-group youth-form-full">
+                        <label htmlFor="youth-school">Trường học <b>*</b></label>
+                        <select id="youth-school" ref={errors.school && !errors.name && !errors.age ? firstErrorRef : null} value={school} aria-invalid={Boolean(errors.school)} aria-describedby={errors.school ? "youth-school-error" : undefined} onChange={updateField(setSchool, "school")}>
+                          <option value="">Chọn trường học</option>
+                          {YOUTH_SCHOOL_OPTIONS.map((option) => <option value={option} key={option}>{option}</option>)}
+                        </select>
+                        {errors.school && <span className="youth-field-error" id="youth-school-error">{errors.school}</span>}
+                      </div>
+                      <div className="youth-form-role youth-form-full">
+                        <UserRound aria-hidden="true" />
+                        <span><small>Vai trò đăng ký</small><strong>{YOUTH_MEMBER_ROLE}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="youth-modal-section youth-modal-photo-section">
+                    <p className="youth-modal-section-title">ẢNH THẺ TRÊN MẶT SÁCH</p>
                     <div className="youth-form-group youth-form-full">
-                      <label htmlFor="youth-school">Trường học <b>*</b></label>
-                      <select id="youth-school" ref={errors.school && !errors.name && !errors.age ? firstErrorRef : null} value={school} aria-invalid={Boolean(errors.school)} aria-describedby={errors.school ? "youth-school-error" : undefined} onChange={updateField(setSchool, "school")}>
-                        <option value="">Chọn trường học</option>
-                        {YOUTH_SCHOOL_OPTIONS.map((option) => <option value={option} key={option}>{option}</option>)}
-                      </select>
-                      {errors.school && <span className="youth-field-error" id="youth-school-error">{errors.school}</span>}
-                    </div>
-                    <div className="youth-form-group youth-form-full">
-                      <label htmlFor="youth-role">Vai trò</label>
-                      <input id="youth-role" type="text" value={YOUTH_MEMBER_ROLE} readOnly />
+                      <label htmlFor="youth-image-src">Ảnh chân dung <b>*</b></label>
+                      <span className="youth-field-hint" id="youth-image-hint">Chọn ảnh rõ mặt, khung dọc; nhận JPG, PNG, WebP hoặc AVIF tối đa 4 MB.</span>
+                      <div className={`youth-photo-actions${errors.imageSrc ? " is-invalid" : ""}`}>
+                        <label className="youth-file-upload-btn">
+                          <Upload className="youth-upload-icon" aria-hidden="true" />
+                          <span>{imageSrc ? "Đổi ảnh thẻ" : "Chọn ảnh thẻ"}</span>
+                          <input type="file" accept={MEDIA_ACCEPT} onChange={(event) => handleFileChange(event, setImageSrc, setImageFile, "imageSrc")} hidden />
+                        </label>
+                        {imageSrc && (
+                          <button type="button" className="youth-photo-clear" onClick={() => clearImage(setImageSrc, setImageFile, "imageSrc")}>
+                            <Trash2 aria-hidden="true" />
+                            <span>Xóa ảnh</span>
+                          </button>
+                        )}
+                      </div>
+                      <div className="youth-photo-url-divider"><span>HOẶC DÁN ĐƯỜNG DẪN ẢNH</span></div>
+                      <input
+                        id="youth-image-src"
+                        ref={errors.imageSrc && !errors.name && !errors.age && !errors.school ? firstErrorRef : null}
+                        type="url"
+                        placeholder="https://..."
+                        value={imageFile ? "" : imageSrc}
+                        aria-invalid={Boolean(errors.imageSrc)}
+                        aria-describedby={errors.imageSrc ? "youth-image-hint youth-image-error" : "youth-image-hint"}
+                        onChange={updateImageField(setImageSrc, setImageFile, "imageSrc")}
+                      />
+                      {errors.imageSrc && <span className="youth-field-error" id="youth-image-error">{errors.imageSrc}</span>}
                     </div>
                   </div>
-                </div>
 
-                <div className="youth-modal-section">
-                  <p className="youth-modal-section-title">ẢNH THẺ</p>
-                  <div className="youth-form-group youth-form-full">
-                    <label htmlFor="youth-image-src">Ảnh chính <b>*</b></label>
-                    <span className="youth-field-hint">Dùng ảnh chân dung rõ mặt, dán đường dẫn hoặc chọn tệp tối đa 4 MB.</span>
-                    <div className={`youth-image-input-box${errors.imageSrc ? " is-invalid" : ""}`}>
-                      <input id="youth-image-src" type="url" placeholder="Dán link ảnh https://..." value={imageSrc} aria-invalid={Boolean(errors.imageSrc)} aria-describedby={errors.imageSrc ? "youth-image-error" : undefined} onChange={updateImageField(setImageSrc, setImageFile, "imageSrc")} />
-                      <label className="youth-file-upload-btn">
-                        <Upload className="youth-upload-icon" aria-hidden="true" />
-                        <span>Chọn ảnh</span>
-                        <input type="file" accept={MEDIA_ACCEPT} onChange={(event) => handleFileChange(event, setImageSrc, setImageFile, "imageSrc")} hidden />
-                      </label>
-                    </div>
-                    {imageSrc && !imageErrors.imageSrc && <div className="youth-img-preview-row"><img src={imageSrc} alt="Xem trước ảnh chính" className="youth-preview-thumb" onError={() => setImageErrors((current) => ({ ...current, imageSrc: true }))} /><span className="youth-preview-text">Đã chọn ảnh chính</span><button type="button" className="youth-preview-remove" onClick={() => clearImage(setImageSrc, setImageFile, "imageSrc")} aria-label="Xóa ảnh chính"><Trash2 aria-hidden="true" /></button></div>}
-                    {errors.imageSrc && <span className="youth-field-error" id="youth-image-error">{errors.imageSrc}</span>}
+                  <div className="youth-modal-actions">
+                    <button type="button" className="youth-btn-cancel" onClick={closeModal}>Hủy bỏ</button>
+                    <button type="submit" className="youth-btn-submit" disabled={isSubmitting}>
+                      <span>{isSubmitting ? "ĐANG GỬI..." : "GỬI ĐĂNG KÝ"}</span>
+                      {!isSubmitting && (
+                        <Send className="youth-upload-icon" aria-hidden="true" />
+                      )}
+                    </button>
                   </div>
-
-                  <div className="youth-form-group youth-form-full">
-                    <label htmlFor="youth-alt-image-src">Ảnh hover <span>(tùy chọn)</span></label>
-                    <span className="youth-field-hint">Ảnh này xuất hiện khi rê chuột trên thẻ. Có thể bỏ trống.</span>
-                    <div className={`youth-image-input-box${errors.altImageSrc ? " is-invalid" : ""}`}>
-                      <input id="youth-alt-image-src" type="url" placeholder="Dán link ảnh phụ hoặc chọn tệp" value={altImageSrc} aria-invalid={Boolean(errors.altImageSrc)} aria-describedby={errors.altImageSrc ? "youth-alt-image-error" : undefined} onChange={updateImageField(setAltImageSrc, setAltImageFile, "altImageSrc")} />
-                      <label className="youth-file-upload-btn">
-                        <Upload className="youth-upload-icon" aria-hidden="true" />
-                        <span>Chọn ảnh</span>
-                        <input type="file" accept={MEDIA_ACCEPT} onChange={(event) => handleFileChange(event, setAltImageSrc, setAltImageFile, "altImageSrc")} hidden />
-                      </label>
-                    </div>
-                    {altImageSrc && !imageErrors.altImageSrc && <div className="youth-img-preview-row"><img src={altImageSrc} alt="Xem trước ảnh hover" className="youth-preview-thumb" onError={() => setImageErrors((current) => ({ ...current, altImageSrc: true }))} /><span className="youth-preview-text">Đã chọn ảnh hover</span><button type="button" className="youth-preview-remove" onClick={() => clearImage(setAltImageSrc, setAltImageFile, "altImageSrc")} aria-label="Xóa ảnh hover"><Trash2 aria-hidden="true" /></button></div>}
-                    {errors.altImageSrc && <span className="youth-field-error" id="youth-alt-image-error">{errors.altImageSrc}</span>}
-                  </div>
-                </div>
-
-                <div className="youth-modal-actions">
-                  <button type="button" className="youth-btn-cancel" onClick={closeModal}>Hủy bỏ</button>
-                  <button type="submit" className="youth-btn-submit" disabled={isSubmitting}>GỬI ĐĂNG KÝ CHO ADMIN DUYỆT</button>
                 </div>
               </form>
             )}

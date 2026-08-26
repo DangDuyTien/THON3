@@ -6,6 +6,10 @@ import { getMotionMetrics } from "./perf-hooks.js";
  */
 
 export const PERF_BUDGET = Object.freeze({
+  frameDeadlineMs: Object.freeze({
+    hz60: 1000 / 60,
+    hz120: 1000 / 120,
+  }),
   desktop: Object.freeze({
     cls: 0.1,
     dynamicLayers: 12,
@@ -21,7 +25,7 @@ export const PERF_BUDGET = Object.freeze({
     cls: 0.1,
     dynamicLayers: 8,
     fcp: 2200,
-    frameMs: 20,
+    frameMs: 1000 / 60,
     inp: 200,
     lcp: 2500,
     longTask: 80,
@@ -45,12 +49,17 @@ const metrics = {
   cls: null,
   fcp: null,
   frameBudgetViolations: 0,
+  frameBudgetViolations60: 0,
+  frameBudgetViolations120: 0,
   frameCount: 0,
   inp: null,
   lcp: null,
   longTasks: [],
   scrollSessions: [],
   ttfb: null,
+  observedRefreshHz: null,
+  p95FrameMs: 0,
+  medianFrameMs: 0,
   worstFrameMs: 0,
 };
 
@@ -194,10 +203,25 @@ function resetFrameSession() {
   frameSession = {
     droppedFrames: 0,
     frameCount: 0,
+    frameTimes: [],
+    framesOver60HzDeadline: 0,
+    framesOver120HzDeadline: 0,
     startedAt: performance.now(),
     totalMs: 0,
     worstFrameMs: 0,
   };
+}
+
+function percentile(values, rank) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.ceil(rank * sorted.length) - 1);
+  return sorted[Math.max(index, 0)];
+}
+
+function estimateRefreshHz(frameTimes) {
+  const median = percentile(frameTimes, 0.5);
+  return median ? Number((1000 / median).toFixed(1)) : null;
 }
 
 function measureFrame(now) {
@@ -208,18 +232,15 @@ function measureFrame(now) {
 
   const delta = now - frameLastTime;
   frameLastTime = now;
-  const budget = getPerformanceBudget();
-
   // Bỏ qua frame dau va frame bi ngat vi tab/background.
   if (delta > 0 && delta < 200) {
     frameSession.frameCount += 1;
     frameSession.totalMs += delta;
     frameSession.worstFrameMs = Math.max(frameSession.worstFrameMs, delta);
+    frameSession.frameTimes.push(delta);
 
-    if (delta > budget.frameMs) {
-      frameSession.droppedFrames += 1;
-      metrics.frameBudgetViolations += 1;
-    }
+    if (delta > PERF_BUDGET.frameDeadlineMs.hz60) frameSession.framesOver60HzDeadline += 1;
+    if (delta > PERF_BUDGET.frameDeadlineMs.hz120) frameSession.framesOver120HzDeadline += 1;
   }
 
   frameId = window.requestAnimationFrame(measureFrame);
@@ -244,14 +265,29 @@ function stopFrameMeasurement() {
   }
 
   if (frameSession?.frameCount) {
+    const observedRefreshHz = estimateRefreshHz(frameSession.frameTimes);
+    const uses120HzDeadline = observedRefreshHz >= 90;
     const session = {
       averageFrameMs: Number((frameSession.totalMs / frameSession.frameCount).toFixed(2)),
-      droppedFrames: frameSession.droppedFrames,
+      droppedFrames: uses120HzDeadline
+        ? frameSession.framesOver120HzDeadline
+        : frameSession.framesOver60HzDeadline,
       frameCount: frameSession.frameCount,
+      framesOver60HzDeadline: frameSession.framesOver60HzDeadline,
+      framesOver120HzDeadline: frameSession.framesOver120HzDeadline,
+      medianFrameMs: Number(percentile(frameSession.frameTimes, 0.5).toFixed(2)),
+      p95FrameMs: Number(percentile(frameSession.frameTimes, 0.95).toFixed(2)),
+      observedRefreshHz,
       worstFrameMs: Number(frameSession.worstFrameMs.toFixed(2)),
     };
 
     metrics.frameCount += session.frameCount;
+    metrics.frameBudgetViolations += session.droppedFrames;
+    metrics.frameBudgetViolations60 += session.framesOver60HzDeadline;
+    metrics.frameBudgetViolations120 += session.framesOver120HzDeadline;
+    metrics.observedRefreshHz = session.observedRefreshHz;
+    metrics.medianFrameMs = session.medianFrameMs;
+    metrics.p95FrameMs = session.p95FrameMs;
     metrics.worstFrameMs = Math.max(metrics.worstFrameMs, session.worstFrameMs);
     metrics.scrollSessions.push(session);
     if (metrics.scrollSessions.length > MAX_SCROLL_SESSIONS) metrics.scrollSessions.shift();
@@ -320,7 +356,12 @@ function sendRumSummary() {
       averageFrameMs: Number(averageFrameMs().toFixed(2)),
       dynamicLayerPeak: getMotionMetrics().dynamicLayerPeak,
       frameBudgetViolations: metrics.frameBudgetViolations,
+      frameBudgetViolations60: metrics.frameBudgetViolations60,
+      frameBudgetViolations120: metrics.frameBudgetViolations120,
       frameCount: metrics.frameCount,
+      medianFrameMs: metrics.medianFrameMs,
+      observedRefreshHz: metrics.observedRefreshHz,
+      p95FrameMs: metrics.p95FrameMs,
       worstFrameMs: metrics.worstFrameMs,
     },
   });
@@ -414,6 +455,11 @@ export function getPerfMetrics() {
     ...metrics,
     ...getMotionMetrics(),
     averageFrameMs: averageFrameMs(),
+    frameBudgetViolations60: metrics.frameBudgetViolations60,
+    frameBudgetViolations120: metrics.frameBudgetViolations120,
+    medianFrameMs: metrics.medianFrameMs,
+    observedRefreshHz: metrics.observedRefreshHz,
+    p95FrameMs: metrics.p95FrameMs,
     longTasks: [...metrics.longTasks],
     sceneUpdates: Object.fromEntries(
       Object.entries(getMotionMetrics().sceneUpdates).map(([name, item]) => [name, { ...item }]),
