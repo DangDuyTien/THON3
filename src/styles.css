@@ -4571,6 +4571,28 @@ button:hover .closing-kinetic-green {
   to { transform: translate3d(0, 100%, 0); }
 }
 
+@keyframes youth-team-page-pull-down-mobile {
+  from {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@keyframes youth-team-page-pull-up-mobile {
+  from {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    clip-path: inset(100% 0 0 0);
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
 .village-archive-section {
   --archive-accent: #53d9ff;
   --archive-accent-ink: #03224c;
@@ -5028,6 +5050,10 @@ button:hover .closing-kinetic-green {
   .youth-team-story,
   .youth-team-story-panel { min-height: max(760px, 100svh); }
   .youth-team-story-panel { grid-template-columns: 1fr; grid-template-rows: minmax(330px, 45svh) minmax(430px, 55svh); }
+  .youth-team-story-panel.is-leaving .youth-team-story-media,
+  .youth-team-story-panel.is-leaving .youth-team-story-copy { animation-name: youth-team-page-pull-down-mobile; }
+  .youth-team-story-panel.is-direction-previous.is-leaving .youth-team-story-media,
+  .youth-team-story-panel.is-direction-previous.is-leaving .youth-team-story-copy { animation-name: youth-team-page-pull-up-mobile; }
   .youth-team-story-copy,
   .youth-team-story-media { min-height: 0; }
   .youth-team-story-media,

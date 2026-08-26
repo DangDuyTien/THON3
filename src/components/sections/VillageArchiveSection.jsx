@@ -259,6 +259,18 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   }, [prewarmArchiveMedia]);
 
   useEffect(() => {
+    if (!storyTextReady || !window.matchMedia("(max-width: 680px)").matches) return;
+    const nextCard = storyCards[activeStoryIndex];
+    if (!nextCard?.imageSrc) return;
+    prewarmCmsImage(
+      nextCard.imageSrc,
+      getArchiveImageSize(nextCard),
+      getArchiveImageSizes(nextCard),
+      nextCard.colorVariant,
+    );
+  }, [activeStoryIndex, storyCards, storyTextReady]);
+
+  useEffect(() => {
     if (reducedMotion) {
       setStoryTextReady(true);
       return undefined;
