@@ -3464,6 +3464,16 @@ img {
   }
 }
 
+body:has(#home) .critical-wordmark-name,
+.app-shell:has(#home) .site-header:not(.is-menu-open) .wordmark-name {
+  color: var(--ink) !important;
+}
+
+body:has(#home) .critical-wordmark-tagline,
+.app-shell:has(#home) .site-header:not(.is-menu-open) .wordmark-tagline {
+  color: rgba(11, 26, 48, 0.72) !important;
+}
+
 @media (max-width: 680px) {
   .site-header {
     padding: 17px 16px;
