@@ -4775,6 +4775,34 @@ button:hover .closing-kinetic-green {
   width: 100%;
 }
 
+/* Member slides: contain the portrait in a framed card instead of full-bleed cover */
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture,
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media > img {
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.18);
+  height: auto;
+  max-height: min(60vh, 520px);
+  overflow: hidden;
+  width: auto;
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media img {
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  height: 100%;
+  max-height: min(60vh, 520px);
+  object-fit: cover;
+  width: 100%;
+}
+
 .youth-team-story-placeholder {
   align-items: center;
   display: flex;
@@ -5063,6 +5091,10 @@ button:hover .closing-kinetic-green {
   .youth-team-story-copy { justify-content: flex-start; padding: 50px 22px 94px; }
   .youth-team-story-back { left: 12px; top: 10px; }
   .youth-team-story-media-index { bottom: 18px; left: 18px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media { padding: 24px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture,
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media > img,
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media img { max-height: min(38svh, 300px); border-radius: 8px; }
   .youth-team-story-placeholder { gap: 14px; padding: 30px; }
   .youth-team-story-placeholder .youth-party-logo-img { height: 112px; width: 112px; }
   .youth-team-story-eyebrow { font-size: 9px; margin-bottom: 18px; }
