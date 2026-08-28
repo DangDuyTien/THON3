@@ -7,7 +7,7 @@ import { getSession } from "../lib/auth-api.js";
 const SiteContentContext = createContext(null);
 const BOOT_RETRY_DELAY_MS = 2000;
 const BOOT_REQUEST_TIMEOUT_MS = 12000;
-const BOOT_TIMEOUT_MS = 60000;
+const BOOT_TIMEOUT_MS = 90000;
 
 function waitForRetry(signal) {
   return new Promise((resolve) => {
@@ -96,7 +96,7 @@ export function SiteContentProvider({ children }) {
         : "waiting";
       setConnectionStatus({ attempt: requestAttempt, cycle, phase });
       setError(controller.signal.aborted
-        ? "Máy chủ chưa phản hồi sau 60 giây. Hệ thống sẽ tự kết nối lại."
+        ? "Máy chủ chưa phản hồi sau 90 giây. Hệ thống sẽ tự kết nối lại."
         : lastError?.message || "Không thể tải nội dung từ máy chủ.");
       setLoading(false);
     };

@@ -35,12 +35,7 @@ const allowedOrigins = new Set([
   ...String(process.env.CORS_ORIGIN || "").split(",").map((origin) => origin.trim()).filter(Boolean),
 ]);
 
-await pool.query("SELECT 1").catch((error) => {
-  console.warn(`MySQL chưa kết nối: ${error.message}`);
-});
-const dummyPasswordHash = await bcrypt.hash("invalid-login-password", 12);
-pool.query("DELETE FROM auth_rate_limits WHERE expires_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY)").catch(() => {});
-pool.query("DELETE FROM auth_challenges WHERE expires_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 7 DAY)").catch(() => {});
+const dummyPasswordHashPromise = bcrypt.hash("invalid-login-password", 12);
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -107,7 +102,7 @@ app.post("/api/auth/login", async (req, res, next) => {
     await assertAuthAllowed(req, email, "login");
     const [rows] = await pool.execute("SELECT id, email, password_hash, display_name, role, session_version, email_otp_enabled, disabled_at FROM users WHERE email = ? LIMIT 1", [email]);
     const user = rows[0];
-    const passwordMatches = password.length <= 128 && await bcrypt.compare(password, user?.password_hash || dummyPasswordHash);
+    const passwordMatches = password.length <= 128 && await bcrypt.compare(password, user?.password_hash || await dummyPasswordHashPromise);
     if (!user || user.disabled_at || !passwordMatches) {
       await recordAuthFailure(req, email, "login");
       return res.status(401).json({ error: "Tài khoản hoặc mật khẩu không chính xác." });
@@ -615,4 +610,11 @@ app.use((error, _req, res, _next) => {
   return res.status(status).json({ error: status >= 500 && !error.expose ? "Máy chủ đang gặp sự cố. Hãy thử lại sau." : (error.message || "Yêu cầu không hợp lệ.") });
 });
 
-app.listen(port, () => console.log(`Thôn API listening on http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`Thôn API listening on http://localhost:${port}`);
+  pool.query("SELECT 1").catch((error) => {
+    console.warn(`MySQL chưa kết nối: ${error.message}`);
+  });
+  pool.query("DELETE FROM auth_rate_limits WHERE expires_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY)").catch(() => {});
+  pool.query("DELETE FROM auth_challenges WHERE expires_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 7 DAY)").catch(() => {});
+});

@@ -38,14 +38,14 @@ function getConnectionEvent({ attempt = 0, code = "", cycle = 1, payloadCharacte
 
 export { SiteLoaderMark as LoaderMark };
 export default function PageLoader({ connectionStatus, contentError = "", contentReady = true, onExitComplete, onRetry }) {
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(90);
   const [drawComplete, setDrawComplete] = useState(false);
   const [drawCycle, setDrawCycle] = useState(0);
   const [mediaReady, setMediaReady] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [running, setRunning] = useState(false);
   const [traceLines, setTraceLines] = useState([]);
-  const countdownDeadlineRef = useRef(Date.now() + 60000);
+  const countdownDeadlineRef = useRef(Date.now() + 90000);
   const exitCompleteRef = useRef(false);
   const initialTraceRef = useRef(false);
   const lastConnectionEventRef = useRef("");
@@ -163,8 +163,8 @@ export default function PageLoader({ connectionStatus, contentError = "", conten
     setCountdown(Math.ceil(AUTO_RETRY_DELAY_MS / 1000));
     retryTimerRef.current = window.setTimeout(() => {
       retryTimerRef.current = null;
-      countdownDeadlineRef.current = Date.now() + 60000;
-      setCountdown(60);
+      countdownDeadlineRef.current = Date.now() + 90000;
+      setCountdown(90);
       setMediaReady(false);
       onRetry();
     }, AUTO_RETRY_DELAY_MS);
@@ -211,8 +211,8 @@ export default function PageLoader({ connectionStatus, contentError = "", conten
       window.clearTimeout(retryTimerRef.current);
       retryTimerRef.current = null;
     }
-    countdownDeadlineRef.current = Date.now() + 60000;
-    setCountdown(60);
+    countdownDeadlineRef.current = Date.now() + 90000;
+    setCountdown(90);
     setMediaReady(false);
     onRetry?.();
   };
