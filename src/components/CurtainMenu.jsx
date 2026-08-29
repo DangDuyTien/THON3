@@ -49,19 +49,23 @@ export default function CurtainMenu({ isOpen, onClose }) {
       setVisible(true);
       setAnimating(true);
       let start = null;
+      let curveFrame = 0;
       const duration = 800;
 
       const animateOpen = (timestamp) => {
         if (!start) start = timestamp;
         const elapsed = timestamp - start;
         const p = Math.min(elapsed / duration, 1);
-        
+
         const easeP = 1 - Math.pow(1 - p, 3);
         const bulge = Math.sin(p * Math.PI) * 28;
         const currentY = easeP * 100;
         const curveY = Math.min(currentY + bulge, 100);
 
-        updateCurve(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
+        curveFrame += 1;
+        if (curveFrame % 2 === 0 || p === 1) {
+          updateCurve(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
+        }
 
         if (p < 1) {
           rafRef.current = requestAnimationFrame(animateOpen);
@@ -75,19 +79,23 @@ export default function CurtainMenu({ isOpen, onClose }) {
     } else if (visible) {
       setAnimating(true);
       let start = null;
+      let curveFrame = 0;
       const duration = 650;
 
       const animateClose = (timestamp) => {
         if (!start) start = timestamp;
         const elapsed = timestamp - start;
         const p = Math.min(elapsed / duration, 1);
-        
+
         const easeP = Math.pow(p, 3);
         const currentY = (1 - easeP) * 100;
         const bulge = Math.sin(p * Math.PI) * 22;
         const curveY = Math.max(currentY - bulge, 0);
 
-        updateCurve(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
+        curveFrame += 1;
+        if (curveFrame % 2 === 0 || p === 1) {
+          updateCurve(`M 0 0 L 100 0 L 100 ${currentY} Q 50 ${curveY} 0 ${currentY} Z`);
+        }
 
         if (p < 1) {
           rafRef.current = requestAnimationFrame(animateClose);

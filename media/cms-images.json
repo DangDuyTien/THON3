@@ -14,11 +14,21 @@
       }
     },
     "variants": {
-      "hero-home": { "sources": { "webp": { "640": "/assets/village-hero-hero-home-640.webp", "960": "/assets/village-hero-hero-home-960.webp", "1440": "/assets/village-hero-hero-home-1440.webp", "1920": "/assets/village-hero-hero-home-1920.webp" } } },
+      "hero-home": {
+        "sources": {
+          "avif": { "640": "/assets/village-hero-hero-home-640.avif", "960": "/assets/village-hero-hero-home-960.avif", "1440": "/assets/village-hero-hero-home-1440.avif", "1920": "/assets/village-hero-hero-home-1920.avif" },
+          "webp": { "640": "/assets/village-hero-hero-home-640.webp", "960": "/assets/village-hero-hero-home-960.webp", "1440": "/assets/village-hero-hero-home-1440.webp", "1920": "/assets/village-hero-hero-home-1920.webp" }
+        }
+      },
       "hero-water": { "sources": { "webp": { "640": "/assets/village-hero-hero-water-640.webp", "960": "/assets/village-hero-hero-water-960.webp", "1440": "/assets/village-hero-hero-water-1440.webp", "1920": "/assets/village-hero-hero-water-1920.webp" } } },
       "hero-road": { "sources": { "webp": { "640": "/assets/village-hero-hero-road-640.webp", "960": "/assets/village-hero-hero-road-960.webp", "1440": "/assets/village-hero-hero-road-1440.webp", "1920": "/assets/village-hero-hero-road-1920.webp" } } },
       "hero-field": { "sources": { "webp": { "640": "/assets/village-hero-hero-field-640.webp", "960": "/assets/village-hero-hero-field-960.webp", "1440": "/assets/village-hero-hero-field-1440.webp", "1920": "/assets/village-hero-hero-field-1920.webp" } } },
-      "story-message": { "sources": { "webp": { "640": "/assets/village-hero-story-message-640.webp", "960": "/assets/village-hero-story-message-960.webp", "1440": "/assets/village-hero-story-message-1440.webp", "1920": "/assets/village-hero-story-message-1920.webp" } } },
+      "story-message": {
+        "sources": {
+          "avif": { "640": "/assets/village-hero-story-message-640.avif", "960": "/assets/village-hero-story-message-960.avif", "1440": "/assets/village-hero-story-message-1440.avif", "1920": "/assets/village-hero-story-message-1920.avif" },
+          "webp": { "640": "/assets/village-hero-story-message-640.webp", "960": "/assets/village-hero-story-message-960.webp", "1440": "/assets/village-hero-story-message-1440.webp", "1920": "/assets/village-hero-story-message-1920.webp" }
+        }
+      },
       "gallery-mono": { "sources": { "webp": { "640": "/assets/village-hero-gallery-mono-640.webp", "960": "/assets/village-hero-gallery-mono-960.webp", "1440": "/assets/village-hero-gallery-mono-1440.webp", "1920": "/assets/village-hero-gallery-mono-1920.webp" } } },
       "gallery-vivid": { "sources": { "webp": { "640": "/assets/village-hero-gallery-vivid-640.webp", "960": "/assets/village-hero-gallery-vivid-960.webp", "1440": "/assets/village-hero-gallery-vivid-1440.webp", "1920": "/assets/village-hero-gallery-vivid-1920.webp" } } },
       "gallery-warm": { "sources": { "webp": { "640": "/assets/village-hero-gallery-warm-640.webp", "960": "/assets/village-hero-gallery-warm-960.webp", "1440": "/assets/village-hero-gallery-warm-1440.webp", "1920": "/assets/village-hero-gallery-warm-1920.webp" } } },
@@ -32,7 +42,7 @@
       "update-warm": { "sources": { "webp": { "640": "/assets/village-hero-update-warm-640.webp", "960": "/assets/village-hero-update-warm-960.webp", "1440": "/assets/village-hero-update-warm-1440.webp", "1920": "/assets/village-hero-update-warm-1920.webp" } } }
     },
     "placeholder": "#2a3b33",
-    "version": "20260804"
+    "version": "20260830"
   },
   {
     "id": "camp-gate-whole",

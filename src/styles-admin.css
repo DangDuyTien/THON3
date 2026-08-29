@@ -525,6 +525,17 @@
   gap: 8px;
 }
 
+.admin-main-eyebrow-separator {
+  color: #8b998f;
+}
+
+.admin-main-description {
+  color: #5f6f64;
+  font-size: 12px;
+  margin: 8px 0 0;
+  max-width: 68ch;
+}
+
 .admin-main-eyebrow::before {
   background: var(--lime);
   content: "";
@@ -2328,11 +2339,18 @@
   gap: 10px;
   grid-column: 1 / -1;
   padding: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.admin-image-editor:focus-within {
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--lime);
 }
 .admin-image-editor-heading, .admin-image-focal-title, .admin-image-meta { align-items: center; display: flex; }
 .admin-image-editor-heading { justify-content: space-between; }
 .admin-image-editor-heading small { color: #718078; display: block; font-size: 10px; margin-top: 4px; }
 .admin-image-fallback-badge { background: rgba(21, 39, 31, 0.08); color: #66746b; font-family: var(--mono); font-size: 8px; padding: 5px 7px; }
+.admin-image-crop.is-fallback img, .admin-image-crop.is-fallback picture img { filter: grayscale(0.35) contrast(0.96); }
+.admin-image-fallback-overlay { align-items: center; background: rgba(248, 250, 245, 0.92); border: 1px solid rgba(21, 39, 31, 0.28); color: #4c5a51; display: flex; font-family: var(--mono); font-size: 8px; gap: 4px; left: 6px; letter-spacing: 0.04em; padding: 3px 7px; pointer-events: none; position: absolute; text-transform: uppercase; top: 6px; }
 .admin-image-editor-main { align-items: start; display: grid; gap: 12px; grid-template-columns: minmax(190px, 300px) minmax(180px, 1fr); }
 .admin-image-crop { aspect-ratio: var(--admin-image-aspect-ratio, 16 / 9); background: #dce3d9; cursor: crosshair; overflow: hidden; position: relative; }
 .admin-image-crop img, .admin-image-crop picture { display: block; height: 100%; width: 100%; }
@@ -6285,6 +6303,8 @@ body.youth-modal-open {
 .admin-login-light-curtain .curtain-menu-content {
   background: linear-gradient(135deg, #f4f8fc 0%, #e6f0fa 35%, #0066ff 100%) !important;
   color: #0b1a30;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .admin-login-light-curtain .curtain-brand-lando span:first-child {

@@ -27,7 +27,6 @@ const publicSectionLoaders = [
 ];
 const CommunityPartnersSection = lazy(loadCommunityPartnersSection);
 const ClosingSection = lazy(loadClosingSection);
-const PageContour = lazy(() => import("./components/PageContour.jsx"));
 const PageTransition = lazy(() => import("./components/PageTransition.jsx"));
 const SeasonsSection = lazy(loadSeasonsSection);
 const VisitChoicesSection = lazy(loadVisitChoicesSection);
@@ -130,7 +129,6 @@ function DeferredSection({ Component, fallbackClassName, sectionId, eager = fals
 function PublicHome({ previewMode = false, heroRevealReady = false }) {
   const { content, replaceContent } = useSiteContent();
   const [menuOpen, setMenuOpen] = useState(false);
-  const contourCanvasRef = useRef(null);
   const compactViewport = typeof window !== "undefined"
     && window.matchMedia("(max-width: 680px)").matches;
   const systemReducedMotion = useReducedMotion();
@@ -175,6 +173,14 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
 
   useEffect(() => {
     if (!previewMode) return undefined;
+    const lastFlashRef = { section: "", focus: "" };
+    const flashElement = (element) => {
+      if (!element) return;
+      element.classList.remove("preview-focus-flash");
+      void element.offsetWidth;
+      element.classList.add("preview-focus-flash");
+      window.setTimeout(() => element.classList.remove("preview-focus-flash"), 1700);
+    };
     const handleMessage = (event) => {
       if (event.origin !== window.location.origin || event.source !== window.parent) return;
       if (event.data?.source !== "thon3-admin-preview") return;
@@ -192,6 +198,14 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
         if (section || focus || attempts >= 24) {
           section?.scrollIntoView({ behavior: "auto", block: "start" });
           focus?.scrollIntoView({ behavior: "auto", block: "center" });
+          if (lastFlashRef.section !== target) {
+            lastFlashRef.section = target;
+            flashElement(section);
+          }
+          if (lastFlashRef.focus !== focusTarget) {
+            lastFlashRef.focus = focusTarget;
+            flashElement(focus);
+          }
           return;
         }
         attempts += 1;
@@ -216,17 +230,12 @@ function PublicHome({ previewMode = false, heroRevealReady = false }) {
 
   return (
     <div className={`app-shell ${getSiteAppearanceClassName(appearance)}`} style={getSiteAppearanceStyle(appearance)}>
-      {!reducedMotion && (
-        <Suspense fallback={null}>
-          <PageContour canvasRef={contourCanvasRef} reducedMotion={reducedMotion} />
-        </Suspense>
-      )}
       <a className="skip-link" href="#noi-dung">Đi tới nội dung chính</a>
       <Header menuOpen={menuOpen} onToggleMenu={toggleMenu} onCloseMenu={closeMenu} />
 
       <main id="noi-dung">
         <Hero reducedMotion={reducedMotion} heroRevealReady={heroRevealReady} />
-        <StoryMessageSection contourCanvasRef={contourCanvasRef} reducedMotion={reducedMotion} />
+        <StoryMessageSection reducedMotion={reducedMotion} />
         <ExploreStatementSection reducedMotion={reducedMotion} />
         <DeferredSection
           Component={SeasonsSection}
@@ -426,7 +435,7 @@ function AppContent() {
         <PageLoader
           connectionStatus={connectionStatus}
           contentError={error}
-          contentReady={!loading && !error}
+          contentReady={!loading}
           onExitComplete={handleLoaderExit}
           onRetry={retryLoad}
         />

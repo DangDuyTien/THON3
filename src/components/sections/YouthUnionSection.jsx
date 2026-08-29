@@ -54,6 +54,7 @@ export default memo(function YouthUnionSection({ reducedMotion }) {
                   src="/assets/youth-union-hero.jpg"
                   alt="Biểu trưng 3D Đoàn Thanh Niên Việt Nam Xã Mê Linh"
                   className="youth-union-emblem-img"
+                  decoding="async"
                   loading="lazy"
                 />
                 <div className="youth-union-emblem-glow" />

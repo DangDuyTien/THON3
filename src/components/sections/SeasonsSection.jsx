@@ -8,10 +8,6 @@ import { useSectionProgress } from "../../hooks/useMotion.js";
 import { prewarmCmsImage } from "../../media.js";
 import { smoothStep } from "../../utils/math.js";
 
-const SEASON_BASE_BACKGROUND = [10, 18, 32];
-const SEASON_GALLERY_BACKGROUND = [5, 28, 56];
-const SEASON_PAPER_BACKGROUND = [244, 248, 252];
-
 function mixRgb(from, to, progress) {
   return from.map((channel, index) => Math.round(channel + (to[index] - channel) * progress));
 }
@@ -49,6 +45,8 @@ export default memo(function SeasonsSection({ reducedMotion }) {
   const boardRef = useRef(null);
   const entryTrackRef = useRef(null);
   const progressLineRef = useRef(null);
+  const toneGalleryRef = useRef(null);
+  const tonePaperRef = useRef(null);
   const [mediaReady, setMediaReady] = useState(reducedMotion);
 
   const prewarmGalleryMedia = useCallback(() => {
@@ -85,11 +83,6 @@ export default memo(function SeasonsSection({ reducedMotion }) {
       Math.min(motion.entryProgress * 0.18 + progress * 0.82, 1),
     );
     const nextSectionRevealProgress = smoothStep((progress - 0.72) / 0.28);
-    const stageBackground = mixRgb(
-      mixRgb(SEASON_BASE_BACKGROUND, SEASON_GALLERY_BACKGROUND, galleryToneProgress),
-      SEASON_PAPER_BACKGROUND,
-      nextSectionRevealProgress,
-    );
     // Release the 61vw entry while the section enters, then finish the move
     // early in the sticky frame so every caption travels with its photo.
     const photoEntryProgress = Math.max(
@@ -100,9 +93,8 @@ export default memo(function SeasonsSection({ reducedMotion }) {
       ? 0
       : 61 * (1 - photoEntryProgress);
     const nextTextColor = mixRgb([244, 248, 252], [5, 28, 56], nextSectionRevealProgress);
-    if (stageRef.current) {
-      stageRef.current.style.backgroundColor = `rgb(${stageBackground.join(", ")})`;
-    }
+    if (toneGalleryRef.current) toneGalleryRef.current.style.opacity = `${galleryToneProgress}`;
+    if (tonePaperRef.current) tonePaperRef.current.style.opacity = `${nextSectionRevealProgress}`;
     if (boardRef.current) {
       boardRef.current.style.setProperty("--season-next-color", `rgb(${nextTextColor.join(", ")})`);
       boardRef.current.style.transform = `translate3d(${horizontalOffset}vw, 0, 0)`;
@@ -120,8 +112,8 @@ export default memo(function SeasonsSection({ reducedMotion }) {
     },
     sleep: () => setMediaReady(false),
     updateWhilePrewarmed: true,
-    willChange: "transform",
-    willChangeTargets: () => [boardRef.current, entryTrackRef.current],
+    willChange: "transform, opacity",
+    willChangeTargets: () => [boardRef.current, entryTrackRef.current, toneGalleryRef.current, tonePaperRef.current],
   });
 
   const mountedPhotoIds = mediaReady
@@ -137,6 +129,8 @@ export default memo(function SeasonsSection({ reducedMotion }) {
     >
       <h2 className="sr-only" id="seasons-title">Nhịp sống trong năm</h2>
       <div className="season-gallery-stage" ref={stageRef}>
+        <div className="season-tone season-tone-gallery" aria-hidden="true" ref={toneGalleryRef} />
+        <div className="season-tone season-tone-paper" aria-hidden="true" ref={tonePaperRef} />
         <div
           className="season-gallery-board"
           ref={boardRef}

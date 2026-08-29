@@ -1,7 +1,7 @@
 import { RotateCcw, Smartphone, Tablet, Monitor } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { getAdminPublicTarget, getPublicHomeHref } from "./admin-registry.js";
+import { getAdminPublicTarget, getAdminSection, getPublicHomeHref } from "./admin-registry.js";
 
 const PREVIEW_MESSAGE = "thon3-admin-preview";
 
@@ -88,7 +88,7 @@ export default function AdminLivePreview({ draft, activeSection, dirty, focusTar
         <div className="admin-preview-toolbar-copy">
           <span className={`admin-preview-live-dot${ready ? " is-ready" : ""}`} aria-hidden="true" />
           <div>
-            <strong>{ready ? "Xem trước trực tiếp" : "Đang mở trang xem trước…"}</strong>
+            <strong>{ready ? `Xem trước: ${getAdminSection(activeSection).label}` : "Đang mở trang xem trước…"}</strong>
             <small>{dirty ? "Đang hiển thị bản nháp — trang chủ chưa thay đổi" : "Nội dung đã đồng bộ với trang chủ"}</small>
           </div>
         </div>

@@ -102,10 +102,33 @@ export function cloneDefaultSiteContent() {
 
 export function normalizeSiteContent(value) {
   const content = mergeWithDefaults(defaultSiteContent, value);
+  content.storyFrames = content.storyFrames.slice(0, 1).map((frame) => ({
+    imageSrc: frame.imageSrc || "/assets/village-hero.jpg",
+    colorVariant: frame.colorVariant || "hero-home",
+    position: frame.position || "center 58%",
+  }));
+  for (const choiceKey of ["left", "right"]) {
+    const choice = content.visitChoices[choiceKey];
+    if (choice && typeof choice === "object") {
+      delete choice.imageSrc;
+      delete choice.imageAlt;
+      delete choice.imagePosition;
+    }
+  }
+  delete content.villageArchive.imageSrc;
+  delete content.villageArchive.imageWidth;
+  delete content.villageArchive.imageHeight;
   content.villageArchive.cards = content.villageArchive.cards.map((card) => {
-    const legacy = LEGACY_ARCHIVE_PLACEHOLDERS.get(card.id);
-    if (!legacy || card.label !== legacy[0] || card.year !== legacy[1]) return card;
-    return { ...card, altImageSrc: "", imageAlt: "", imageSrc: "", label: "", year: "" };
+    const cleaned = { ...card };
+    delete cleaned.altImageSrc;
+    const legacy = LEGACY_ARCHIVE_PLACEHOLDERS.get(cleaned.id);
+    if (legacy && cleaned.label === legacy[0] && cleaned.year === legacy[1]) {
+      cleaned.imageAlt = "";
+      cleaned.imageSrc = "";
+      cleaned.label = "";
+      cleaned.year = "";
+    }
+    return cleaned;
   });
   return content;
 }

@@ -8,7 +8,7 @@ export const ADMIN_OVERVIEW = {
 
 export const ADMIN_SECTIONS = [
   { id: "settings", label: "Thông tin chung", description: "Tên, màu sắc, font và hiệu ứng", publicTarget: "home" },
-  { id: "hero", label: "Mở đầu trang", description: "Bốn khung cảnh ở phần đầu", publicTarget: "home" },
+  { id: "hero", label: "Mở đầu trang", description: "Ảnh mở đầu toàn màn hình", publicTarget: "home" },
   { id: "story", label: "Câu chuyện", description: "Lời nhắn và hình ảnh chính", publicTarget: "cau-chuyen" },
   { id: "statement", label: "Tuyên ngôn", description: "Thông điệp lớn giữa trang", publicTarget: "ban-do" },
   { id: "seasons", label: "Nhịp sống", description: "Bộ ảnh theo mùa", publicTarget: "nhung-mua" },

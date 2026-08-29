@@ -16,6 +16,7 @@
     "budget": "node scripts/check-bundle-budget.js",
     "media:validate": "node scripts/validate-cms-media.js",
     "media:variants": "node scripts/generate-media-variants.mjs",
+    "media:avif": "node scripts/generate-hero-avif.mjs",
     "perf:lighthouse": "lhci autorun --config=lighthouserc.desktop.cjs && lhci autorun --config=lighthouserc.mobile.cjs",
     "preview": "vite preview --host 0.0.0.0"
   },

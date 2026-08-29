@@ -52,6 +52,7 @@ import {
 import {
   ADMIN_NAV_ITEMS,
   ADMIN_SECTIONS,
+  getAdminSection,
   getAdminSectionFromHash,
   getAdminHash,
   getAdminPublicTarget,
@@ -119,10 +120,8 @@ function readImageDimensions(file) {
   });
 }
 
-function getArchiveCardAspectRatio(card, archive) {
-  const width = card.imageSrc ? card.imageWidth : archive.imageWidth;
-  const height = card.imageSrc ? card.imageHeight : archive.imageHeight;
-  return width && height ? `${width} / ${height}` : "3 / 4";
+function getArchiveCardAspectRatio(card) {
+  return card.imageWidth && card.imageHeight ? `${card.imageWidth} / ${card.imageHeight}` : "3 / 4";
 }
 
 function hasSameAspectRatio(width, height, currentWidth, currentHeight) {
@@ -495,7 +494,7 @@ function SettingsEditor({ draft, update }) {
   const appearance = draft.settings.appearance;
   const menuImages = draft.settings.menuImages || [];
   return (
-    <AdminPanel eyebrow="01 / HỆ THỐNG" title="Nhận diện & giao diện" description="Từ chữ, màu, nền đến nhịp chuyển động của trang chủ đều có thể điều chỉnh ở đây.">
+    <AdminPanel eyebrow="01 / THÔNG TIN CHUNG" title="Nhận diện & giao diện" description="Từ chữ, màu, nền đến nhịp chuyển động của trang chủ đều có thể điều chỉnh ở đây.">
       <div className="admin-settings-section">
         <div className="admin-settings-section-heading">
           <span>01</span>
@@ -622,40 +621,24 @@ function SettingsEditor({ draft, update }) {
 }
 
 function HeroEditor({ draft, update }) {
+  const frame = draft.storyFrames[0] || { imageSrc: "", position: "center 58%" };
   return (
-    <AdminPanel eyebrow="02 / MỞ ĐẦU" title="Bốn khung cảnh mở đầu" description="Mỗi khung cảnh xuất hiện khi người xem cuộn qua phần đầu trang." cardCount={draft.storyFrames.length}>
+    <AdminPanel eyebrow="02 / MỞ ĐẦU TRANG" title="Ảnh mở đầu" description="Ảnh toàn màn hình xuất hiện ngay khi mở trang chủ.">
       <AdminSectionImageUploader
         title="Tự điền ảnh mở đầu"
-        description="Ảnh được xếp vào các khung cảnh theo thứ tự tên tệp"
-        targets={draft.storyFrames.map((_, index) => ({
-          imagePath: `storyFrames[${index}].imageSrc`,
-          altPath: `storyFrames[${index}].description`,
-        }))}
+        description="Ảnh được thay vào khung mở đầu"
+        targets={[{ imagePath: "storyFrames[0].imageSrc" }]}
         update={update}
       />
-      <div className="admin-card-stack">
-        {draft.storyFrames.map((frame, index) => (
-          <AdminCard key={frame.number} index={index} title={`Khung cảnh ${frame.number}`} summary={[frame.lead, frame.accent].filter(Boolean).join(" ")} thumbnail={frame.imageSrc}>
-            <div className="admin-form-grid admin-form-grid-wide">
-              <AdminField label="Nhãn nhỏ" value={frame.eyebrow} onChange={(value) => update(`storyFrames[${index}].eyebrow`, value)} />
-              <AdminField label="Dòng chính" value={frame.lead} onChange={(value) => update(`storyFrames[${index}].lead`, value)} />
-              <AdminField label="Dòng nhấn" value={frame.accent} onChange={(value) => update(`storyFrames[${index}].accent`, value)} />
-              <AdminField label="Ghi chú bên phải" value={frame.note} onChange={(value) => update(`storyFrames[${index}].note`, value)} />
-              <AdminField label="Mô tả" multiline value={frame.description} onChange={(value) => update(`storyFrames[${index}].description`, value)} />
-              <AdminImageField
-                label="Ảnh khung cảnh"
-                value={frame.imageSrc}
-                onChange={(value) => update(`storyFrames[${index}].imageSrc`, value)}
-                alt={frame.description}
-                onAltChange={(value) => update(`storyFrames[${index}].description`, value)}
-                position={frame.position}
-                onPositionChange={(value) => update(`storyFrames[${index}].position`, value)}
-                target={`hero-${index}`}
-                hint={index === 0 ? "Khung 01 là ảnh đang hiển thị trên trang chủ." : "Khung này đang được lưu trong nội dung nhưng chưa xuất hiện ở Hero hiện tại."}
-              />
-            </div>
-          </AdminCard>
-        ))}
+      <div className="admin-form-grid">
+        <AdminImageField
+          label="Ảnh mở đầu"
+          value={frame.imageSrc}
+          onChange={(value) => update("storyFrames[0].imageSrc", value)}
+          position={frame.position}
+          onPositionChange={(value) => update("storyFrames[0].position", value)}
+          target="hero-0"
+        />
       </div>
     </AdminPanel>
   );
@@ -826,16 +809,6 @@ function ChoiceEditor({ choice, path, update, index }) {
         <AdminField label="Nút dẫn tới" value={choice.actionLabel} onChange={(value) => update(`${path}.actionLabel`, value)} />
         <AdminField label="Liên kết" value={choice.href} onChange={(value) => update(`${path}.href`, value)} hint="Ví dụ: /cau-chuyen" />
         <AdminField label="Mô tả" multiline value={choice.copy} onChange={(value) => update(`${path}.copy`, value)} />
-        <AdminImageField
-          label="Ảnh lựa chọn"
-          value={choice.imageSrc}
-          onChange={(value) => update(`${path}.imageSrc`, value)}
-          alt={choice.imageAlt}
-          onAltChange={(value) => update(`${path}.imageAlt`, value)}
-          position={choice.imagePosition}
-          onPositionChange={(value) => update(`${path}.imagePosition`, value)}
-          target={`visit-${index}`}
-        />
       </div>
     </AdminCard>
   );
@@ -843,14 +816,12 @@ function ChoiceEditor({ choice, path, update, index }) {
 
 function VisitEditor({ draft, update }) {
   return (
-    <AdminPanel eyebrow="06 / GHÉ THĂM" title="Hai lối trở về" description="Hai lựa chọn nội dung cùng hình ảnh toàn màn hình ở cuối phần này." cardCount={2}>
+    <AdminPanel eyebrow="06 / HAI LỐI TRỞ VỀ" title="Hai lối trở về" description="Hai lựa chọn nội dung cùng hình ảnh toàn màn hình ở cuối phần này." cardCount={2}>
       <AdminSectionImageUploader
         title="Tự điền ảnh hai lối trở về"
-        description="Thứ tự: cổng trại, lối trái, lối phải và ảnh toàn cảnh"
+        description="Thứ tự: cổng trại và ảnh toàn cảnh"
         targets={[
           { imagePath: "visitChoices.gate.imageSrc", altPath: "visitChoices.gate.imageAlt" },
-          { imagePath: "visitChoices.left.imageSrc", altPath: "visitChoices.left.imageAlt" },
-          { imagePath: "visitChoices.right.imageSrc", altPath: "visitChoices.right.imageAlt" },
           { imagePath: "fullBleedArrival.imageSrc", altPath: "fullBleedArrival.imageAlt" },
         ]}
         update={update}
@@ -949,14 +920,8 @@ function PendingYouthUnionApproval({ pendingList, onApprove, onReject }) {
                 ) : (
                   <div className="admin-no-img">Không có ảnh</div>
                 )}
-                <span>Ảnh 1 (Chính)</span>
+                <span>Ảnh thẻ</span>
               </div>
-              {item.altImageSrc && (
-                <div className="admin-pending-thumb">
-                  <img src={item.altImageSrc} alt={`${item.name} hover`} />
-                  <span>Ảnh 2 (Hover)</span>
-                </div>
-              )}
             </div>
 
             <div className="admin-pending-info">
@@ -1163,32 +1128,17 @@ function ArchiveBulkUploader({ cards, onChange }) {
 function ArchiveEditor({ draft, update, pendingList, onSubmissionApproved, onSubmissionRejected }) {
   const archive = draft.villageArchive;
   return (
-    <AdminPanel eyebrow="07 / ĐOÀN VIÊN" title="Gương mặt tuổi trẻ" description="Mỗi thẻ là một trang đôi trong cuốn sách; ba thẻ đầu dành cho Ban Chấp hành, các thẻ sau dành cho đoàn viên." cardCount={archive.cards.length}>
+    <AdminPanel eyebrow="07 / KHO ẢNH TỰ ĐỘNG" title="Gương mặt tuổi trẻ" description="Mỗi thẻ là một trang đôi trong cuốn sách; ba thẻ đầu dành cho Ban Chấp hành, các thẻ sau dành cho đoàn viên." cardCount={archive.cards.length}>
       <PendingYouthUnionApproval pendingList={pendingList} onApprove={onSubmissionApproved} onReject={onSubmissionRejected} />
       <ArchiveBulkUploader cards={archive.cards} onChange={(cards) => update("villageArchive.cards", cards)} />
       <div className="admin-form-grid">
         <AdminField label="Nhãn nhỏ" value={archive.eyebrow} onChange={(value) => update("villageArchive.eyebrow", value)} />
         <AdminField label="Tiêu đề" multiline value={archive.title} onChange={(value) => update("villageArchive.title", value)} hint="Dùng xuống dòng để tách hai dòng lớn." />
         <AdminField label="Lời giới thiệu chung" multiline value={archive.intro} onChange={(value) => update("villageArchive.intro", value)} />
-        <AdminImageField
-          label="Ảnh mặc định"
-          value={archive.imageSrc}
-          onChange={(value) => update("villageArchive.imageSrc", value)}
-          fallbackSrc="/assets/village-hero.jpg"
-          fit="contain"
-          aspectRatio={archive.imageWidth && archive.imageHeight ? `${archive.imageWidth} / ${archive.imageHeight}` : "3 / 4"}
-          target="archive-default"
-          hint="Dùng làm ảnh dự phòng nếu một thẻ chưa có ảnh riêng."
-          onDimensionsChange={({ width, height }) => {
-            if (hasSameAspectRatio(width, height, archive.imageWidth, archive.imageHeight)) return;
-            update("villageArchive.imageWidth", width);
-            update("villageArchive.imageHeight", height);
-          }}
-        />
       </div>
       <div className="admin-card-stack">
         {archive.cards.map((card, index) => (
-          <AdminCard key={card.id} index={index} title={card.label || `Đoàn viên ${index + 1}`} summary={card.year} thumbnail={card.imageSrc || archive.imageSrc}>
+          <AdminCard key={card.id} index={index} title={card.label || `Đoàn viên ${index + 1}`} summary={card.year} thumbnail={card.imageSrc}>
             <div className="admin-form-grid admin-form-grid-wide">
               <AdminField label="Họ và tên" value={card.label} onChange={(value) => update(`villageArchive.cards[${index}].label`, value)} />
               <AdminField label="Chức vụ / thông tin ngắn" value={card.year} onChange={(value) => update(`villageArchive.cards[${index}].year`, value)} />
@@ -1202,26 +1152,17 @@ function ArchiveEditor({ draft, update, pendingList, onSubmissionApproved, onSub
               <AdminImageField
                 label="Ảnh đoàn viên"
                 value={card.imageSrc || ""}
-                fallbackSrc={archive.imageSrc}
                 onChange={(value) => update(`villageArchive.cards[${index}].imageSrc`, value)}
                 alt={card.imageAlt}
                 onAltChange={(value) => update(`villageArchive.cards[${index}].imageAlt`, value)}
                 fit="contain"
-                aspectRatio={getArchiveCardAspectRatio(card, archive)}
+                aspectRatio={getArchiveCardAspectRatio(card)}
                 target={`archive-${card.id}`}
                 onDimensionsChange={({ width, height }) => {
                   if (hasSameAspectRatio(width, height, card.imageWidth, card.imageHeight)) return;
                   update(`villageArchive.cards[${index}].imageWidth`, width);
                   update(`villageArchive.cards[${index}].imageHeight`, height);
                 }}
-              />
-              <AdminImageField
-                label="Ảnh khi rê chuột (không bắt buộc)"
-                value={card.altImageSrc || ""}
-                onChange={(value) => update(`villageArchive.cards[${index}].altImageSrc`, value)}
-                fit="contain"
-                aspectRatio={getArchiveCardAspectRatio(card, archive)}
-                target={`archive-${card.id}`}
               />
               <button
                 className="admin-danger-text-button"
@@ -1290,7 +1231,7 @@ function CommunityEditor({ draft, update }) {
 function UpdatesEditor({ draft, update }) {
   const updates = draft.villageUpdates;
   return (
-    <AdminPanel eyebrow="09 / NHỊP SỐNG HÔM NAY" title="Các hoạt động đang diễn ra" description="Nội dung các thẻ hoạt động xuất hiện ở phần cuối trang chủ." cardCount={updates.cards.length}>
+    <AdminPanel eyebrow="09 / ĐANG DIỄN RA" title="Các hoạt động đang diễn ra" description="Nội dung các thẻ hoạt động xuất hiện ở phần cuối trang chủ." cardCount={updates.cards.length}>
       <AdminSectionImageUploader
         title="Tự điền ảnh hoạt động"
         description="Ảnh được xếp vào từng hoạt động, ảnh cuối dùng làm ảnh mặc định"
@@ -1345,7 +1286,7 @@ function UpdatesEditor({ draft, update }) {
 
 function AdminOverview({ draft, onSelect }) {
   const counts = [
-    ["Khung cảnh", draft.storyFrames.length, "hero"],
+    ["Ảnh mở đầu", draft.storyFrames.length, "hero"],
     ["Ảnh theo mùa", draft.seasonalGallery.photos.length, "seasons"],
     ["Kho ảnh", draft.villageArchive.cards.length, "archive"],
     ["Hoạt động", draft.villageUpdates.cards.length, "updates"],
@@ -1445,6 +1386,7 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
   const activeSectionIndex = ADMIN_NAV_ITEMS.findIndex((section) => section.id === activeSection);
   const previousSection = ADMIN_NAV_ITEMS[activeSectionIndex - 1] || null;
   const nextSection = ADMIN_NAV_ITEMS[activeSectionIndex + 1] || null;
+  const activeSectionMeta = getAdminSection(activeSection);
   const publishedSnapshotRef = useRef(contentSnapshot);
   const lastDraftSnapshotRef = useRef("");
   const adminCardCommand = useMemo(() => ({
@@ -1813,8 +1755,13 @@ export default function AdminPage({ onLogout, onSessionRevoked }) {
           <main className="admin-main">
           <div className="admin-main-heading">
             <div>
-              <p className="admin-main-eyebrow">{content.settings.siteName} / NỘI DUNG</p>
-              <h2><span key={activeSection} className="admin-heading-transition">{activeSection === "overview" ? "Chỉnh sửa trang giới thiệu" : ADMIN_SECTIONS.find((section) => section.id === activeSection)?.label}</span></h2>
+              <p className="admin-main-eyebrow">
+                <span>Nhóm {activeSectionMeta.index} / {String(ADMIN_NAV_ITEMS.length).padStart(2, "0")}</span>
+                <span className="admin-main-eyebrow-separator" aria-hidden="true">›</span>
+                <span>{activeSectionMeta.label}</span>
+              </p>
+              <h2><span key={activeSection} className="admin-heading-transition">{activeSectionMeta.label}</span></h2>
+              <p className="admin-main-description">{activeSectionMeta.description}</p>
             </div>
             <div className="admin-data-actions">
               <button className="admin-secondary-button admin-icon-text-button" type="button" onClick={() => openMediaLibrary()}>

@@ -17,6 +17,7 @@ import {
 
 const FOCUSABLE_SELECTOR = "button:not([disabled]), input:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])";
 const LEADERSHIP_ROLE_FALLBACKS = ["Bí thư", "Phó Bí thư", "Phó Bí thư"];
+const MODAL_EXIT_MS = 260;
 const STORY_TRANSITION_MS = 760;
 const STORY_PAGE_STAGGER_MS = Math.round(STORY_TRANSITION_MS * 0.2);
 const STORY_TRANSITION_TOTAL_MS = STORY_TRANSITION_MS + STORY_PAGE_STAGGER_MS;
@@ -83,7 +84,7 @@ function ArchiveStorySlide({
 }) {
   const isIntro = slideIndex === 0;
   const leaderIndex = slideIndex - 1;
-  const card = isIntro ? storyCards.find((item) => String(item?.imageSrc || "").trim()) : storyCards[leaderIndex];
+  const card = storyCards[leaderIndex];
   const role = isIntro
     ? ""
     : String(card?.year || "").trim() || LEADERSHIP_ROLE_FALLBACKS[leaderIndex] || YOUTH_MEMBER_ROLE;
@@ -115,11 +116,16 @@ function ArchiveStorySlide({
         className="youth-team-story-media"
         data-preview-target={!isIntro && card?.id ? `archive-${card.id}` : undefined}
       >
-        <ArchiveStoryMedia
-          card={card}
-          fallbackLabel={isIntro ? "Gương mặt tuổi trẻ Mê Linh" : name}
-          priority={slideIndex <= 1}
-        />
+        {isIntro ? (
+          <div className="youth-team-intro-emblem">
+            <YouthUnionPartyLogo
+              size={320}
+              style={{ width: "clamp(190px, 30vmin, 320px)", height: "clamp(190px, 30vmin, 320px)" }}
+            />
+          </div>
+        ) : (
+          <ArchiveStoryMedia card={card} fallbackLabel={name} priority={slideIndex <= 1} />
+        )}
         <span className="youth-team-story-media-index" aria-hidden="true">
           {String(slideIndex + 1).padStart(2, "0")}
         </span>
@@ -216,9 +222,11 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
   const successTimerRef = useRef(null);
+  const modalExitTimerRef = useRef(null);
   const firstErrorRef = useRef(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalClosing, setIsModalClosing] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -258,16 +266,20 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
     return undefined;
   }, [prewarmArchiveMedia]);
 
+  // Chuan bi san (tai + decode) anh cua slide ke truoc/ke sau de lat trang
+  // khong bao gio khung hinh bi dut vi decode tren main thread.
   useEffect(() => {
-    if (!storyTextReady || !window.matchMedia("(max-width: 680px)").matches) return;
-    const nextCard = storyCards[activeStoryIndex];
-    if (!nextCard?.imageSrc) return;
-    prewarmCmsImage(
-      nextCard.imageSrc,
-      getArchiveImageSize(nextCard),
-      getArchiveImageSizes(nextCard),
-      nextCard.colorVariant,
-    );
+    if (!storyTextReady) return;
+    for (const index of [activeStoryIndex + 1, activeStoryIndex - 1]) {
+      const neighborCard = storyCards[index];
+      if (!neighborCard?.imageSrc) continue;
+      prewarmCmsImage(
+        neighborCard.imageSrc,
+        getArchiveImageSize(neighborCard),
+        getArchiveImageSizes(neighborCard),
+        neighborCard.colorVariant,
+      );
+    }
   }, [activeStoryIndex, storyCards, storyTextReady]);
 
   useEffect(() => {
@@ -299,6 +311,8 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
 
   useEffect(() => () => {
     if (storyTransitionTimerRef.current) window.clearTimeout(storyTransitionTimerRef.current);
+    if (modalExitTimerRef.current) window.clearTimeout(modalExitTimerRef.current);
+    if (successTimerRef.current) window.clearTimeout(successTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -354,13 +368,32 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
   };
 
   const closeModal = useCallback(() => {
-    setIsModalOpen(false);
-    setFormSubmitted(false);
-    setErrors({});
-    if (successTimerRef.current) window.clearTimeout(successTimerRef.current);
-  }, []);
+    if (successTimerRef.current) {
+      window.clearTimeout(successTimerRef.current);
+      successTimerRef.current = null;
+    }
+    if (modalExitTimerRef.current) return;
+    const finishClose = () => {
+      modalExitTimerRef.current = null;
+      setIsModalClosing(false);
+      setIsModalOpen(false);
+      setFormSubmitted(false);
+      setErrors({});
+    };
+    if (reducedMotion) {
+      finishClose();
+      return;
+    }
+    setIsModalClosing(true);
+    modalExitTimerRef.current = window.setTimeout(finishClose, MODAL_EXIT_MS);
+  }, [reducedMotion]);
 
   const openModal = (event) => {
+    if (modalExitTimerRef.current) {
+      window.clearTimeout(modalExitTimerRef.current);
+      modalExitTimerRef.current = null;
+    }
+    setIsModalClosing(false);
     openerRef.current = event.currentTarget;
     setErrors({});
     setImageErrors({});
@@ -529,6 +562,30 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
           <i aria-hidden="true" />
           <span>{String(storySlideCount).padStart(2, "0")}</span>
         </div>
+        <nav className="youth-team-story-rail" aria-label="Chọn gương mặt cần xem">
+          {[
+            { label: "Mở đầu", index: 0 },
+            ...storyCards.map((card, cardIndex) => ({
+              index: cardIndex + 1,
+              label: String(card?.label || "").trim()
+                || String(card?.year || "").trim()
+                || LEADERSHIP_ROLE_FALLBACKS[cardIndex]
+                || YOUTH_MEMBER_ROLE,
+            })),
+          ].map((item) => (
+            <button
+              key={item.index}
+              type="button"
+              className={`youth-team-story-rail-item${item.index === activeStoryIndex ? " is-active" : ""}`}
+              aria-current={item.index === activeStoryIndex ? "true" : undefined}
+              aria-label={`Xem ${item.label}`}
+              onClick={() => changeStorySlide(item.index)}
+            >
+              <span className="youth-team-story-rail-name">{item.label}</span>
+              <span className="youth-team-story-rail-index" aria-hidden="true">{String(item.index + 1).padStart(2, "0")}</span>
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Minimal Right-Aligned Action Bar (No Frame) */}
@@ -552,7 +609,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
       {/* Registration Modal */}
       {isModalOpen && (
         <div
-          className="youth-modal-backdrop"
+          className={`youth-modal-backdrop${isModalClosing ? " is-closing" : ""}`}
           data-lenis-prevent
           onMouseDown={(event) => event.target === event.currentTarget && closeModal()}
         >
@@ -588,6 +645,7 @@ export default memo(function VillageArchiveSection({ reducedMotion }) {
                       <img
                         src={imageSrc}
                         alt="Xem trước ảnh thẻ đoàn viên"
+                        decoding="async"
                         onError={() => setImageErrors((current) => ({ ...current, imageSrc: true }))}
                       />
                     ) : (

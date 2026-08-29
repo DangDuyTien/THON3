@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 import { pool, withTransaction } from "./db.mjs";
+import { contentCache } from "./content-cache.mjs";
 import { clearSessionCookie, issueCsrfToken, issueSession, requireCsrf, requireRole, requireUser, SESSION_TTL_SECONDS, setSessionCookie, validateAdminPassword } from "./auth.mjs";
 import mediaRouter from "./routes-media.mjs";
 import { appendApprovedSubmissionCard, buildApprovedSubmissionCard } from "./submission-content.mjs";
@@ -297,9 +298,17 @@ app.post("/api/auth/password/recover", (_req, res) => res.status(410).json({ err
 
 app.get("/api/content/published", async (_req, res, next) => {
   try {
-    const [rows] = await pool.execute("SELECT content, version, updated_at FROM site_content WHERE site_key = ? LIMIT 1", [siteKey]);
-    if (!rows[0]) return res.json({ data: null });
-    return res.json({ data: { content: typeof rows[0].content === "string" ? JSON.parse(rows[0].content) : rows[0].content, version: rows[0].version, updated_at: rows[0].updated_at } });
+    const cached = contentCache.getCachedContent();
+    if (cached) {
+      // Trả cache ngay lập tức; DB chỉ được chạm lại nền khi cache quá hạn (stale-while-revalidate).
+      if (contentCache.isStale()) {
+        contentCache.refreshFromDb().catch(() => {});
+      }
+      return res.json({ data: { content: cached.content, version: cached.version, updated_at: cached.updatedAt } });
+    }
+    const fresh = await contentCache.refreshFromDb();
+    if (!fresh || fresh.content === null) return res.json({ data: null });
+    return res.json({ data: { content: fresh.content, version: fresh.version, updated_at: fresh.updatedAt } });
   } catch (error) {
     return next(error);
   }
@@ -376,6 +385,7 @@ app.post("/api/content/publish", requireUser, requireCsrf, requireRole("admin"),
       }, connection);
       return { content: req.body.content, version: nextVersion };
     });
+    contentCache.storeContent(result.content, result.version);
     return res.json({ data: result });
   } catch (error) {
     return next(error);
@@ -457,6 +467,7 @@ app.post("/api/content/revisions/:version/restore", requireUser, requireCsrf, re
       }, connection);
       return { content, version: nextVersion };
     });
+    contentCache.storeContent(result.content, result.version);
     return res.json({ data: result });
   } catch (error) {
     return next(error);
@@ -582,6 +593,7 @@ app.post("/api/submissions/:id/approve", requireUser, requireCsrf, requireRole("
       }, connection);
       return { id: submissionId, status: "approved", card, content: nextContent, version: nextVersion };
     });
+    contentCache.storeContent(result.content, result.version);
     return res.json({ data: result });
   } catch (error) { return next(error); }
 });

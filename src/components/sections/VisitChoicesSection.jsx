@@ -114,6 +114,7 @@ export default memo(function VisitChoicesSection({ reducedMotion }) {
                     src={gate.imageSrc}
                     alt=""
                     imageVariant="full"
+                    placeholderBackground={false}
                     sizes="(max-width: 680px) min(100vw, 600px), min(88vw, 1240px, 127svh)"
                   />
                 </div>

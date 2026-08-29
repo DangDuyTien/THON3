@@ -173,7 +173,15 @@ export function prewarmCmsImage(mediaOrSource, sizeVariant = "full", sizes = "10
   if (attributes?.srcSet) image.srcset = attributes.srcSet;
   picture.appendChild(image);
   const cleanup = () => picture.remove();
-  image.addEventListener("load", cleanup, { once: true });
+  // Decode truoc bien anh thanh bitmap san sang, de lan dau tien anh hien ra
+  // (flip slide / cuon toi) khong phai tra gia decode tren main thread.
+  image.addEventListener("load", () => {
+    if (typeof image.decode !== "function") {
+      cleanup();
+      return;
+    }
+    image.decode().catch(() => {}).finally(cleanup);
+  }, { once: true });
   image.addEventListener("error", cleanup, { once: true });
   document.body.appendChild(picture);
   image.src = src;

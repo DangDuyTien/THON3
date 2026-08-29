@@ -4,6 +4,7 @@ export default function YouthUnionPartyLogo({ size = 28, className = "", style =
       src="/assets/doan-tncs-logo-160.webp"
       alt="Huy hiệu Đoàn TNCS Hồ Chí Minh"
       className={`youth-party-logo-img ${className}`}
+      decoding="async"
       style={{
         width: size,
         height: size,

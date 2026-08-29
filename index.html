@@ -16,8 +16,8 @@
     <link
       rel="preload"
       as="image"
-      href="/assets/village-hero-hero-home-1920.webp?v=20260804"
-      imagesrcset="/assets/village-hero-hero-home-640.webp?v=20260804 640w, /assets/village-hero-hero-home-960.webp?v=20260804 960w, /assets/village-hero-hero-home-1440.webp?v=20260804 1440w, /assets/village-hero-hero-home-1920.webp?v=20260804 1920w"
+      href="/assets/village-hero-hero-home-1920.avif?v=20260830"
+      imagesrcset="/assets/village-hero-hero-home-640.avif?v=20260830 640w, /assets/village-hero-hero-home-960.avif?v=20260830 960w, /assets/village-hero-hero-home-1440.avif?v=20260830 1440w, /assets/village-hero-hero-home-1920.avif?v=20260830 1920w"
       imagesizes="(max-width: 680px) 150svh, 100vw"
       fetchpriority="high"
     />
@@ -56,18 +56,25 @@
       <span class="critical-wordmark-name" style="font-family:system-ui,-apple-system,sans-serif;font-size:clamp(18px,1.46vw,21px);font-weight:800;line-height:1.15">XÃ<br />MÊ LINH</span>
       <span class="critical-wordmark-tagline" style="color:rgba(245,246,239,.72);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:clamp(7px,.56vw,8px);font-weight:500;line-height:1.2">HÀ NỘI</span>
     </a>
-    <img
-      class="critical-hero-image"
-      src="/assets/village-hero-hero-home-640.webp?v=20260804"
-      srcset="/assets/village-hero-hero-home-640.webp?v=20260804 640w, /assets/village-hero-hero-home-960.webp?v=20260804 960w, /assets/village-hero-hero-home-1440.webp?v=20260804 1440w, /assets/village-hero-hero-home-1920.webp?v=20260804 1920w"
-      sizes="(max-width: 680px) 150svh, 100vw"
-      width="1920"
-      height="1080"
-      alt=""
-      aria-hidden="true"
-      fetchpriority="high"
-      decoding="async"
-    />
+    <picture>
+      <source
+        type="image/avif"
+        srcset="/assets/village-hero-hero-home-640.avif?v=20260830 640w, /assets/village-hero-hero-home-960.avif?v=20260830 960w, /assets/village-hero-hero-home-1440.avif?v=20260830 1440w, /assets/village-hero-hero-home-1920.avif?v=20260830 1920w"
+        sizes="(max-width: 680px) 150svh, 100vw"
+      />
+      <img
+        class="critical-hero-image"
+        src="/assets/village-hero-hero-home-640.webp?v=20260830"
+        srcset="/assets/village-hero-hero-home-640.webp?v=20260830 640w, /assets/village-hero-hero-home-960.webp?v=20260830 960w, /assets/village-hero-hero-home-1440.webp?v=20260830 1440w, /assets/village-hero-hero-home-1920.webp?v=20260830 1920w"
+        sizes="(max-width: 680px) 150svh, 100vw"
+        width="1920"
+        height="1080"
+        alt=""
+        aria-hidden="true"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
     <div id="root"></div>
     <script type="module" src="./src/main.jsx"></script>
   </body>

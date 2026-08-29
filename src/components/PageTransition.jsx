@@ -202,7 +202,7 @@ export default function PageTransition({ currentRouteKey, reducedMotion = false 
       </svg>
       <div className="page-transition-curtain" style={{ clipPath: "url(#page-transition-clip-path)" }}>
         <div className="page-transition-center">
-          <SiteLoaderMark label={title} key={`${title}-${drawCycle}`} />
+          <SiteLoaderMark key={drawCycle} />
           <p className="page-transition-title">{title}</p>
           <span className="page-transition-caption">XÃ MÊ LINH</span>
         </div>

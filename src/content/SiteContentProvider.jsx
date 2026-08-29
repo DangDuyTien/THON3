@@ -5,26 +5,33 @@ import { isBackendConfigured } from "../lib/backend-api.js";
 import { getSession } from "../lib/auth-api.js";
 
 const SiteContentContext = createContext(null);
-const BOOT_RETRY_DELAY_MS = 2000;
-const BOOT_REQUEST_TIMEOUT_MS = 12000;
-const BOOT_TIMEOUT_MS = 90000;
+const CONTENT_SEED_STORAGE_KEY = "me-linh:published-content";
+const REQUEST_TIMEOUT_MS = 8000;
+const SILENT_RETRY_DELAYS_MS = [5000, 20000, 60000];
 
-function waitForRetry(signal) {
-  return new Promise((resolve) => {
-    const finish = () => {
-      window.clearTimeout(timer);
-      signal.removeEventListener("abort", finish);
-      resolve();
-    };
-    const timer = window.setTimeout(finish, BOOT_RETRY_DELAY_MS);
-    signal.addEventListener("abort", finish, { once: true });
-  });
+// Bản nội dung public lần cuối tải thành công giúp mở trang tức thì mà không chờ DB.
+function readSeedContent() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(CONTENT_SEED_STORAGE_KEY) || "");
+    return parsed?.content && typeof parsed.content === "object" ? normalizeSiteContent(parsed.content) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSeedContent(content) {
+  try {
+    window.localStorage.setItem(CONTENT_SEED_STORAGE_KEY, JSON.stringify({ content, savedAt: Date.now() }));
+  } catch {
+    // Seed chỉ là tăng tốc — bỏ qua khi storage đầy hoặc bị chặn.
+  }
 }
 
 export function SiteContentProvider({ children }) {
-  const [content, setContent] = useState(cloneDefaultSiteContent);
+  const [seedContent] = useState(readSeedContent);
+  const [content, setContent] = useState(() => seedContent ?? cloneDefaultSiteContent());
   const [connectionStatus, setConnectionStatus] = useState({ attempt: 0, cycle: 1, phase: "starting" });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!seedContent);
   const [error, setError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
 
@@ -38,29 +45,26 @@ export function SiteContentProvider({ children }) {
 
     let active = true;
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), BOOT_TIMEOUT_MS);
     const cycle = loadAttempt + 1;
+    const retryTimers = [];
     let requestAttempt = 0;
     setConnectionStatus({ attempt: 0, cycle, phase: "starting" });
     setError("");
-    setLoading(true);
 
-    const loadPublishedContent = async () => {
-      let lastError = null;
+    // Trang vẫn mở với nội dung mặc định/seed trong khi quá trình tải chạy nền.
+    const runAttempt = () => {
+      if (!active || controller.signal.aborted) return;
+      requestAttempt += 1;
+      setConnectionStatus({ attempt: requestAttempt, cycle, phase: "connecting" });
+      const requestController = new AbortController();
+      const requestTimeout = window.setTimeout(() => requestController.abort(), REQUEST_TIMEOUT_MS);
+      controller.signal.addEventListener("abort", () => requestController.abort(), { once: true });
 
-      while (active && !controller.signal.aborted) {
-        requestAttempt += 1;
-        setConnectionStatus({ attempt: requestAttempt, cycle, phase: "connecting" });
-        const requestController = new AbortController();
-        const abortRequest = () => requestController.abort();
-        const requestTimeout = window.setTimeout(abortRequest, BOOT_REQUEST_TIMEOUT_MS);
-        controller.signal.addEventListener("abort", abortRequest, { once: true });
-
-        try {
-          const nextContent = await getPublishedContent({ signal: requestController.signal });
+      getPublishedContent({ signal: requestController.signal })
+        .then((nextContent) => {
           if (!active) return;
-          window.clearTimeout(timeout);
           setContent(nextContent);
+          writeSeedContent(nextContent);
           setConnectionStatus({
             attempt: requestAttempt,
             cycle,
@@ -69,44 +73,33 @@ export function SiteContentProvider({ children }) {
           });
           setError("");
           setLoading(false);
-          return;
-        } catch (loadError) {
-          lastError = loadError;
-          if (!active || controller.signal.aborted) break;
-          if (loadError?.status && loadError.status < 500) {
-            setConnectionStatus({ attempt: requestAttempt, code: `HTTP_${loadError.status}`, cycle, phase: "rejected" });
-            break;
-          }
+        })
+        .catch((loadError) => {
+          if (!active || controller.signal.aborted) return;
+          const timedOut = loadError?.name === "AbortError";
+          const rejected = Boolean(loadError?.status && loadError.status < 500);
           setConnectionStatus({
             attempt: requestAttempt,
-            code: loadError?.name === "AbortError" ? "REQUEST_TIMEOUT" : (loadError?.status ? `HTTP_${loadError.status}` : "NETWORK_ERROR"),
+            code: timedOut ? "REQUEST_TIMEOUT" : (loadError?.status ? `HTTP_${loadError.status}` : "NETWORK_ERROR"),
             cycle,
-            phase: loadError?.name === "AbortError" ? "timedOut" : "retrying",
+            phase: rejected ? "rejected" : timedOut ? "timedOut" : "retrying",
           });
-          await waitForRetry(controller.signal);
-        } finally {
-          window.clearTimeout(requestTimeout);
-          controller.signal.removeEventListener("abort", abortRequest);
-        }
-      }
-
-      if (!active) return;
-      const phase = !controller.signal.aborted && lastError?.status && lastError.status < 500
-        ? "rejected"
-        : "waiting";
-      setConnectionStatus({ attempt: requestAttempt, cycle, phase });
-      setError(controller.signal.aborted
-        ? "Máy chủ chưa phản hồi sau 90 giây. Hệ thống sẽ tự kết nối lại."
-        : lastError?.message || "Không thể tải nội dung từ máy chủ.");
-      setLoading(false);
+          setError(loadError?.message || "Không thể tải nội dung từ máy chủ.");
+          setLoading(false);
+          if (!rejected) {
+            const delay = SILENT_RETRY_DELAYS_MS[requestAttempt - 1];
+            if (delay !== undefined) retryTimers.push(window.setTimeout(runAttempt, delay));
+          }
+        })
+        .finally(() => window.clearTimeout(requestTimeout));
     };
 
-    loadPublishedContent();
+    runAttempt();
 
     return () => {
       active = false;
-      window.clearTimeout(timeout);
       controller.abort();
+      retryTimers.forEach((timer) => window.clearTimeout(timer));
     };
   }, [loadAttempt]);
 
@@ -119,6 +112,7 @@ export function SiteContentProvider({ children }) {
     if (!session?.user) throw new Error("Phiên quản trị đã hết hạn. Hãy đăng nhập lại.");
     const result = await publishContent(normalizedContent, session.user.id);
     setContent(result.content);
+    writeSeedContent(result.content);
     setError("");
     return result.content;
   }, []);

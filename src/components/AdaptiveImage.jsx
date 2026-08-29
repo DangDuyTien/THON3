@@ -13,6 +13,7 @@ const AdaptiveImage = forwardRef(function AdaptiveImage(
     imageVariant = "full",
     loading,
     media,
+    placeholderBackground = true,
     priority = false,
     sizes = "100vw",
     src,
@@ -23,6 +24,9 @@ const AdaptiveImage = forwardRef(function AdaptiveImage(
 ) {
   const cmsImage = resolveCmsImage(media || src);
   const attributes = getImageAttributes(cmsImage || src, imageVariant, colorVariant);
+  const backgroundColor = placeholderBackground && cmsImage?.placeholder
+    ? cmsImage.placeholder
+    : undefined;
   const image = (
     <img
       {...imageProps}
@@ -35,7 +39,11 @@ const AdaptiveImage = forwardRef(function AdaptiveImage(
       sizes={attributes ? sizes : undefined}
       src={attributes?.src || src}
       srcSet={attributes?.srcSet || undefined}
-      style={{ objectPosition: imagePosition || getCmsImagePosition(cmsImage), ...style }}
+      style={{
+        backgroundColor,
+        objectPosition: imagePosition || getCmsImagePosition(cmsImage),
+        ...style,
+      }}
       width={attributes?.width}
     />
   );

@@ -153,14 +153,14 @@ export default function AdminImageEditor({
       <div className="admin-image-editor-heading">
         <div>
           <span className="admin-field-label" id={`admin-image-${generatedId}`}>{label}</span>
-          <small>{usingFallback ? "Đang dùng ảnh mặc định" : value?.startsWith("data:") ? "Ảnh tải từ máy" : value ? "Ảnh từ đường dẫn" : "Chưa có ảnh"}</small>
+          <small>{usingFallback ? "Đang dùng ảnh mẫu — chưa thay" : value?.startsWith("data:") ? "Ảnh tải từ máy" : value ? "Ảnh từ đường dẫn" : "Chưa có ảnh"}</small>
         </div>
-        {usingFallback && <span className="admin-image-fallback-badge">ẢNH MẶC ĐỊNH</span>}
+        {usingFallback && <span className="admin-image-fallback-badge">ẢNH MẪU</span>}
       </div>
 
       <div className="admin-image-editor-main">
         <div
-          className={`admin-image-crop${fit === "contain" ? " is-contain" : ""}`}
+          className={`admin-image-crop${fit === "contain" ? " is-contain" : ""}${usingFallback ? " is-fallback" : ""}`}
           style={{ "--admin-image-aspect-ratio": aspectRatio }}
           onPointerDown={handleFocalPointer}
         >
@@ -182,6 +182,7 @@ export default function AdminImageEditor({
           ) : (
             <div className="admin-image-empty"><ImagePlus aria-hidden="true" /><span>Chưa có ảnh</span></div>
           )}
+          {usingFallback && <span className="admin-image-fallback-overlay" aria-hidden="true">Ảnh mẫu</span>}
           {effectiveSrc && fit === "cover" && onPositionChange && (
             <span className="admin-image-focal-marker" style={{ left: `${focal.x}%`, top: `${focal.y}%` }} aria-hidden="true"><LocateFixed /></span>
           )}
@@ -197,7 +198,7 @@ export default function AdminImageEditor({
             <Upload aria-hidden="true" /><span>{uploading ? "Đang tải..." : value ? "Tải ảnh thay thế" : "Tải ảnh từ máy"}</span>
           </button>
           {value && (
-            <button className="admin-quiet-button admin-image-remove-button" type="button" onClick={() => { onChange(""); setUrlValue(""); }} aria-label={`Xóa ${label.toLowerCase()}`} title={fallbackSrc ? "Bỏ ảnh riêng và dùng ảnh mặc định" : "Xóa ảnh"}>
+            <button className="admin-quiet-button admin-image-remove-button" type="button" onClick={() => { onChange(""); setUrlValue(""); }} aria-label={`Xóa ${label.toLowerCase()}`} title={fallbackSrc ? "Bỏ ảnh riêng và dùng lại ảnh mẫu" : "Xóa ảnh"}>
               <Trash2 aria-hidden="true" />
             </button>
           )}

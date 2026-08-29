@@ -120,12 +120,7 @@ export default function PageLoader({ connectionStatus, contentError = "", conten
 
     let cancelled = false;
     let image = null;
-    const markReady = async () => {
-      try {
-        await image?.decode?.();
-      } catch {
-        // The load event below already confirms that the browser can render the image.
-      }
+    const markReady = () => {
       if (!cancelled && image?.complete && image.naturalWidth > 0) setMediaReady(true);
     };
     const frame = window.requestAnimationFrame(() => {

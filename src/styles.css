@@ -28,6 +28,12 @@
   box-sizing: border-box;
 }
 
+a,
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
 html {
   scrollbar-gutter: stable;
   scroll-behavior: auto;
@@ -65,22 +71,9 @@ body {
 }
 
 [data-theme="dark"] .app-shell::before {
-  background: 
+  background:
     radial-gradient(circle at 20% 25%, rgba(0, 240, 255, 0.10) 0%, transparent 50%),
     radial-gradient(circle at 80% 75%, rgba(0, 102, 255, 0.08) 0%, transparent 55%);
-}
-
-.page-contour-canvas {
-  contain: paint;
-  height: 100svh;
-  inset: 0;
-  opacity: 1;
-  pointer-events: none;
-  position: fixed;
-  transform: translateZ(0);
-  /* P2: will-change managed by JS (page-contour-canvas is always visible) */
-  width: 100%;
-  z-index: 12;
 }
 
 /* Below-fold sections do not need paint or image decode work until they are
@@ -823,6 +816,7 @@ body.page-transition-active {
 }
 
 .page-transition-center {
+  --loader-draw-duration: 1800ms;
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -840,21 +834,15 @@ body.page-transition-active {
 
 
 .page-transition-center .site-loader-signature .sig-draw .sig-path {
-  animation: sig-draw-line var(--loader-draw-duration) var(--loader-draw-ease) 2 forwards;
   stroke: var(--ink);
 }
 
-.page-transition-center .site-loader-signature .sig-dynamic-label .sig-label-text {
-  clip-path: inset(0 100% 0 0);
-  fill: var(--ink);
-  font-family: var(--mono);
-  font-size: 38px;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  opacity: 1;
-  text-transform: uppercase;
-  animation: sig-draw-label var(--loader-draw-duration) var(--loader-draw-ease) 2 forwards;
-}
+.page-transition-center .sig-t { animation: sig-draw-t var(--loader-draw-duration) var(--loader-draw-ease) 1 forwards; }
+.page-transition-center .sig-h { animation: sig-draw-h var(--loader-draw-duration) var(--loader-draw-ease) 1 forwards; }
+.page-transition-center .sig-o { animation: sig-draw-o var(--loader-draw-duration) var(--loader-draw-ease) 1 forwards; }
+.page-transition-center .sig-n { animation: sig-draw-n var(--loader-draw-duration) var(--loader-draw-ease) 1 forwards; }
+.page-transition-center .sig-3 { animation: sig-draw-3 var(--loader-draw-duration) var(--loader-draw-ease) 1 forwards; }
+.page-transition-center .sig-line { animation: sig-draw-line var(--loader-draw-duration) var(--loader-draw-ease) 1 forwards; }
 
 .page-transition-title {
   display: none;
@@ -881,17 +869,6 @@ body.page-transition-active {
   stroke-dashoffset: 0;
 }
 
-.page-transition.is-reduced-motion .page-transition-center .sig-dynamic-label .sig-label-text {
-  animation: none;
-  clip-path: inset(0 0 0 0);
-  opacity: 1;
-}
-
-@keyframes sig-draw-label {
-  0%, 58% { clip-path: inset(0 100% 0 0); }
-  85%, 100% { clip-path: inset(0 0 0 0); }
-}
-
 @media (max-width: 680px) {
   .page-transition-center {
     gap: 14px;
@@ -900,11 +877,6 @@ body.page-transition-active {
   .page-transition-center .site-loader-mark {
     height: 90px;
     width: min(88vw, 440px);
-  }
-
-  .page-transition-center .site-loader-signature .sig-dynamic-label .sig-label-text {
-    font-size: 28px;
-    letter-spacing: 0.22em;
   }
 }
 
@@ -2057,6 +2029,23 @@ img {
   overflow: hidden;
   position: sticky;
   top: 0;
+}
+
+.season-tone {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.season-tone-gallery {
+  background: rgb(5, 28, 56);
+  opacity: 0;
+}
+
+.season-tone-paper {
+  background: rgb(244, 248, 252);
+  opacity: 0;
 }
 
 .season-gallery-board {
@@ -4696,12 +4685,19 @@ button:hover .closing-kinetic-green {
 .youth-team-story-panel.is-reversed .youth-team-story-copy { grid-column: 1; }
 .youth-team-story-panel.is-reversed .youth-team-story-media { grid-column: 2; }
 
+/* Intro spread carries the Đoàn emblem instead of a member portrait */
+.youth-team-intro-emblem {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}
+
 /* Story copy wipes in after the previous spread has fully cleared the viewport. */
 .youth-team-text-reveal {
   color: inherit;
   display: block;
   max-width: 100%;
-  overflow: hidden;
   position: relative;
 }
 
@@ -4921,7 +4917,7 @@ button:hover .closing-kinetic-green {
   font-size: 82px;
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 0.96;
+  line-height: 1.2;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -5025,6 +5021,90 @@ button:hover .closing-kinetic-green {
   width: 26px;
 }
 
+/* Thanh điều hướng dọc: xem thẳng gương mặt mình muốn, không phải lật từng trang.
+   Không hộp nền — chỉ chữ trắng + halo tối mảnh để đọc được trên cả ảnh sáng. */
+.youth-team-story-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: absolute;
+  right: clamp(12px, 2vw, 22px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+}
+
+.youth-team-story-rail-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-family: var(--mono);
+  justify-content: flex-end;
+  opacity: 0.6;
+  padding: 3px 0;
+  text-shadow: 0 1px 3px rgba(3, 10, 20, 0.7), 0 0 12px rgba(3, 10, 20, 0.4);
+  transition: opacity 200ms ease;
+}
+
+.youth-team-story-rail-item:hover {
+  opacity: 0.85;
+}
+
+.youth-team-story-rail-item.is-active {
+  opacity: 1;
+}
+
+.youth-team-story-rail-item:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.youth-team-story-rail-item::before {
+  content: "";
+  background: currentColor;
+  flex: 0 0 auto;
+  height: 1px;
+  transition: width 200ms ease;
+  width: 0;
+}
+
+.youth-team-story-rail-item.is-active::before {
+  margin-right: 7px;
+  width: 14px;
+}
+
+.youth-team-story-rail-index {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.youth-team-story-rail-name {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-left: 0;
+  margin-right: 0;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: margin 200ms ease, max-width 240ms ease, opacity 180ms ease;
+  white-space: nowrap;
+}
+
+.youth-team-story-rail-item:hover .youth-team-story-rail-name,
+.youth-team-story-rail-item.is-active .youth-team-story-rail-name {
+  margin-left: 9px;
+  margin-right: 9px;
+  max-width: 148px;
+  opacity: 1;
+}
+
 .village-archive-roster {
   contain-intrinsic-size: auto 900px;
   content-visibility: auto;
@@ -5115,24 +5195,28 @@ button:hover .closing-kinetic-green {
 
 .youth-union-join-inline {
   align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--archive-surface);
+  border: 1px solid rgba(194, 235, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   display: flex;
+  gap: 18px;
   justify-content: space-between;
   margin: 74px 24px 0;
   max-width: none;
-  padding: 28px 0 42px;
+  padding: 20px 24px;
   position: static;
 }
 
-.youth-inline-label { align-items: center; display: inline-flex; font-family: var(--mono); font-size: 10px; }
-.youth-inline-add-btn { background: var(--archive-accent); border: 1px solid var(--archive-accent); border-radius: 6px; box-shadow: none; color: var(--archive-accent-ink); min-height: 48px; padding: 11px 20px; transition: background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease; }
+.youth-inline-label { align-items: center; color: var(--archive-muted); display: inline-flex; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
+.youth-inline-add-btn { align-items: center; background: #d43d3d; border: 1px solid #d43d3d; border-radius: 6px; box-shadow: none; color: #fff; cursor: pointer; display: inline-flex; font-family: var(--mono); font-size: 12px; font-weight: 800; gap: 7px; letter-spacing: 0.04em; min-height: 48px; padding: 11px 22px; transition: background-color 200ms ease, border-color 200ms ease; white-space: nowrap; }
 
 @media (hover: hover) and (pointer: fine) {
   .village-archive-card:hover { border-color: var(--archive-accent); box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42); transform: translate3d(0, -6px, 0); }
   .village-archive-card:hover .village-archive-media-layer-front { clip-path: none; opacity: 0; }
   .youth-team-story-back:hover svg,
   .youth-team-story-next:hover svg { transform: translate3d(0, 3px, 0); }
-  .youth-inline-add-btn:hover { background: #fff; border-color: #fff; box-shadow: 0 7px 22px rgba(0, 0, 0, 0.28); color: var(--archive-accent-ink); transform: translate3d(0, -2px, 0); }
+  .youth-inline-add-btn:hover { background: #08172b; border-color: #08172b; color: #fff; }
 }
 
 .app-shell.theme-hover-quiet .village-archive-card:hover,
@@ -5192,12 +5276,15 @@ button:hover .closing-kinetic-green {
   .youth-team-story-placeholder .youth-party-logo-img { height: 112px; width: 112px; }
   .youth-team-story-eyebrow { font-size: 9px; margin-bottom: 18px; }
   .youth-team-intro-title,
-  .youth-team-leader-copy h3 { font-size: 42px; line-height: 1; }
+  .youth-team-leader-copy h3 { font-size: 42px; line-height: 1.2; }
   .youth-team-story-role { font-size: 14px; margin-bottom: 10px; }
   .youth-team-story-divider { border-top-width: 3px; margin-top: 24px; width: 92px; }
   .youth-team-story-lead,
   .youth-team-story-bio { font-size: 14px; line-height: 1.6; margin-top: 22px; }
   .youth-team-story-next { bottom: 18px; }
+  .youth-team-story-rail { right: 8px; }
+  .youth-team-story-rail-item { padding: 2px 0; }
+  .youth-team-story-rail-name { display: none; }
   .youth-team-story-progress { bottom: 18px; right: 14px; }
   .village-archive-roster { padding: 78px 10px 30px; }
   .village-archive-heading { gap: 12px; margin-bottom: 34px; padding: 0 4px; }
@@ -5206,7 +5293,7 @@ button:hover .closing-kinetic-green {
   .village-archive-card { aspect-ratio: 3 / 4; }
   .village-archive-card figcaption { font-size: 12px; padding: 34px 10px 10px; }
   .village-archive-card figcaption .archive-card-meta { font-size: 8px; }
-  .youth-union-join-inline { align-items: stretch; flex-direction: column; gap: 16px; margin: 56px 4px 0; padding-bottom: 12px; }
+  .youth-union-join-inline { align-items: stretch; flex-direction: column; gap: 14px; margin: 56px 12px 0; padding: 16px; }
   .youth-inline-label { line-height: 1.4; }
   .youth-inline-add-btn { justify-content: center; width: 100%; }
 }
@@ -5232,8 +5319,59 @@ body.youth-modal-open {
   overflow: hidden;
 }
 
+@keyframes youth-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes youth-modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes youth-modal-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes youth-modal-card-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0) scale(0.975);
+  }
+}
+
+@keyframes youth-modal-card-in-mobile {
+  from { transform: translate3d(0, 100%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes youth-modal-card-out-mobile {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, 100%, 0); }
+}
+
+.youth-modal-backdrop.is-closing {
+  animation: youth-modal-backdrop-out 240ms ease both;
+}
+
+.youth-modal-backdrop.is-closing .youth-modal-card {
+  animation: youth-modal-card-out 240ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
 .youth-modal-backdrop {
   align-items: center;
+  animation: youth-modal-backdrop-in 200ms ease both;
   background: rgba(4, 12, 22, 0.9);
   backdrop-filter: blur(8px);
   display: flex;
@@ -5247,6 +5385,7 @@ body.youth-modal-open {
 }
 
 .youth-modal-card {
+  animation: youth-modal-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
   background: #f4f5f1;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
@@ -5285,8 +5424,8 @@ body.youth-modal-open {
 }
 
 .youth-modal-close:hover {
-  background: #d94f4f;
-  border-color: #d94f4f;
+  background: #d43d3d;
+  border-color: #d43d3d;
 }
 
 .youth-modal-close:focus-visible,
@@ -5303,7 +5442,7 @@ body.youth-modal-open {
 }
 
 .youth-member-preview {
-  background: #d94f4f;
+  background: #d43d3d;
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -5324,14 +5463,40 @@ body.youth-modal-open {
 .youth-member-preview-photo {
   aspect-ratio: 3 / 4;
   background: #eef2ed;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  margin: 28px auto 22px;
+  border-radius: 6px;
+  box-shadow: 0 26px 64px rgba(0, 0, 0, 0.36), 0 10px 22px rgba(0, 0, 0, 0.22);
+  margin: 34px auto 26px;
   max-height: 410px;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  transform: rotate(-1.4deg);
   width: min(100%, 300px);
 }
 
+.youth-member-preview-photo::before,
+.youth-member-preview-photo::after {
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  content: "";
+  height: 22px;
+  position: absolute;
+  top: -10px;
+  width: 78px;
+  z-index: 2;
+}
+
+.youth-member-preview-photo::before {
+  left: 18px;
+  transform: rotate(-7deg);
+}
+
+.youth-member-preview-photo::after {
+  right: 18px;
+  transform: rotate(5deg);
+}
+
 .youth-member-preview-photo img {
+  border-radius: 6px;
   display: block;
   height: 100%;
   object-fit: cover;
@@ -5341,12 +5506,14 @@ body.youth-modal-open {
 
 .youth-member-preview-empty {
   align-items: center;
+  border-radius: 6px;
   color: #c84444;
   display: flex;
   flex-direction: column;
   gap: 12px;
   height: 100%;
   justify-content: center;
+  overflow: hidden;
 }
 
 .youth-member-preview-empty svg {
@@ -5360,6 +5527,7 @@ body.youth-modal-open {
   font-family: var(--mono);
   font-size: 9px;
   font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -5378,7 +5546,7 @@ body.youth-modal-open {
   font-family: var(--display);
   font-size: 34px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.15;
   margin-top: 12px;
   overflow-wrap: anywhere;
 }
@@ -5388,6 +5556,7 @@ body.youth-modal-open {
   font-size: 12px;
   line-height: 1.5;
   margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .youth-member-preview-note {
@@ -5430,11 +5599,11 @@ body.youth-modal-open {
 .youth-modal-header h4,
 .youth-modal-success h4 {
   color: #08172b;
-  font-family: var(--sans);
-  font-size: 28px;
-  font-weight: 800;
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.12;
+  line-height: 1.15;
   margin: 12px 0 8px;
 }
 
@@ -5760,9 +5929,16 @@ body.youth-modal-open {
   }
 
   .youth-modal-card {
+    animation-name: youth-modal-card-in-mobile;
+    animation-delay: 0ms;
+    animation-duration: 380ms;
     border-radius: 8px 8px 0 0;
     max-height: 96dvh;
     overflow-y: auto;
+  }
+
+  .youth-modal-backdrop.is-closing .youth-modal-card {
+    animation-name: youth-modal-card-out-mobile;
   }
 
   .youth-modal-close {
@@ -5777,6 +5953,8 @@ body.youth-modal-open {
   }
 
   .youth-member-preview {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.34);
+    border-right: 0;
     column-gap: 18px;
     display: grid;
     grid-template-columns: 112px minmax(0, 1fr);
@@ -5796,6 +5974,16 @@ body.youth-modal-open {
     margin: 20px 0 0;
     width: 112px;
   }
+
+  .youth-member-preview-photo::before,
+  .youth-member-preview-photo::after {
+    height: 14px;
+    top: -7px;
+    width: 44px;
+  }
+
+  .youth-member-preview-photo::before { left: 10px; }
+  .youth-member-preview-photo::after { right: 10px; }
 
   .youth-member-preview-empty svg {
     height: 54px;
@@ -5853,5 +6041,31 @@ body.youth-modal-open {
   .youth-modal-card * {
     scroll-behavior: auto;
     transition: none !important;
+  }
+
+  .youth-modal-backdrop,
+  .youth-modal-card {
+    animation: none !important;
+  }
+}
+
+.preview-focus-flash {
+  animation: preview-focus-flash 1.7s ease both;
+  outline: 3px solid var(--lime);
+  outline-offset: -3px;
+}
+
+@keyframes preview-focus-flash {
+  0% {
+    outline-color: transparent;
+  }
+
+  12%,
+  70% {
+    outline-color: var(--lime);
+  }
+
+  100% {
+    outline-color: transparent;
   }
 }

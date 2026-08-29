@@ -6,7 +6,7 @@ import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import { useSectionProgress } from "../../hooks/useMotion.js";
 import { smoothStep } from "../../utils/math.js";
 
-export default memo(function StoryMessageSection({ contourCanvasRef, reducedMotion }) {
+export default memo(function StoryMessageSection({ reducedMotion }) {
   const { content } = useSiteContent();
   const { villageMessage } = content;
   const sectionRef = useRef(null);
@@ -51,9 +51,6 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
     stage.style.setProperty("--story-signature-word-dash", `${(1 - signatureDraw) * 3600}px`);
     stage.style.setProperty("--story-title-left-x", `-${titleTravel}vw`);
     stage.style.setProperty("--story-title-right-x", `${titleTravel}vw`);
-
-    const contourCanvas = contourCanvasRef.current;
-    if (contourCanvas) contourCanvas.style.opacity = `${smoothStep(progress / 0.62)}`;
   }, 1, {
     activate: () => {
       stageRef.current?.classList.add("story-motion-active");
@@ -84,11 +81,6 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
       ];
     },
   });
-
-  useEffect(() => () => {
-    const contourCanvas = contourCanvasRef.current;
-    if (contourCanvas) contourCanvas.style.opacity = "";
-  }, [contourCanvasRef]);
 
   return (
     <section
@@ -137,7 +129,7 @@ export default memo(function StoryMessageSection({ contourCanvasRef, reducedMoti
 
         <div className="story-message-signature" aria-label={villageMessage.signatureAlt} data-preview-target="story-signature">
           {villageMessage.signatureImage ? (
-            <img src={villageMessage.signatureImage} alt={villageMessage.signatureAlt} />
+            <img src={villageMessage.signatureImage} alt={villageMessage.signatureAlt} decoding="async" loading="lazy" />
           ) : (
             <svg className="signature-writing" viewBox="0 0 900 250" aria-hidden="true">
               <text className="signature-writing-word" x="84" y="164">{villageMessage.signatureText}</text>

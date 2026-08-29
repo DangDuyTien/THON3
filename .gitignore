@@ -18,6 +18,7 @@ dist-ssr
 !.env.example
 server/storage/*
 !server/storage/.gitkeep
+server/.cache/
 
 # Lighthouse reports
 .lighthouseci
