@@ -4785,32 +4785,83 @@ button:hover .closing-kinetic-green {
   width: 100%;
 }
 
-/* Member slides: contain the portrait in a framed card instead of full-bleed cover */
+/* Member slides: portrait photo taped into the album page, not framed */
 .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media {
   align-items: center;
   display: flex;
   justify-content: center;
-  padding: 48px;
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media:has(picture, > img)::after {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  content: "";
+  height: min(58vh, 520px);
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(calc(-50% + 22px), calc(-50% + 20px)) rotate(1.8deg);
+  width: calc(min(58vh, 520px) * 0.75);
+  z-index: 0;
 }
 
 .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture,
 .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media > img {
   aspect-ratio: 3 / 4;
-  border-radius: 10px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.18);
-  height: auto;
-  max-height: min(60vh, 520px);
+  border-radius: 6px;
+  box-shadow:
+    0 26px 64px rgba(0, 0, 0, 0.36),
+    0 10px 22px rgba(0, 0, 0, 0.22);
+  flex: none;
+  height: min(58vh, 520px);
+  object-fit: cover;
   overflow: hidden;
+  position: relative;
+  transform: rotate(-1.4deg);
   width: auto;
+  z-index: 1;
 }
 
-.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media img {
-  aspect-ratio: 3 / 4;
-  border-radius: 10px;
+/* Tape strips pinning the photo onto the page */
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::before,
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::after {
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  content: "";
+  height: 24px;
+  position: absolute;
+  top: -11px;
+  width: 84px;
+  z-index: 2;
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::before {
+  left: 20px;
+  transform: rotate(-7deg);
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::after {
+  right: 20px;
+  transform: rotate(5deg);
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture img {
+  border-radius: 3px;
   height: 100%;
-  max-height: min(60vh, 520px);
   object-fit: cover;
   width: 100%;
+}
+
+.youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media-index {
+  bottom: auto;
+  color: rgba(255, 255, 255, 0.09);
+  font-family: var(--display);
+  font-size: clamp(150px, 17vw, 230px);
+  left: 30px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  top: 12px;
+  z-index: 0;
 }
 
 .youth-team-story-placeholder {
@@ -4887,10 +4938,21 @@ button:hover .closing-kinetic-green {
 }
 
 .youth-team-story-role {
-  font-size: 17px;
-  font-style: italic;
-  margin-bottom: 16px;
-  text-transform: none;
+  align-items: center;
+  display: flex;
+  font-size: 12px;
+  font-style: normal;
+  gap: 14px;
+  letter-spacing: 0.26em;
+  margin-bottom: 22px;
+}
+
+.youth-team-story-role::before {
+  background: rgba(255, 255, 255, 0.55);
+  content: "";
+  display: block;
+  height: 1px;
+  width: 34px;
 }
 
 .youth-team-story-divider {
@@ -5101,10 +5163,31 @@ button:hover .closing-kinetic-green {
   .youth-team-story-copy { justify-content: flex-start; padding: 50px 22px 94px; }
   .youth-team-story-back { left: 12px; top: 10px; }
   .youth-team-story-media-index { bottom: 18px; left: 18px; }
-  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media { padding: 24px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media { padding: 20px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media:has(picture, > img)::after {
+    height: min(30svh, 250px);
+    transform: translate(calc(-50% + 12px), calc(-50% + 11px)) rotate(1.6deg);
+    width: calc(min(30svh, 250px) * 0.75);
+  }
   .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture,
-  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media > img,
-  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media img { max-height: min(38svh, 300px); border-radius: 8px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media > img {
+    border-radius: 5px;
+    height: min(30svh, 250px);
+    transform: rotate(-1.2deg);
+  }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::before,
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::after {
+    height: 16px;
+    top: -8px;
+    width: 54px;
+  }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::before { left: 14px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media picture::after { right: 14px; }
+  .youth-team-story-panel:has(.youth-team-leader-copy) .youth-team-story-media-index {
+    font-size: 96px;
+    left: 14px;
+    top: 6px;
+  }
   .youth-team-story-placeholder { gap: 14px; padding: 30px; }
   .youth-team-story-placeholder .youth-party-logo-img { height: 112px; width: 112px; }
   .youth-team-story-eyebrow { font-size: 9px; margin-bottom: 18px; }
