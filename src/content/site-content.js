@@ -132,7 +132,7 @@ export const communityPartners = {
   eyebrow: "CỘNG ĐỒNG / MÊ LINH",
   headline: ["CỘNG ĐỒNG", "& ĐỒNG HÀNH"],
   organizations: [
-    { id: "youth-union", label: "ĐOÀN TNCS HỒ CHÍ MINH", logo: "/assets/doan-tncs-logo-160.webp", logoAlt: "Biểu trưng Đoàn Thanh niên Cộng sản Hồ Chí Minh", type: "emblem" },
+    { id: "youth-union", label: "ĐOÀN TNCS HỒ CHÍ MINH", logo: "/assets/doan-tncs-logo-960.webp", logoAlt: "Biểu trưng Đoàn Thanh niên Cộng sản Hồ Chí Minh", type: "emblem" },
     { id: "ubnd", label: "UBND XÃ", logo: "/assets/community-ubnd.svg", logoAlt: "Biểu trưng UBND Xã Mê Linh", mark: "UBND" },
     { id: "fatherland-front", label: "MẶT TRẬN TỔ QUỐC", logo: "/assets/community-mttq.svg", logoAlt: "Biểu trưng Mặt trận Tổ quốc", mark: "MTTQ" },
     { id: "women-union", label: "HỘI LIÊN HIỆP PHỤ NỮ", logo: "/assets/community-hpn.svg", logoAlt: "Biểu trưng Hội Liên hiệp Phụ nữ", mark: "HPN" },

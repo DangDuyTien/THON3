@@ -9,7 +9,7 @@ Phạm vi: trang chủ React/Vite của Xã Mê Linh, Hà Nội
 | --- | --- | --- |
 | P0 - Đo và ngân sách | Hoàn tất | `src/perf.js` ghi Web Vitals, Long Task, FPS cuộn và layer động; `npm run build:check` kiểm tra media contract cùng ngân sách bundle. |
 | P1 - Motion runtime | Hoàn tất | `src/motion-runtime.js` chỉ kích hoạt scene gần viewport; `src/motion-frame-scheduler.js` gom cập nhật main thread vào một `requestAnimationFrame`. |
-| P1 - Cuộn cảm ứng | Hoàn tất | Điện thoại luôn dùng cuộn native của hệ điều hành (`syncTouch: false`); Lenis chỉ điều khiển wheel trên desktop. Parallax vẫn cập nhật qua scroll listener passive. |
+| P1 - Cuộn cảm ứng | Hoàn tất | Điện thoại (≤ 680px) dùng cuộn native 100%, không khởi tạo Lenis — tắt cả `smoothWheel` lẫn bất kỳ chặn cuộn nào để bỏ độ trễ mượt. Lenis chỉ chạy trên desktop. Parallax vẫn cập nhật qua scroll listener passive. |
 | P1 - Media | Hoàn tất | `AdaptiveImage` dùng AVIF/WebP `srcset`, hero-home và story-message có bản AVIF (1920w: 502 KB WebP → 373 KB AVIF, quality 60 + chroma 4:4:4 để giữ chi tiết); ảnh dưới màn hình lazy-load; hero và gallery chỉ giữ cửa sổ media cần thiết, rồi prewarm cảnh kế tiếp. |
 | P1 - Canvas liên tục | Đã gỡ | Canvas contour nền (nét vẽ di chuyển) đã được gỡ bỏ hoàn toàn 2026-08-29 theo quyết định sản phẩm — loại bỏ consumer rAF lớn nhất và toàn bộ chi phí marching squares trên main thread (đường fallback iOS). |
 | P1 - Máy yếu | Hoàn tất | Bảo vệ máy yếu nằm ở media window/prewarm, scene sleep, reduced-motion và ảnh AVIF; không còn vòng vẽ nền vô hạn. |

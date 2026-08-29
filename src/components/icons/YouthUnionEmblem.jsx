@@ -1,7 +1,7 @@
 export default function YouthUnionEmblem({ size = 36, className = "", style = {} }) {
   return (
     <img
-      src="/assets/doan-tncs-logo-160.webp"
+      src="/assets/doan-tncs-logo-960.webp"
       alt="Huy hiệu Đoàn TNCS Hồ Chí Minh"
       className={`youth-union-emblem-img ${className}`}
       decoding="async"

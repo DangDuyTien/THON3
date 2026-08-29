@@ -2,7 +2,6 @@ import { memo, useEffect, useRef } from "react";
 import { useSiteContent } from "../../content/SiteContentProvider.jsx";
 import RevealLine from "../RevealLine.jsx";
 import RevealLines from "../RevealLines.jsx";
-import { subscribeContinuousFrame } from "../../motion-frame-scheduler.js";
 
 const CommunityReveal = RevealLine;
 
@@ -43,21 +42,52 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       lastTime = timestamp;
       scrollOffsetRef.current *= 0.92;
       if (Math.abs(scrollOffsetRef.current) < 0.01) scrollOffsetRef.current = 0;
-      const speed = (1.5 + scrollOffsetRef.current * 0.05) * (delta / 16.66);
+      if (scrollOffsetRef.current === 0) {
+        if (lastTransform !== 0) {
+          marqueeRef.current.style.transform = "translate3d(0, 0, 0)";
+          lastTransform = 0;
+        }
+        return;
+      }
+      const speed = scrollOffsetRef.current * (delta / 16.66);
       positionRef.current += speed;
       if (positionRef.current >= groupWidthRef.current) positionRef.current -= groupWidthRef.current;
-      marqueeRef.current.style.transform = `translate3d(-${positionRef.current.toFixed(2)}px, 0, 0)`;
+      if (positionRef.current < 0) positionRef.current += groupWidthRef.current;
+      const nextTransform = -positionRef.current;
+      if (nextTransform !== lastTransform) {
+        marqueeRef.current.style.transform = `translate3d(${nextTransform.toFixed(2)}px, 0, 0)`;
+        lastTransform = nextTransform;
+      }
     };
-    let unsubscribeFrame = null;
-    const startFrameLoop = () => {
-      if (unsubscribeFrame) return;
+    let lastTransform = 0;
+    let frameHandle = null;
+    const ensureFrameLoop = () => {
+      if (frameHandle !== null) return;
       marqueeRef.current?.style.setProperty("will-change", "transform");
       lastTime = performance.now();
-      unsubscribeFrame = subscribeContinuousFrame(onFrame);
+      const tick = (timestamp) => {
+        frameHandle = null;
+        onFrame(timestamp);
+        if (scrollOffsetRef.current !== 0) {
+          frameHandle = window.requestAnimationFrame(tick);
+        } else {
+          marqueeRef.current?.style.removeProperty("will-change");
+        }
+      };
+      frameHandle = window.requestAnimationFrame(tick);
     };
     const stopFrameLoop = () => {
-      unsubscribeFrame?.();
-      unsubscribeFrame = null;
+      if (frameHandle !== null) {
+        window.cancelAnimationFrame(frameHandle);
+        frameHandle = null;
+      }
+      scrollOffsetRef.current = 0;
+      lastTransform = -positionRef.current;
+      if (lastTransform !== 0) {
+        marqueeRef.current.style.transform = "translate3d(0, 0, 0)";
+        positionRef.current = 0;
+        lastTransform = 0;
+      }
       marqueeRef.current?.style.removeProperty("will-change");
     };
 
@@ -65,14 +95,10 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       ? null
       : new IntersectionObserver(([entry]) => {
         visibleRef.current = entry.isIntersecting;
-        if (entry.isIntersecting) startFrameLoop();
-        else stopFrameLoop();
+        if (entry.isIntersecting && scrollOffsetRef.current !== 0) ensureFrameLoop();
+        else if (!entry.isIntersecting) stopFrameLoop();
       }, { rootMargin: "20% 0px 20% 0px" });
     if (intersectionObserver) intersectionObserver.observe(section);
-    else {
-      visibleRef.current = true;
-      startFrameLoop();
-    }
 
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -81,6 +107,7 @@ export default memo(function CommunityPartnersSection({ reducedMotion }) {
       lastScrollY = currentScrollY;
       if (!visibleRef.current || Math.abs(delta) <= 0.5) return;
       scrollOffsetRef.current = Math.min(Math.max(scrollOffsetRef.current + delta * 0.18, -60), 60);
+      if (scrollOffsetRef.current !== 0) ensureFrameLoop();
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
 

@@ -33,14 +33,22 @@ export function useMomentumScroll(reducedMotion) {
     const compactViewport = window.matchMedia("(max-width: 680px)").matches;
     const root = document.documentElement;
 
-    const maximumWheelDelta = compactViewport ? 120 : 240;
+    if (compactViewport) {
+      root.classList.add("native-scroll-active");
+      return () => {
+        root.classList.remove("native-scroll-active");
+        destroyMotionRuntime();
+      };
+    }
+
+    const maximumWheelDelta = 240;
     let coarseScrollActive = false;
     let lenis;
     lenis = new Lenis({
       allowNestedScroll: false,
       anchors: true,
       autoRaf: false,
-      duration: compactViewport ? 1.1 : 1.05,
+      duration: 1.05,
       easing: (t) => 1 - Math.pow(1 - t, 3),
       overscroll: false,
       smoothWheel: true,
@@ -50,7 +58,7 @@ export function useMomentumScroll(reducedMotion) {
         data.deltaY = Math.sign(data.deltaY) * Math.min(Math.abs(data.deltaY), maximumWheelDelta);
         return true;
       },
-      wheelMultiplier: compactViewport ? 0.6 : 0.58,
+      wheelMultiplier: 0.58,
     });
     let unsubscribeAnimationFrame = null;
 

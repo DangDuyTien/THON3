@@ -1,7 +1,7 @@
 export default function YouthUnionPartyLogo({ size = 28, className = "", style = {} }) {
   return (
     <img
-      src="/assets/doan-tncs-logo-160.webp"
+      src="/assets/doan-tncs-logo-960.webp"
       alt="Huy hiệu Đoàn TNCS Hồ Chí Minh"
       className={`youth-party-logo-img ${className}`}
       decoding="async"
